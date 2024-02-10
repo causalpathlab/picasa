@@ -1,0 +1,25 @@
+
+# Ignore cmake files
+CMakeFiles/
+*.cmake
+CMakeCache.txt
+Makefile
+
+
+.vscode/
+.snakemake/
+
+/data
+
+io.py
+scratch.py
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+/build
+
+*.so
+
+
