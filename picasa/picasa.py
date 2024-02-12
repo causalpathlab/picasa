@@ -1,5 +1,4 @@
 from .dutil import Dataset 
-from . import genomics
 from .util.typehint import Adata
 
 import pandas as pd 
@@ -8,22 +7,6 @@ import numpy as np
 class picasa(object):
 	def __init__(self, data: Dataset):
 		self.data = data
-	
-	def annotate_features(self, gtf: str, gtf_by: str):
-	
-		gtf = genomics.read_gtf(gtf).query("feature == 'gene'").split_attribute()
-
-		gtf = gtf.sort_values("seqname").drop_duplicates(subset=[gtf_by], keep="last")
-
-		merge_df = pd.concat([
-			pd.DataFrame(gtf.to_bed(name=gtf_by)),
-			pd.DataFrame(gtf).drop(columns=genomics.Gtf.COLUMNS)  # Only use the splitted attributes
-		], axis=1).set_index(gtf_by)
-
-		merge_df.index = merge_df.index.str.upper()
-
-		self.data.adata_list['rna'].var = pd.merge(self.data.adata_list['rna'].var,merge_df,left_index=True,right_index=True,how='left')
-		self.data.adata_list['spatial'].var = pd.merge(self.data.adata_list['spatial'].var,merge_df,left_index=True,right_index=True,how='left')
 
 	def update_common_features(self):
      
