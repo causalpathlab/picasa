@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 from sklearn.utils.extmath import randomized_svd
-from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-# from ..util.typehint import Mapping,Adata
+from ..util.typehint import Adata
+from typing import Mapping
+from ..dutil import load_data
 
 import logging
 logger = logging.getLogger(__name__)
@@ -52,9 +53,16 @@ def get_projection(mtx: np.array, rp_arrs: np.array, rp_weight_adjust: bool, ndi
     
     return Z
 
-def rp(adata_list: Mapping[str, Adata],depth: int, replicates: int, batch: int, rp_weight_adjust: bool, ndim: int)-> None:
+def rp(adata_list: Mapping[str, Adata],
+       depth: int = 10, 
+       replicates: int = 10, 
+       batch: int = 10000, 
+       rp_weight_adjust: bool = True, 
+       ndim: int = 10
+       )-> None:
 
     ndims = len(adata_list['spatial'].uns['selected_genes'])
+    
     rp_arrs = projection_matrix(depth,ndims,replicates)
         
     for ad in adata_list:    
@@ -62,6 +70,14 @@ def rp(adata_list: Mapping[str, Adata],depth: int, replicates: int, batch: int, 
         
         if adata.shape[0]<batch:
             mtx = load_data(adata,0,adata.shape[0])
-            rmtx = get_projection(mtx.T,rp_arrs, rp_weight_adjust,ndim)
-    
+            adata.obsm['X_rp'] = get_projection(mtx.T,rp_arrs, rp_weight_adjust,ndim)
+
+        else:
+            blocks = [(start, min(start + (batch), adata.shape[0])) for start in range(0, adata.shape[0], batch)]
+            rmtx = np.empty((0, ndim))
+            for b in blocks:
+                dmtx = load_data(adata,b[0],b[1])
+                cmtx = get_projection(dmtx.T,rp_arrs, rp_weight_adjust,ndim)
+                rmtx = np.concatenate((rmtx, cmtx), axis=0)                
+            adata.obsm['X_rp'] = rmtx
     
