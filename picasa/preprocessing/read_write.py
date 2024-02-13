@@ -2,20 +2,30 @@ import pandas as  pd
 import numpy as np
 from scipy.sparse import csr_matrix
 import h5py as hf
+from anndata import AnnData
+import scanpy as sc 
 
 
-def CreateH5ADfromMMF(inpath: str, outpath: str, sample: str) -> None:
+def CreateH5ADfromMMF(inpath: str, outpath: str, sample: str, index_filter: str = None) -> None:
 	
-	import scanpy as sc 
 	
 	adata = sc.read_10x_mtx(inpath)
 	
-	adata.write(outpath+sample+'.h5ad',compression='gzip')
+	if index_filter: 
+		df = pd.DataFrame(adata.X.todense())
+		df.index = adata.obs.index.values
+		df.columns = adata.var.index.values
+		df = df[df.index.str.contains(index_filter)]
+		smat = csr_matrix(df.values)
+		adata2 = AnnData(X=smat)
+		adata2.obs_names = df.index
+		adata2.var_names = df.columns
+		adata2.write(outpath+sample+'.h5ad',compression='gzip')
+	else:
+		adata.write(outpath+sample+'.h5ad',compression='gzip')
 
 def CreateH5ADfromMMF_spatial(inpath: str, outpath: str, sample: str, position_coordinate: str) -> None:
-    
-	import scanpy as sc 
-	
+    	
 	adata = sc.read_10x_mtx(inpath)
 
 	df_pos = pd.read_csv(position_coordinate,header=False)
@@ -29,7 +39,7 @@ def CreateH5fromMMF(inpath: str, outpath: str, sample: str) -> None:
 	
 	from scipy.io import mmread
 	
-	f = hf.File(outpath+sample+'.h5','w')
+	f = hf.File(outpath+sample+'.h5ad','w')
 
 	mm = mmread(inpath+'/matrix.mtx.gz')
 	mtx = mm.todense()

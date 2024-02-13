@@ -1,6 +1,4 @@
 import numpy as np
-
-
 from ..util.typehint import Adata
 from typing import Mapping
        
