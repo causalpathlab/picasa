@@ -61,9 +61,9 @@ def rp(adata_list: Mapping[str, Adata],
        ndim: int = 10
        )-> None:
 
-    ndims = len(adata_list['spatial'].uns['selected_genes'])
+    feature_dim = len(adata_list['spatial'].uns['selected_genes'])
     
-    rp_arrs = projection_matrix(depth,ndims,replicates)
+    rp_arrs = projection_matrix(depth,feature_dim,replicates)
         
     for ad in adata_list:    
         adata = adata_list[ad]
