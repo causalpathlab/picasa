@@ -14,21 +14,30 @@ pico = picasa.create_picasa_object({'rna':rna,'spatial':spatial})
 
 picasa.pp.common_features(pico.data.adata_list) 
 
-picasa.proj.rp(pico.data.adata_list)
-picasa.proj.pmf(pico.data.adata_list)
+# picasa.proj.rp(pico.data.adata_list)
+# picasa.proj.pmf(pico.data.adata_list)
 
-nbr = picasa.nbr.generate_neighbours(source_adata=pico.data.adata_list['spatial'],target_adata=pico.data.adata_list['rna'],num_nbrs=10,use_projection='X_pmf_theta')
+# nbr = picasa.nbr.generate_neighbours(source_adata=pico.data.adata_list['spatial'],target_adata=pico.data.adata_list['rna'],num_nbrs=10,use_projection='X_pmf_theta')
 
 
-ad_map = ad.read_h5ad('../Tangram/ad_map.h5ad')
-nbr2 = ad_map.X.T
-nbr2 = ad_map.X
-nbr2 = np.argsort(-nbr2, axis=1)[:, :10]
+# ad_map = ad.read_h5ad('../Tangram/ad_map.h5ad')
+# nbr = ad_map.X.T
+# nbr = np.argsort(-nbr, axis=1)[:, :10] 
+# np.savez_compressed('data/spsc_map.npz', array=nbr)
 
-mtotal = 0
-for ri,row in enumerate(nbr.values()):
-    mtotal += len(np.intersect1d(np.array(row), np.array(nbr2[ri])))
-print(mtotal)
+nbr_data = np.load('data/spsc_map.npz')
+nbr= nbr_data['array']
+spsc_map ={x:y for x,y in zip(range(nbr.shape[0]),nbr)}
+
+pico.set_spsc_map(spsc_map)
+
+pb = picasa.int.get_pairwise_bulk_interaction(spsc_map,pico.data.adata_list['rna'])
+print(pb)
+
+# mtotal = 0
+# for ri,row in enumerate(nbr.values()):
+#     mtotal += len(np.intersect1d(np.array(row), np.array(nbr2[ri])))
+# print(mtotal)
 
 
 # df_nbr = pd.DataFrame(nbr).T

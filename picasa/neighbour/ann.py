@@ -33,8 +33,8 @@ def get_neighbours(mtx,model,nbrsize):
 
 def generate_neighbours(source_adata: AnnData, 
                         target_adata: AnnData,
-                        use_projection: str = 'X_rp',
-                        num_nbrs: int = 1
+                        use_projection: str,
+                        num_nbrs: int
                         ) -> dict:
     
     ann_model = get_NNmodel(source_adata.obsm[use_projection])
