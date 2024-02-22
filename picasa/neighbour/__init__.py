@@ -1,2 +1,2 @@
-from .ann import generate_neighbours
+from .ann import generate_neighbours, get_NNmodel
 

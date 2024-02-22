@@ -1,1 +1,1 @@
-from .bulk import get_pairwise_bulk_interaction
+from .cpw import get_pairwise_interaction

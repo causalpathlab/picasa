@@ -13,7 +13,7 @@ def get_nbr_mtx(sc_adata: AnnData, nbr_list: np.array) -> np.array:
 def get_interaction_data(mtx: np.array) -> np.array:
     cpair = []
     for i in range(len(mtx)):
-        cpair.append(mtx[i] * np.array([mtx[i] for j, row in enumerate(mtx) if j != i]))
+        cpair.append(mtx[i] * np.array([mtx[i] for j, _ in enumerate(mtx) if j != i]))
     cpair = np.array(cpair)
     cpair = cpair.reshape(cpair.shape[0]*cpair.shape[1],cpair.shape[2])
     return cpair

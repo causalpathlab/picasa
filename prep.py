@@ -6,6 +6,15 @@ import pandas as pd
 import numpy as np
 import picasa
 
+bulk_path = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/figures/fig1/data/sc.h5ad'
+sim_data_path = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/data/'
+size = 100
+depth = 10000
+seed = 123
+
+simdata_from_bulk_copula(bulk_path,sim_data_path,size,depth,seed)
+
+
 rna = ad.read_h5ad('data/brain/test_ad_sc.h5ad')
 spatial = ad.read_h5ad('data/brain/test_ad_sp.h5ad')
 
@@ -31,8 +40,17 @@ spsc_map ={x:y for x,y in zip(range(nbr.shape[0]),nbr)}
 
 pico.set_spsc_map(spsc_map)
 
-pb = picasa.int.get_pairwise_bulk_interaction(spsc_map,pico.data.adata_list['rna'])
+pb = picasa.int.get_pairwise_interaction(spsc_map,pico.data.adata_list['rna'],rp_replicates=5,rp_depth=10,rp_dim=10,rp_weight_adjust=True)
 print(pb)
+
+fname = 'data/cellpair'
+col_names = rna.var.index.values
+row_names = ['cp'+str(i) for i in range(pb.shape[0])]
+smat = csr_matrix(pb)
+
+write_h5(fname,row_names,col_names,smat)
+
+
 
 # mtotal = 0
 # for ri,row in enumerate(nbr.values()):
