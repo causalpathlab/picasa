@@ -81,12 +81,12 @@ def distribution_transformation(params,x,epsilon=1e-8):
 
 	return u
 
-def get_sim_sc_from_ref(ref_path,size,depth,seed):
+def get_sim_sc_from_ref(sc_ref_path,size,depth,seed):
 
 	np.random.seed(seed)
 	
 	## ref data
-	ann = an.read_h5ad(ref_path)
+	ann = an.read_h5ad(sc_ref_path)
 	df = ann.to_df().T
 	ct = ann.obs['celltype']
 	df.columns = [ x+'@'+y for x,y in zip(df.columns.values,ct)]
@@ -138,20 +138,21 @@ def get_sim_sc_from_ref(ref_path,size,depth,seed):
 			sc_ct[:,i] = np.sort(sc)
 
 		sc_ct = sc_ct[np.arange(z_ct.shape[0])[:, np.newaxis], np.argsort(z_ct)].T
-
+  
 		## get index ids
 		for i in range(size): all_indx.append(str(i) + '_' + ct)
 
-		dfsc = pd.concat([dfsc,pd.DataFrame(sc_ct,columns=genes)],axis=0,ignore_index=True)
+		for i in range(size):
+			ct_genes_order = genes[np.argsort(z_ct[:,i])]
+			cdf = pd.DataFrame(sc_ct[i,:]).T
+			cdf.columns = ct_genes_order
+			dfsc = pd.concat([dfsc,cdf],axis=0,ignore_index=True)
 
 		print(dfsc.shape)
 	print(dfsc.shape)
 	dfsc = dfsc.astype(int)
 	
-	##shuffle columns to break ranked order
-	arr = np.arange(dfsc.shape[1])
-	np.random.shuffle(arr)
-	dfsc = dfsc.iloc[:,arr]
+	dfsc = dfsc.loc[:,df.index.values]
  
 	dt = h5py.special_dtype(vlen=str) 
 	dfsc.index = np.array(np.array(all_indx).flatten(), dtype=dt)

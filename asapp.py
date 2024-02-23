@@ -2,9 +2,9 @@ import asappy
 import anndata as an
 
 ######################################################
-sample = 'cellpair'
+sample = 'sim'
 
-wdir = 'example/'
+wdir = 'data/sim/'
 
 data_size = 110000
 number_batches = 1
@@ -24,6 +24,9 @@ asappy.asap_nmf(asap_object,num_factors=n_topics,seed=42)
 asappy.generate_model(asap_object)
 
 asap_adata = an.read_h5ad(wdir+'results/'+sample+'.h5asap')
+
+## top 10 main paper
+asappy.plot_gene_loading(asap_adata,top_n=10,max_thresh=25)
 	
 cluster_resolution= 0.1 ## paper
 asappy.leiden_cluster(asap_adata,resolution=cluster_resolution)
@@ -35,5 +38,3 @@ asappy.plot_umap(asap_adata,col='cluster',pt_size=0.5,ftype='png')
 
 asap_adata.write(wdir+'results/'+sample+'.h5asapad')
 	
-## top 10 main paper
-asappy.plot_gene_loading(asap_adata,top_n=10,max_thresh=25)

@@ -6,17 +6,9 @@ import pandas as pd
 import numpy as np
 import picasa
 
-bulk_path = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/figures/fig1/data/sc.h5ad'
-sim_data_path = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/data/'
-size = 100
-depth = 10000
-seed = 123
 
-simdata_from_bulk_copula(bulk_path,sim_data_path,size,depth,seed)
-
-
-rna = ad.read_h5ad('data/brain/test_ad_sc.h5ad')
-spatial = ad.read_h5ad('data/brain/test_ad_sp.h5ad')
+rna = ad.read_h5ad('data/brca/brca4290_scrna.h5ad')
+spatial = ad.read_h5ad('data/brca/brca4290_spatial.h5ad')
 
 
 pico = picasa.create_picasa_object({'rna':rna,'spatial':spatial})
@@ -68,9 +60,9 @@ write_h5(fname,row_names,col_names,smat)
 # df = pd.read_csv('data/brca_celltype.csv.gz')
 # rna.obs['celltype'] = pd.merge(rna.obs,df,left_index=True,right_on='cell',how='left')['celltype'].values
 
-# dfsp = pd.read_csv('data/CID4290_metadata.csv')
-# dfsp.rename(columns={'Unnamed: 0':'spot'},inplace=True)
-# spatial.obs['celltype'] = pd.merge(spatial.obs,dfsp,left_index=True,right_on='spot',how='left')['Classification'].values
+dfsp = pd.read_csv('data/brca/CID4290_metadata.csv')
+dfsp.rename(columns={'Unnamed: 0':'spot'},inplace=True)
+spatial.obs['celltype'] = pd.merge(spatial.obs,dfsp,left_index=True,right_on='spot',how='left')['Classification'].values
 
 
 

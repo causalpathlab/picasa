@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from picasa.dutil.data import load_data
+from ..dutil.data import load_data
 
 def get_nbr_mtx(sc_adata: AnnData, nbr_list: np.array) -> np.array:
     mtx = []

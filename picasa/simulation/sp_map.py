@@ -21,7 +21,7 @@ def assign_spatial_region(vx: int, vy: int, x: int, y: int, b: int)->str:
 	elif vx > x+(b*2)  and vy > y+(b*2)   : return 'C'
 
 def get_spatial_map(sp_ref_path: str) -> pd.DataFrame:
-    
+	
 	adata = an.read_h5ad(sp_ref_path)
 	x = np.array([ float(x.split('x')[0]) for x in adata.obs.position])
 	y = np.array([ float(x.split('x')[1]) for x in adata.obs.position])
@@ -70,7 +70,7 @@ def assign_sc_to_spatial(dfsc: pd.DataFrame, dfsp: pd.DataFrame,sp_ref_path: str
 		
 	all_nbrs = []
 	for idx,spot in enumerate(adata.X):
-     
+	 
 		celltype = dfsp.loc[idx,['celltype']].values[0]
 
 		if len(celltype) == 1:
@@ -86,18 +86,29 @@ def assign_sc_to_spatial(dfsc: pd.DataFrame, dfsp: pd.DataFrame,sp_ref_path: str
 
    
 def generate_simdata(sc_ref_path: str, 
-                    sp_ref_path: str, 
-                    sc_size: int = 100, 
-                    sc_depth: int = 10000, 
-                    seed: int = 42):
+					sp_ref_path: str, 
+					sc_size: int = 100, 
+					sc_depth: int = 10000, 
+					seed: int = 42):
 
-    dfsc = get_sim_sc_from_ref(sc_ref_path,sc_size,sc_depth,seed)
-    celltypes = pd.Series([x.split('_')[1] for x in dfsc.index.values]).unique()
-    ct_map = {x:y for x,y in zip(SPCODE,celltypes)}
+	dfsc = get_sim_sc_from_ref(sc_ref_path,sc_size,sc_depth,seed)
+	celltypes = pd.Series([x.split('_')[1] for x in dfsc.index.values]).unique()
+	ct_map = {x:y for x,y in zip(SPCODE,celltypes)}
 
-    dfsp = get_spatial_map(sp_ref_path)
+	dfsp = get_spatial_map(sp_ref_path)
 
-    nbrs = assign_sc_to_spatial(dfsc,dfsp,sp_ref_path,celltypes,ct_map,nbrsize=16)
-    
-    return dfsc,dfsp, nbrs
-    
+	nbrs = assign_sc_to_spatial(dfsc,dfsp,sp_ref_path,celltypes,ct_map,nbrsize=16)
+	
+	ct = []
+	for c in dfsp['celltype'].values:
+		if len(c) == 1: ct.append(ct_map[c])
+		else:
+			mix = ''
+			for ic in c.split('-'): mix += ct_map[ic] + '-'
+			ct.append(mix)    
+	dfsp['celltype'] = ct 
+
+	dfsp.columns = [ ct_map[x] if x in ct_map.keys() else x for x in dfsp.columns]
+ 	
+	return dfsc,dfsp, nbrs
+	
