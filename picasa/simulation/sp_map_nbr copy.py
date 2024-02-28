@@ -58,47 +58,38 @@ def get_spatial_map(sp_ref_path: str) -> pd.DataFrame:
 	df.reset_index(inplace=True)
 	return df
 
-def assign_sc_to_spatial( 
-    dfsc: pd.DataFrame, 
-    dfsp: pd.DataFrame, 
-    ct_map: dict, 
-    sc_size: int
-    ):
-			
-	all_scs = []
+def assign_sc_to_spatial(dfsc: pd.DataFrame, dfsp: pd.DataFrame,sp_ref_path: str, celltypes: list, ct_map: dict, nbrsize: int)-> list:
+	
+	model_list = {}
+	for ct in celltypes:
+		model_ann = get_NNmodel(dfsc[dfsc.index.str.contains(ct)].values)
+		model_ann.build()
+		model_list[ct] = model_ann
+
+	adata = an.read_h5ad(sp_ref_path)
+		
 	all_nbrs = []
-	for idx in range(dfsc.shape[0]):
+	for idx,spot in enumerate(adata.X):
 	 
 		celltype = dfsp.loc[idx,['celltype']].values[0]
 
 		if len(celltype) == 1:
-			selected = dfsc.iloc[dfsc.index.str.contains(ct_map[celltype])].sample(sc_size)	
-			all_scs.append(selected.values)
-			all_nbrs.append(selected.index.values)
+			all_nbrs.append(np.array([ model_list[ct_map[celltype]].query(spot,k=nbrsize) ])[0])
    
 		else:
-			n_sc = int(sc_size/len(celltype.split('-')))
-			scs = []
+			ns = int(nbrsize/len(celltype.split('-')))
 			nbrs = []
 			for ct in celltype.split('-'):
-				selected = dfsc.iloc[dfsc.index.str.contains(ct_map[ct])].sample(n_sc)	
-				scs.append(selected.values)
-				nbrs.append(selected.index.values)
-			scs = np.array(scs)
-			scs = scs.reshape((scs.shape[0]*scs.shape[1],scs.shape[2]))
-			all_scs.append(scs)
+				nbrs.append(model_list[ct_map[ct]].query(spot,k=ns))
 			all_nbrs.append(np.array(nbrs).flatten())
-   
-	return np.array(all_scs),np.array(all_nbrs)
+	return all_nbrs
 
    
-def generate_simdata(
-    sc_ref_path: str, 
-	sp_ref_path: str, 
-	sc_size: int = 16, 
-	sc_depth: int = 10000, 
-	seed: int = 42
-    )-> dict:
+def generate_simdata(sc_ref_path: str, 
+					sp_ref_path: str, 
+					sc_size: int = 100, 
+					sc_depth: int = 10000, 
+					seed: int = 42):
 
 	dfsc = get_sim_sc_from_ref(sc_ref_path,sc_size,sc_depth,seed)
 	celltypes = pd.Series([x.split('_')[1] for x in dfsc.index.values]).unique()
@@ -106,9 +97,7 @@ def generate_simdata(
 
 	dfsp = get_spatial_map(sp_ref_path)
 
-	all_scs, all_nbrs = assign_sc_to_spatial(dfsc,dfsp,ct_map,sc_size)
-	
-	all_sp = all_scs.sum(axis=1)
+	nbrs = assign_sc_to_spatial(dfsc,dfsp,sp_ref_path,celltypes,ct_map,nbrsize=16)
 	
 	ct = []
 	for c in dfsp['celltype'].values:
@@ -120,10 +109,6 @@ def generate_simdata(
 	dfsp['celltype'] = ct 
 
 	dfsp.columns = [ ct_map[x] if x in ct_map.keys() else x for x in dfsp.columns]
-	
-	return {'sp_pos': dfsp,
-         	'sp_nbrs': all_nbrs,
-          	'sp_exp': all_sp,
-            'sc_exp': all_scs,
-            'genes': dfsc.columns.values}
+ 	
+	return dfsc,dfsp, nbrs
 	

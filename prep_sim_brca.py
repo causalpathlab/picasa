@@ -43,7 +43,7 @@ adata_rna.obs['celltype'] = rnaf.obs['celltype'].values
 
 adata_rna.obs['celltype'] = [x.replace(' ','') for x in adata_rna.obs['celltype'] ]
 adata_rna.obs['celltype'] = [x.replace('-','') for x in adata_rna.obs['celltype'] ]
-adata_rna.write('brcasim_sc.h5ad',compression='gzip')
+adata_rna.write('data/sim/brcasim_sc.h5ad',compression='gzip')
 
 
 
@@ -75,7 +75,7 @@ adata_sp =  ad.read_h5ad(sp_ref_path)
 adata_spatial.obs.index = adata_sp.obs['position'].values
 adata_spatial.obs['position'] = adata_sp.obs['position'].values
 
-adata_spatial.write('brcasim_sp.h5ad',compression='gzip')
+adata_spatial.write('data/sim/brcasim_sp.h5ad',compression='gzip')
 
 # #################################
 

@@ -2,9 +2,9 @@ import asappy
 import anndata as an
 
 ######################################################
-sample = 'sim'
+sample = 'cellpair'
 
-wdir = 'data/sim/'
+wdir = 'figures/fig1/'
 
 data_size = 110000
 number_batches = 1
