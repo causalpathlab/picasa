@@ -81,7 +81,7 @@ def distribution_transformation(params,x,epsilon=1e-8):
 
 	return u
 
-def get_sim_sc_from_ref(sc_ref_path,size,depth,seed):
+def get_simulation_params_from_ref(sc_ref_path,sim_params,depth,seed):
 
 	np.random.seed(seed)
 	
@@ -97,14 +97,20 @@ def get_sim_sc_from_ref(sc_ref_path,size,depth,seed):
  	## adjust depth
 	x_sum = df.values.sum(0)
 	df = (df/x_sum)*depth
-  
+	x_mean = np.asarray(df.mean(1)).astype('float64')
 
-	dfsc = pd.DataFrame()
-	all_indx = []
+	rank = 50  
 
+	sim_params['ct_all'] = df
+	sim_params['mean_all'] = x_mean 
+	sim_params['cts'] = cts
+	sim_params['genes'] = genes
+	sim_params['rank'] = rank
+	sim_params['depth'] = depth
+ 
 	for ct in cts:
 
-		print('generating single cell data for...'+str(ct))
+		print('generating single cell params for...'+str(ct))
 
 		x_ct = df[[x for x in df.columns if '@'+ct in x]].values
 		
@@ -116,51 +122,70 @@ def get_sim_sc_from_ref(sc_ref_path,size,depth,seed):
 		qt = QuantileTransformer(random_state=0)
 		x_all_q = qt.fit_transform(x_continous)
 
-		rank = 50  
+		
 		mu_ct = x_continous.mean(1)
 		u,d,_ = np.linalg.svd(x_all_q, full_matrices=False)
 		L_ct = np.dot(u[:, :rank],np.diag(d[:rank]))  
 
-		## sample mvn of given size with 
-		z_ct =  np.dot(L_ct, np.random.normal(size=(rank, size))) +   mu_ct[:, np.newaxis]
+		sim_params[ct+'_mean'] = mu_ct
+		sim_params[ct+'_var'] = L_ct
+		
+def get_simulated_cells(sim_params,ct,size,rho):
+ 
+	df = sim_params['ct_all']
+	x_mean = sim_params['mean_all'] 
+	rank = sim_params['rank']
+	depth = sim_params['depth']
+	genes = sim_params['genes']
+ 
+	all_indx = []
+	dfsc = pd.DataFrame()
 
-		## sample original data by column index
-		sc_idx = np.array([[random.randint(0, x_ct.shape[1]-1) for _ in range(x_ct.shape[0])] for _ in range(size)])
+	x_ct = df[[x for x in df.columns if '@'+ct in x]].values
 
-		sc_ct = np.empty_like(z_ct)
+	L_ct = sim_params[ct+'_var']
+	mu_ct = sim_params[ct+'_mean']
 
-		for i in range(size):
+	## sample mvn of given size with 
+	z_ct =  np.dot(L_ct, np.random.normal(size=(rank, size))) +   mu_ct[:, np.newaxis]
 
-			## sample single cell from original data
-			sc = x_ct[np.arange(x_ct.shape[0])[:,np.newaxis],sc_idx[i][:, np.newaxis]].flatten()
+	## sample original data by column index
+	sc_idx = np.array([[random.randint(0, x_ct.shape[1]-1) for _ in range(x_ct.shape[0])] for _ in range(size)])
 
-			## rank gene values
-			sc_ct[:,i] = np.sort(sc)
+	sc_ct = np.empty_like(z_ct)
 
-		sc_ct = sc_ct[np.arange(z_ct.shape[0])[:, np.newaxis], np.argsort(z_ct)].T
-  
-		## get index ids
-		for i in range(size): all_indx.append(str(i) + '_' + ct)
+	for i in range(size):
 
-		for i in range(size):
-			ct_genes_order = genes[np.argsort(z_ct[:,i])]
-			cdf = pd.DataFrame(sc_ct[i,:]).T
-			cdf.columns = ct_genes_order
-			dfsc = pd.concat([dfsc,cdf],axis=0,ignore_index=True)
+		## sample single cell from original data
+		sc = x_ct[np.arange(x_ct.shape[0])[:,np.newaxis],sc_idx[i][:, np.newaxis]].flatten()
 
-		print(dfsc.shape)
+		## rank gene values
+		sc_ct[:,i] = np.sort(sc)
+
+	sc_ct = sc_ct[np.arange(z_ct.shape[0])[:, np.newaxis], np.argsort(z_ct)].T
+
+	sc_prop = np.divide(x_mean, np.sum(x_mean))
+	sc_global = np.empty_like(sc_ct)
+	for i in range(size):
+		sc_global[i,:] = np.random.multinomial(depth,sc_prop,1).T.flatten()
+	
+	sc_all = (rho * sc_ct) + ( (1-rho) * sc_global) 
+
+	## get index ids
+	for i in range(size): all_indx.append(str(i) + '_' + ct)
+
+	for i in range(size):
+		ct_genes_order = genes[np.argsort(z_ct[:,i])]
+		cdf = pd.DataFrame(sc_all[i,:]).T
+		cdf.columns = ct_genes_order
+		dfsc = pd.concat([dfsc,cdf],axis=0,ignore_index=True)
+
 	print(dfsc.shape)
 	dfsc = dfsc.astype(int)
 	
-	dfsc = dfsc.loc[:,df.index.values]
- 
+	dfsc = dfsc.loc[:,genes]
+
 	dt = h5py.special_dtype(vlen=str) 
 	dfsc.index = np.array(np.array(all_indx).flatten(), dtype=dt)
 
 	return dfsc
-
-	# smat = scipy.sparse.csr_matrix(dfsc.values)
-	# dt = h5py.special_dtype(vlen=str) 
-	# all_indx = np.array(np.array(all_indx).flatten(), dtype=dt) 
-	# write_h5(sim_dat_path,all_indx,genes,smat)
-

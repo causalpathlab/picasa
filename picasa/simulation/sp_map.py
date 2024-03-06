@@ -2,7 +2,7 @@ import numpy as np
 import anndata as an
 import pandas as pd 
 
-from .copula import get_sim_sc_from_ref 
+from .copula import get_simulation_params_from_ref,get_simulated_cells
 from ..neighbour import get_NNmodel
 
 SPCODE = ['A','B','C','D']
@@ -59,20 +59,23 @@ def get_spatial_map(sp_ref_path: str) -> pd.DataFrame:
 	return df
 
 def assign_sc_to_spatial( 
-    dfsc: pd.DataFrame, 
+    sim_params: dict, 
     dfsp: pd.DataFrame, 
     ct_map: dict, 
-    sc_size: int
+    sc_size: int,
+    rho: float
     ):
 			
 	all_scs = []
 	all_nbrs = []
-	for idx in range(dfsc.shape[0]):
+	for idx in range(dfsp.shape[0]):
 	 
 		celltype = dfsp.loc[idx,['celltype']].values[0]
 
+		print('generating single cell data for...'+str(idx)+'....'+str(dfsp.shape[0]))
+
 		if len(celltype) == 1:
-			selected = dfsc.iloc[dfsc.index.str.contains(ct_map[celltype])].sample(sc_size)	
+			selected = get_simulated_cells(sim_params,ct_map[celltype],sc_size,rho)
 			all_scs.append(selected.values)
 			all_nbrs.append(selected.index.values)
    
@@ -81,7 +84,7 @@ def assign_sc_to_spatial(
 			scs = []
 			nbrs = []
 			for ct in celltype.split('-'):
-				selected = dfsc.iloc[dfsc.index.str.contains(ct_map[ct])].sample(n_sc)	
+				selected = get_simulated_cells(sim_params,ct_map[ct],n_sc,rho)	
 				scs.append(selected.values)
 				nbrs.append(selected.index.values)
 			scs = np.array(scs)
@@ -96,18 +99,20 @@ def generate_simdata(
     sc_ref_path: str, 
 	sp_ref_path: str, 
 	sc_size: int = 16, 
-	sc_depth: int = 10000, 
+	sc_depth: int = 10000,
+	rho: float = 0.9,
 	seed: int = 42
     )-> dict:
 
-	dfsc = get_sim_sc_from_ref(sc_ref_path,sc_size,sc_depth,seed)
-	celltypes = pd.Series([x.split('_')[1] for x in dfsc.index.values]).unique()
-	ct_map = {x:y for x,y in zip(SPCODE,celltypes)}
+	sim_params = {}
+	get_simulation_params_from_ref(sc_ref_path,sim_params,sc_depth,seed)
+	ct_map = {x:y for x,y in zip(SPCODE,sim_params['cts'])}
 
 	dfsp = get_spatial_map(sp_ref_path)
 
-	all_scs, all_nbrs = assign_sc_to_spatial(dfsc,dfsp,ct_map,sc_size)
+	all_scs, all_nbrs = assign_sc_to_spatial(sim_params,dfsp,ct_map,sc_size,rho)
 	
+    ### add drop out for spatial
 	all_sp = all_scs.sum(axis=1)
 	
 	ct = []
@@ -125,5 +130,5 @@ def generate_simdata(
          	'sp_nbrs': all_nbrs,
           	'sp_exp': all_sp,
             'sc_exp': all_scs,
-            'genes': dfsc.columns.values}
+            'genes': sim_params['genes']}
 	

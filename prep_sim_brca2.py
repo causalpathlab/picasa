@@ -12,7 +12,8 @@ from scipy.sparse import csr_matrix
 sc_ref_path = 'data/sim/brcasim_sc.h5ad'
 sp_ref_path = 'data/sim/brcasim_sp.h5ad'
 
-simdata = picasa.sim.generate_simdata(sc_ref_path,sp_ref_path,sc_size=16)
+sc_size = 4
+simdata = picasa.sim.generate_simdata(sc_ref_path,sp_ref_path,sc_size=sc_size)
 
 sc_exp_shape = simdata['sc_exp'].shape
 adata_sc = ad.AnnData(X=csr_matrix(simdata['sc_exp'].reshape(
@@ -30,9 +31,9 @@ pico = picasa.create_picasa_object({'rna':adata_sc,'spatial':adata_sc})
 picasa.pp.common_features(pico.data.adata_list) 
 
 cell_indx = []
-t = [ x for x in range(16)]
+t = [ x for x in range(sc_size)]
 for si in range(simdata['sp_nbrs'].shape[0]):
-    cell_indx.append(np.array([x + (16 * si) for x in t]))
+    cell_indx.append(np.array([x + (sc_size * si) for x in t]))
     
 spsc_map ={x:y for x,y in zip(range(simdata['sp_nbrs'].shape[0]),cell_indx)}
 pico.set_spsc_map(spsc_map)
@@ -51,73 +52,56 @@ smat = csr_matrix(pb)
 picasa.pp.read_write.write_h5(fname,row_names,col_names,smat)
 
 
-# ###### sim qc 
-# from picasa.dutil.data import load_data
-# def get_nbr_mtx(adata_sc: AnnData, spsc_map: dict) -> np.array:
-#     mtx = []
-#     for nbrs in spsc_map.values():
-#         cmtx = []
-#         for nbr_index in nbrs:
-#             nbr_exp = load_data(adata_sc,nbr_index,nbr_index+1)
-#             cmtx.append(nbr_exp)
-#         cmtx = np.squeeze(np.array(cmtx))
-#         mtx.append(cmtx.mean(0))
-#     return np.squeeze(np.array(mtx))
+###### sim qc 
 
-# dfexp = pd.DataFrame(get_nbr_mtx(adata_sc,spsc_map))
-# dfexp.index = adata_sp.obs.index.values
-# dfexp.columns = adata_sp.var.index.values 
-
-
-# from anndata import AnnData
-# import scanpy as sc
-# import numpy as np
+from anndata import AnnData
+import scanpy as sc
+import numpy as np
 
 
 
-# adata = AnnData(dfexp.values)
-# sc.pp.normalize_total(adata, target_sum=1e4)
-# sc.pp.log1p(adata)
-# dfn = adata.to_df()
-# dfn.columns = dfexp.columns
-# dfn.index = dfexp.index.values
+sc.pp.normalize_total(adata_sp, target_sum=1e4)
+sc.pp.log1p(adata_sp)
+dfn = adata_sp.to_df()
+dfn.columns = adata_sp.var.index.values
+dfn.index = adata_sp.uns['position']
     
-# # for marker in ["CD3D", "CD68", "EPCAM", "PECAM1"]:
-# for marker in ["YARS2","TRIM66","ACTA2","DDX39B"]:
-#     df = dfn[[marker]]
+import matplotlib.pylab as plt
+from plotnine import * 
 
-#     df['x'] = [ float(x.split('x')[0]) for x in df.index.values]
-#     df['y'] = [ float(x.split('x')[1]) for x in df.index.values]
+for marker in ["CD3D", "CD68", "EPCAM", "PECAM1"]:
+    df = dfn[[marker]]
 
-#     df = pd.melt(df,id_vars=['x','y'])
-#     # dfn['value'] = dfn['value'].apply( lambda x: 1 if x>1 else x)
+    df['x'] = [ float(x.split('x')[0]) for x in df.index.values]
+    df['y'] = [ float(x.split('x')[1]) for x in df.index.values]
 
-#     import matplotlib.pylab as plt
-#     from plotnine import * 
-
-#     p = (ggplot(df, aes(x='x', y='y', color='value')) +\
-#     geom_point(size=5) +\
-#     scale_color_gradient(low="skyblue", high="yellow", name="Intensity") +\
-#     facet_wrap('~ variable'))
-
-#     p.save('test'+marker+'.png', dpi=300)
+    df = pd.melt(df,id_vars=['x','y'])
+    # dfn['value'] = dfn['value'].apply( lambda x: 1 if x>1 else x)
 
 
+    p = (ggplot(df, aes(x='x', y='y', color='value')) +\
+    geom_point(size=5) +\
+    scale_color_gradient(low="skyblue", high="yellow", name="Intensity") +\
+    facet_wrap('~ variable'))
 
-
-# # pb = picasa.int.get_pairwise_interaction(spsc_map,pico.data.adata_list['rna'],rp_replicates=5,rp_depth=10,rp_dim=10,rp_weight_adjust=True)
-# # print(pb)
-
-# # fname = 'data/sim/sim'
-# # col_names = adata_sc.var.index.values
-# # row_names = ['cp'+str(i) for i in range(pb.shape[0])]
-# # smat = csr_matrix(pb)
-
-# # picasa.pp.read_write.write_h5(fname,row_names,col_names,smat)
+    p.save('test'+marker+'.png', dpi=300)
 
 
 
-# ##scanpy 
+
+# pb = picasa.int.get_pairwise_interaction(spsc_map,pico.data.adata_list['rna'],rp_replicates=5,rp_depth=10,rp_dim=10,rp_weight_adjust=True)
+# print(pb)
+
+# fname = 'data/sim/sim'
+# col_names = adata_sc.var.index.values
+# row_names = ['cp'+str(i) for i in range(pb.shape[0])]
+# smat = csr_matrix(pb)
+
+# picasa.pp.read_write.write_h5(fname,row_names,col_names,smat)
+
+
+
+##scanpy 
 # adata = AnnData(dfexp.values)
 # adata.var_names = dfexp.columns.values
 # sc.pp.filter_cells(adata, min_genes=200)
