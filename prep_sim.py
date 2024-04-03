@@ -29,7 +29,7 @@ spsc_map ={x:y for x,y in zip(range(nbrs.shape[0]),nbrs)}
 pico.set_spsc_map(spsc_map)
 
 
-from picasa.dutil.data import load_data
+from sailr.dutil.data import load_data
 def get_nbr_mtx(sc_adata: AnnData, spsc_map: dict) -> np.array:
     mtx = []
     for nbrs in spsc_map.values():

@@ -5,7 +5,7 @@ import scanpy as sc
 import pandas as pd
 import numpy as np
 from anndata import AnnData
-import picasa
+import sailr
 from scipy.sparse import csr_matrix 
 
 
@@ -13,7 +13,7 @@ sc_ref_path = 'data/sim/brcasim_sc.h5ad'
 sp_ref_path = 'data/sim/brcasim_sp.h5ad'
 
 sc_size = 4
-simdata = picasa.sim.generate_simdata(sc_ref_path,sp_ref_path,sc_size=sc_size)
+simdata = sailr.sim.generate_simdata(sc_ref_path,sp_ref_path,sc_size=sc_size)
 
 sc_exp_shape = simdata['sc_exp'].shape
 adata_sc = ad.AnnData(X=csr_matrix(simdata['sc_exp'].reshape(

@@ -5,7 +5,7 @@ import scanpy as sc
 import pandas as pd
 import numpy as np
 from anndata import AnnData
-import picasa
+import sailr
 from scipy.sparse import csr_matrix 
 
 
@@ -16,8 +16,8 @@ from scipy.sparse import csr_matrix
 rna = ad.read_h5ad('data/brca/brca4290_scrna.h5ad')
 spatial = ad.read_h5ad('data/brca/brca4290_spatial.h5ad')
 
-pico = picasa.create_picasa_object({'rna':rna,'spatial':spatial})
-picasa.pp.common_features(pico.data.adata_list)
+pico = sailr.create_sailr_object({'rna':rna,'spatial':spatial})
+sailr.pp.common_features(pico.data.adata_list)
 
 rna_genes = rna.var.index.values[rna.uns['selected_genes']]
 

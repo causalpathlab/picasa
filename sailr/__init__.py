@@ -1,4 +1,4 @@
-from .picasa import create_picasa_object
+from .sailr import create_sailr_object
 from . import preprocessing as pp
 from . import projection as proj
 from . import neighbour as nbr
