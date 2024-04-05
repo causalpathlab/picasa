@@ -1,1 +1,1 @@
-from .sp_map_nbr import generate_simdata
+from .sp_map import generate_simdata

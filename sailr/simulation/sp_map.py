@@ -4,7 +4,10 @@ import pandas as pd
 from sklearn.cluster import KMeans
 
 from .copula import get_simulation_params_from_ref,get_simulated_cells
-from ..neighbour import get_NNmodel
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def assign_sc_to_spatial( 
@@ -32,20 +35,22 @@ def assign_sc_to_spatial(
 	 
 		celltype = dfsp.loc[idx,['celltype']].values[0]
 
-		print('generating single cell data for...'+str(idx)+'....'+str(dfsp.shape[0]))
-
 		selected = get_simulated_cells(sim_params,celltype,sc_size_per_spot,rho)
 		all_scs.append(selected.values)
-		all_nbrs.append(selected.index.values)
-      
-	return np.array(all_scs),np.array(all_nbrs)
+		all_nbrs.append([str(idx)+'_'+ x for x in selected.index.values])
+  
+		if idx % 100 == 0:
+			logger.info('Status...'+str(idx)+'/'+str(dfsp.shape[0]))
+   
+	dfsp.columns = ['x','y','celltype']			
+	return np.array(all_scs),np.array(all_nbrs),dfsp
 
    
 def generate_simdata(
 	sc_ref_path: str, 
 	sp_ref_path: str, 
+	num_celltypes: int, 
 	sc_size_per_spot: int = 1, 
-	num_celltypes: int = 10, 
 	sc_depth: int = 10000,
 	rho: float = 0.9,
 	seed: int = 42
@@ -54,21 +59,10 @@ def generate_simdata(
 	sim_params = {}
 	get_simulation_params_from_ref(sc_ref_path,sim_params,sc_depth,seed)
 
-	all_scs, all_nbrs = assign_sc_to_spatial(sim_params,sp_ref_path,sc_size_per_spot,num_celltypes,rho)
+	all_scs, all_nbrs, dfsp = assign_sc_to_spatial(sim_params,sp_ref_path,sc_size_per_spot,num_celltypes,rho)
 	
 	### add drop out for spatial
 	all_sp = all_scs.sum(axis=1)
-	
-	ct = []
-	for c in dfsp['celltype'].values:
-		if len(c) == 1: ct.append(ct_map[c])
-		else:
-			mix = ''
-			for ic in c.split('-'): mix += ct_map[ic] + '-'
-			ct.append(mix)    
-	dfsp['celltype'] = ct 
-
-	dfsp.columns = [ ct_map[x] if x in ct_map.keys() else x for x in dfsp.columns]
 	
 	return {'sp_pos': dfsp,
 		 	'sp_nbrs': all_nbrs,

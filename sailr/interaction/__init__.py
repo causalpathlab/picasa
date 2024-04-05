@@ -1,1 +1,0 @@
-from .cpw import get_pairwise_interaction

@@ -1,1 +1,1 @@
-# PICASA - Pairwise Interactions of single Cells with Approximate Spatial Alignment
+# SAILR - Spatial Alignment of single-cell by Interpretive contrastive LeaRning

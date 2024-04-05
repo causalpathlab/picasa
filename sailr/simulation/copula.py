@@ -114,7 +114,6 @@ def get_simulation_params_from_ref(sc_ref_path,sim_params,depth,seed):
 
 		x_ct = df[[x for x in df.columns if '@'+ct in x]].values
 		
-
 		model_params = fit_model(x_ct)
 		x_continous = distribution_transformation(model_params,x_ct)
 
@@ -180,11 +179,8 @@ def get_simulated_cells(sim_params,ct,size,rho):
 		cdf.columns = ct_genes_order
 		dfsc = pd.concat([dfsc,cdf],axis=0,ignore_index=True)
 
-	print(dfsc.shape)
-	dfsc = dfsc.astype(int)
-	
+	dfsc = dfsc.astype(int)	
 	dfsc = dfsc.loc[:,genes]
-
 	dt = h5py.special_dtype(vlen=str) 
 	dfsc.index = np.array(np.array(all_indx).flatten(), dtype=dt)
 

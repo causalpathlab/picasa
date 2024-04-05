@@ -27,5 +27,7 @@ __pycache__/
 *.csv
 *.h5*
 *.png
+*.log
+*.out
 
 

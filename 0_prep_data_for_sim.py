@@ -8,7 +8,11 @@ from anndata import AnnData
 import sailr
 from scipy.sparse import csr_matrix 
 
-
+'''
+This file is for generating simulation data using real brca patient id sample 
+and then add celltype in sc and position in spatial h5ads
+and make it ready for simulation input.
+'''
 
 ############# data prep for simulation 
 
@@ -23,12 +27,14 @@ rna_genes = rna.var.index.values[rna.uns['selected_genes']]
 
 
 
-dfct = pd.read_csv('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/data/brca/brca_celltype.csv.gz')
+dfct = pd.read_csv('data/brca/brca_celltype.csv.gz')
 rna.obs['celltype'] = pd.merge(rna.obs,dfct[['cell','celltype']],left_index=True, right_on='cell',how='left')['celltype'].values
-selected = ['Endothelial',  'T-cells', 'Myeloid','Cancer Epithelial']
-rnaf = rna[rna.obs['celltype'].isin(selected)]
 
-rnaf = rnaf[rnaf.obs.groupby('celltype').sample(n=200).index.values]
+selected = ['Endothelial', 'CAFs', 'PVL', 'B-cells', 'T-cells', 'Myeloid', 'Cancer Epithelial']
+print(rna.obs['celltype'].value_counts())
+rnaf = rna[rna.obs['celltype'].isin(selected)]
+print(rnaf.obs['celltype'].value_counts())
+# rnaf = rnaf[rnaf.obs.groupby('celltype').sample(n=200).index.values]
 
 df_rna = pd.DataFrame(rnaf.X.todense())
 df_rna.index = rnaf.obs.index.values
@@ -53,7 +59,7 @@ cell_height = 100
 x = spatial.uns['position']['array_col'] * cell_width + spatial.uns['position']['pxl_col_in_fullres']
 y = spatial.uns['position']['array_row'] * cell_height + spatial.uns['position']['pxl_row_in_fullres']
 spatial.obs['position'] = [str(x)+'x'+str(y) for x,y in zip(x,y)]
-spatial = spatial[spatial.obs.sample(n=278).index.values]
+# spatial = spatial[spatial.obs.sample(n=278).index.values]
 
 
 
@@ -69,14 +75,14 @@ adata_spatial.obs.index = df_spatial.index.values
 adata_spatial.var.index = df_spatial.columns.values
 
 
-sp_ref_path = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/figures/fig1/data/sp.h5ad'
-adata_sp =  ad.read_h5ad(sp_ref_path)
+# sp_ref_path = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/figures/fig1/data/sp.h5ad'
+# adata_sp =  ad.read_h5ad(sp_ref_path)
 
-adata_spatial.obs.index = adata_sp.obs['position'].values
-adata_spatial.obs['position'] = adata_sp.obs['position'].values
+adata_spatial.obs.index = spatial.obs['position'].values
+adata_spatial.obs['position'] = spatial.obs['position'].values
 
 adata_spatial.write('data/sim/brcasim_sp.h5ad',compression='gzip')
 
-# #################################
+##################################
 
 
