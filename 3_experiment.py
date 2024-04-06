@@ -1,17 +1,16 @@
 
 import matplotlib.pylab as plt
-import anndata as ad
-import scanpy as sc
+import anndata as an
 import pandas as pd
 import numpy as np
-import picasa
+import sailr
 
 
-rna = ad.read_h5ad('data/brca/brca4290_scrna.h5ad')
-spatial = ad.read_h5ad('data/brca/brca4290_spatial.h5ad')
+rna = an.read_h5ad('data/sim/sim_sc.h5ad')
+spatial = an.read_h5ad('data/sim/sim_sp.h5ad')
 
 
-pico = picasa.create_picasa_object({'rna':rna,'spatial':spatial})
+sailr_model = sailr.create_sailr_object({'rna':rna,'spatial':spatial})
 
 picasa.pp.common_features(pico.data.adata_list) 
 
