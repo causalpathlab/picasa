@@ -25,9 +25,11 @@ __pycache__/
 *.so
 
 *.csv
+*.csv.gz
 *.h5*
 *.png
 *.log
 *.out
+*.model
 
 

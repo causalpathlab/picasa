@@ -19,9 +19,13 @@ def kl_loss(mean,lnvar):
 	return  -0.5 * torch.sum(1. + lnvar - torch.pow(mean,2) - torch.exp(lnvar), dim=-1)
 
 
-def triplet_loss(anchor,positive,negative): 
-	distance_positive = (anchor - positive).pow(2).sum(1)  
-	distance_negative = (anchor - negative).pow(2).sum(1)  
-	# losses = F.relu(distance_positive - distance_negative + margin)
-	losses = distance_negative - distance_positive 
-	return losses.sum() * 1e10
+def cl_loss(anchor, positive, negative, margin=1.0):
+    # distance_positive = (anchor - positive).pow(2).sum(1)  
+    # distance_negative = (anchor - negative).pow(2).sum(1)  
+
+    distance_positive = F.pairwise_distance(anchor, positive, keepdim=True)
+    distance_negative = F.pairwise_distance(anchor, negative, keepdim=True)
+
+    losses = F.relu(distance_positive - distance_negative + margin)
+
+    return losses.mean()

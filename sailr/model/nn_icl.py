@@ -1,7 +1,7 @@
 import torch
 torch.manual_seed(0)
 import torch.nn as nn
-from .loss import kl_loss,multi_dir_log_likelihood,reparameterize,triplet_loss
+from .loss import kl_loss,multi_dir_log_likelihood,reparameterize,cl_loss
 import logging
 logger = logging.getLogger(__name__)
 
@@ -93,10 +93,10 @@ class Decoder(nn.Module):
 		return z_beta
 
 class SAILRNET(nn.Module):
-	def __init__(self,input_dims,latent_dims,layers):
+	def __init__(self,input_dims,latent_dims,encoder_layers,projection_layers):
 		super(SAILRNET,self).__init__()
-		self.encoder = Encoder(input_dims,layers)
-		self.projector = ProjectionHead(latent_dims,layers)
+		self.encoder = Encoder(input_dims,encoder_layers)
+		self.projector = ProjectionHead(latent_dims,projection_layers)
 		self.decoder = Decoder(latent_dims, input_dims)
 
 	def forward(self,x_sc, x_spp, x_spn):
@@ -107,12 +107,11 @@ class SAILRNET(nn.Module):
 		bm,bv,theta,beta = self.decoder(h_sc)
 		return SAILROUT(h_sc,h_spp,h_spn,z_sc,z_spp,z_spn,theta,beta,bm,bv)
 
-def train(model,data,epochs,l_rate,batch_size):
+def train(model,data,kl_lmbda, ll_lmbda, cl_lmbda, l_rate,epochs, batch_size):
 	logger.info('Starting training....')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate)
 	loss_values = []
 	loss_values_sep = []
-
 	for epoch in range(epochs):
 		loss = 0
 		loss_ll = 0
@@ -125,14 +124,13 @@ def train(model,data,epochs,l_rate,batch_size):
 			sailrout = model(x_sc,x_spp,x_spn)
    
 			alpha = torch.exp(torch.clamp(torch.mm(sailrout.theta,sailrout.beta),-10,10))
-			loglikloss = multi_dir_log_likelihood(x_sc,alpha).mean()/10
+			loglikloss = multi_dir_log_likelihood(x_sc,alpha).mean() * ll_lmbda
    
-			klb = kl_loss(sailrout.bmean,sailrout.bvar).sum()
+			klb = kl_loss(sailrout.bmean,sailrout.bvar).sum() * kl_lmbda
 
-			cl = triplet_loss(sailrout.z_sc,sailrout.z_spp,sailrout.z_spn)
+			cl = cl_loss(sailrout.z_sc,sailrout.z_spp,sailrout.z_spn) * cl_lmbda
    
-
-			train_loss = loglikloss + klb + cl
+			train_loss =  klb - loglikloss + cl
    
 			train_loss.backward()
    
@@ -147,11 +145,15 @@ def train(model,data,epochs,l_rate,batch_size):
 			loss_kl += kl_l.item()
 			loss_cl += cl_l.item()
 
-		# if epoch % 10 == 0:
-		print('====> Epoch: {} Average loss: {:.4f},{:.4f},{:.4f},{:.4f}'.format(epoch, loss/batch_size,loss_ll/batch_size,loss_kl/batch_size,loss_cl/batch_size))
+		if epoch % 10 == 0:
+			logging.info('====> Epoch: {} Average loss: {:.4f},{:.4f},{:.4f},{:.4f}'.format(epoch, loss/batch_size,loss_ll/batch_size,loss_kl/batch_size,loss_cl/batch_size))
 
 		# loss_values.append(loss/len(data))
 		# loss_values_sep.append((loss_ll/len(data),loss_kl/len(data)))
 
 
 	return loss_values,loss_values_sep
+
+def predict(model,data):
+	for x_sc,y,x_spp,x_spn in data: break
+	return model(x_sc,x_spp,x_spn)
