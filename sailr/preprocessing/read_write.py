@@ -88,3 +88,21 @@ def write_h5(fname,row_names,col_names,smat):
 	f['matrix']['features'].create_dataset('id',data=col_names,compression='gzip')
 
 	f.close()
+ 
+
+def write_h5ad_from_h5(infile,outfile):
+	f = hf.File(infile, 'r')
+	mtx_indptr = f['matrix']['indptr']
+	mtx_indices = f['matrix']['indices']
+	mtx_data = f['matrix']['data']
+	barcodes = [x.decode('utf-8') for x in f['matrix']['barcodes']]
+	features = [x.decode('utf-8') for x in f['matrix']['features']['id']]
+	shape = (len(barcodes),len(features))
+
+	matrix = csr_matrix((mtx_data, mtx_indices, mtx_indptr), shape=shape)
+	
+	adata = AnnData(X=matrix)
+	adata.obs_names = barcodes
+	adata.var_names = features
+ 
+	adata.write_h5ad(outfile)

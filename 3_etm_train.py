@@ -9,7 +9,7 @@ import torch
 
 import logging
 
-wdir = '/node/sim/'
+wdir = 'node/sim/'
 
 
 logging.basicConfig(filename=wdir+'results/3_etm_train.log',
@@ -19,7 +19,7 @@ logging.basicConfig(filename=wdir+'results/3_etm_train.log',
 
 rna = an.read_h5ad(wdir+'data/sim_sc.h5ad')
 
-device = 'cuda:1'
+device = 'cpu'
 batch_size = 128
 input_dims = 20309
 latent_dims = 10

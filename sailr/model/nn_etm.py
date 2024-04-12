@@ -13,7 +13,6 @@ class Stacklayers(nn.Module):
 		for next_l in layers:
 			self.layers.append(nn.Linear(self.input_size,next_l))
 			self.layers.append(self.get_activation())
-			nn.BatchNorm1d(next_l)
 			self.input_size = next_l
 
 	def forward(self, input_data):

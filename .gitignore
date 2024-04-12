@@ -9,7 +9,7 @@ Makefile
 .vscode/
 .snakemake/
 
-/data
+/node
 /example
 /figures
 

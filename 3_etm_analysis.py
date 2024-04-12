@@ -1,5 +1,4 @@
 
-
 import matplotlib.pylab as plt
 import anndata as an
 import pandas as pd
@@ -11,7 +10,7 @@ import umap
 
 ### predict for test data
 
-device = 'cuda:1'
+device = 'cpu'
 input_dims = 20309
 latent_dims = 10
 encoder_layers = [200,100,10]
@@ -21,7 +20,7 @@ epochs= 500
 wdir = 'node/sim/'
 rna = an.read_h5ad(wdir+'data/sim_sc.h5ad')
         
-batch_size=9984
+batch_size=4113
 data_pred = sailr.du.nn_load_data(rna,device,batch_size)
 sailr_model = sailr.nn_etm.SAILRNET(input_dims, latent_dims, encoder_layers).to(device)
 sailr_model.load_state_dict(torch.load(wdir+'results/nn_etm.model'))
@@ -38,7 +37,15 @@ proj_2d = umap_2d.fit(dfh)
 df_umap= pd.DataFrame()
 df_umap['cell'] = ylabel
 df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
-df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
+
+
+# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
+
+dfl = pd.read_csv(wdir+'data/sim_meta.tsv',sep='\t')
+dfl = dfl[['Cell','Celltype (major-lineage)']]
+dfl.columns = ['cell','celltype']
+df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
+
 plot_umap_df(df_umap,'celltype',wdir+'results/nn_etm',pt_size=1.0,ftype='png')
 
 dfbeta = pd.DataFrame(m.beta.cpu().detach().numpy())
