@@ -46,6 +46,8 @@ class ENCODER(nn.Module):
 		x = x/torch.sum(x,dim=-1,keepdim=True)
 		z = self.fc(x)
 
+		# z = self.fc(x.float())
+
 		return z
 
 class MLP(nn.Module):
@@ -67,7 +69,7 @@ class SAILRNET(nn.Module):
 		self.corruption_rate = corruption_rate
 
 	def forward(self,x_sc):
-		corruption_mask = torch.randint_like(x_sc,high=x_sc.max()+1, device=x_sc.device) > x_sc.max() *  self.corruption_rate
+		corruption_mask = torch.randint_like(x_sc,high=x_sc.max()+1, device=x_sc.device) > ((x_sc.max()+1) *  self.corruption_rate)
 		x_random = self.marginals.sample(torch.Size(x_sc.size())).to(x_sc.device)
 		x_corrupted = torch.where(corruption_mask, x_random, x_sc)
   
