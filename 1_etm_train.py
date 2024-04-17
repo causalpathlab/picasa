@@ -6,22 +6,23 @@ import pandas as pd
 import numpy as np
 import sailr
 import torch
+import umap
 
 import logging
 
-sample = 'sim_sc'
-wdir = 'node/sim/'
+sample = 'pancreas_sc'
+wdir = 'node/pancreas/'
 
 device = 'cpu'
 batch_size = 128
-input_dims = 20309
+input_dims = 17543
 latent_dims = 10
 encoder_layers = [200,100,10]
 l_rate = 0.01
-epochs= 500
+epochs= 1000
 
 
-logging.basicConfig(filename=wdir+'results/3_etm_train.log',
+logging.basicConfig(filename=wdir+'results/1_etm_train.log',
 						format='%(asctime)s %(levelname)-8s %(message)s',
 						level=logging.INFO,
 						datefmt='%Y-%m-%d %H:%M:%S')
@@ -30,6 +31,14 @@ rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
 
 
 def train():
+	logging.info('train.....')
+	logging.info( f"Device: {device}, \
+    Batch Size: {batch_size},  \
+    Input Dimensions: {input_dims}, Latent Dimensions: {latent_dims}, \
+    Encoder Layers: {encoder_layers},  \
+    Learning Rate: {l_rate}, \
+    Epochs: {epochs}")
+
 	data = sailr.du.nn_load_data(rna,device,batch_size)
 
 	sailr_model = sailr.nn_etm.SAILRNET(input_dims, latent_dims, encoder_layers).to(device)
@@ -40,6 +49,7 @@ def train():
 	torch.save(sailr_model.state_dict(),wdir+'results/nn_etm.model')
 
 def eval():
+	logging.info('eval.....')
 	batch_size=4113
 	data_pred = sailr.du.nn_load_data(rna,device,batch_size)
 	sailr_model = sailr.nn_etm.SAILRNET(input_dims, latent_dims, encoder_layers).to(device)
@@ -52,20 +62,19 @@ def eval():
 	from sailr.util.plots import plot_umap_df,plot_gene_loading
 
 	dfh = pd.DataFrame(m.theta.cpu().detach().numpy())
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,metric='cosine')
-	proj_2d = umap_2d.fit(dfh)
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.1,metric='cosine').fit(dfh)
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = ylabel
 	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
 	### for simulated brca
-	df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
+	# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
 
 	## for pancreas
-	# dfl = pd.read_csv(wdir+'data/sim_meta.tsv',sep='\t')
-	# dfl = dfl[['Cell','Celltype (major-lineage)']]
-	# dfl.columns = ['cell','celltype']
-	# df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
+	dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
+	dfl = dfl[['Cell','Celltype (major-lineage)']]
+	dfl.columns = ['cell','celltype']
+	df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
 
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_etm',pt_size=1.0,ftype='png')
 
@@ -97,3 +106,5 @@ def eval():
 	# plt.tight_layout()  
 	# plt.savefig('testnn_etm.png');plt.close()
 
+# train()
+eval()

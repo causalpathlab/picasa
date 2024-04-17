@@ -9,24 +9,26 @@ import torch
 import sys
 import logging
 
-sample = 'sim_sc'
-wdir = 'node/sim/'
+sample = 'pancreas_sc'
+wdir = 'node/pancreas/'
 
 device = 'cpu'
-batch_size = 128
+batch_size = 256
 eval_batch_size=9984
-input_dims = 20309
+input_dims = 17543
 latent_dims = 10
 encoder_layers = [200,100,10]
 projection_layers = [10,25,10]
-corruption_rate = 0.1
+corruption_rate = 0.9
 l_rate = 0.001
-epochs= 100
+epochs= 2000
+
+temperature = 10 # higher scores smooths out the differences between the similarity scores.
 
 
 rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
 
-logging.basicConfig(filename=wdir+'results/3_pcl_train.log',
+logging.basicConfig(filename=wdir+'results/2_pcl_train.log',
 						format='%(asctime)s %(levelname)-8s %(message)s',
 						level=logging.INFO,
 						datefmt='%Y-%m-%d %H:%M:%S')
@@ -36,7 +38,7 @@ logging.info( f"Device: {device}, \
     Input Dimensions: {input_dims}, Latent Dimensions: {latent_dims}, \
     Encoder Layers: {encoder_layers}, Projection Layers: {projection_layers}, \
     Corruption Rate: {corruption_rate}, Learning Rate: {l_rate}, \
-    Epochs: {epochs}")
+    Epochs: {epochs}, Temperature: {temperature}")
 
 def train():
 	logging.info('train...')
@@ -47,7 +49,7 @@ def train():
 	sailr_model = sailr.nn_pcl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
 	logging.info(sailr_model)
 
-	sailr.nn_pcl.train(sailr_model,data,epochs,l_rate)
+	sailr.nn_pcl.train(sailr_model,data,epochs,l_rate,temperature)
 
 	torch.save(sailr_model.state_dict(),wdir+'results/nn_pcl.model')
 
@@ -72,19 +74,19 @@ def eval():
 
 	def plot_latent(mtx,label):
 		dfh = pd.DataFrame(mtx)
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,metric='cosine').fit(dfh)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.2,metric='cosine').fit(dfh)
 
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = ylabel
 		df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
 
-		df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
+		# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
 
-		# dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
-		# dfl = dfl[['Cell','Celltype (major-lineage)']]
-		# dfl.columns = ['cell','celltype']
-		# df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
+		dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
+		dfl = dfl[['Cell','Celltype (major-lineage)']]
+		dfl.columns = ['cell','celltype']
+		df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
 
 		plot_umap_df(df_umap,'celltype',wdir+'results/nn_pcl_'+label,pt_size=1.0,ftype='png')
 
@@ -96,5 +98,5 @@ def eval():
 	plot_latent(m.h_scc.cpu().detach().numpy(),'h_scc')
 
 
-train()
+# train()
 eval()

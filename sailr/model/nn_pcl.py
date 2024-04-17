@@ -39,14 +39,13 @@ class ENCODER(nn.Module):
 	def __init__(self,input_dims,layers):
 		super(ENCODER, self).__init__()
 		self.fc = Stacklayers(input_dims,layers)
-
+		self.depth = 1e4
+  
 	def forward(self, x):
 
 		x = torch.log1p(x)
 		x = x/torch.sum(x,dim=-1,keepdim=True)
 		z = self.fc(x)
-
-		# z = self.fc(x.float())
 
 		return z
 
@@ -81,7 +80,7 @@ class SAILRNET(nn.Module):
   
 		return SAILROUT(h_sc,h_scc,z_sc,z_scc)
 
-def train(model,data,epochs,l_rate):
+def train(model,data,epochs,l_rate,temperature):
 	logger.info('Starting training....')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	for epoch in range(epochs):
@@ -91,7 +90,8 @@ def train(model,data,epochs,l_rate):
 
 			sailrout = model(x_sc)
 
-			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_scc)	
+			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_scc,temperature)	
+   
 			train_loss.backward()
 
 			opt.step()

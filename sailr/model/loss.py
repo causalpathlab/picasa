@@ -51,3 +51,29 @@ def pcl_loss(z_i, z_j,temperature = 1.0):
         loss = torch.sum(all_losses) / (2 * batch_size)
 
         return loss
+
+def tcl_loss(z_a, z_p, z_n,temperature = 1.0):
+    dist_pos = (z_a - z_p).pow(2).sum(1)
+    dist_neg = (z_a - z_n).pow(2).sum(1)
+    loss = F.relu(dist_pos - dist_neg + temperature)
+    return loss.mean()
+
+def tcl_ce_loss(z_a, z_p, z_n, temperature = 1.0):
+    
+    batch_size = z_a.size(0)
+
+    pos_similarity = F.cosine_similarity(z_a, z_p, dim=-1)
+    neg_similarity = F.cosine_similarity(z_a.unsqueeze(1), z_n.unsqueeze(0), dim=2)
+
+    numerator = torch.exp(pos_similarity/temperature)
+    denominator = torch.exp(pos_similarity / temperature) + torch.sum(torch.exp(neg_similarity / temperature), dim=1)
+
+    mask = torch.eye(batch_size, dtype=torch.bool, device=z_a.device)
+    denominator = denominator.masked_fill(mask, 0)
+
+    all_losses = -torch.log(numerator / denominator)
+    loss = torch.mean(all_losses)
+    
+    # print("NaN values in :", torch.isnan(pos_similarity).any())
+    
+    return loss
