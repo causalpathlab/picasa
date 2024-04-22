@@ -53,11 +53,7 @@ class SparseDataset(Dataset):
 		sp_pos_ind1,sp_pos_ind2 = self.sp_indptr[sp_pos_idx],self.sp_indptr[sp_pos_idx+1]
 		sp_pos_cell[self.sp_indices[sp_pos_ind1:sp_pos_ind2].long()] = self.sp_vals[sp_pos_ind1:sp_pos_ind2]
 
-		sp_neg_cell = torch.zeros((self.sp_shape[1],), dtype=torch.int32, device=self.device)
-		sp_neg_ind1,sp_neg_ind2 = self.sp_indptr[sp_neg_idx],self.sp_indptr[sp_neg_idx+1]
-		sp_neg_cell[self.sp_indices[sp_neg_ind1:sp_neg_ind2].long()] = self.sp_vals[sp_neg_ind1:sp_neg_ind2]
-
-		return sc_cell, self.sc_label[idx], sp_pos_cell, sp_neg_cell
+		return sc_cell, self.sc_label[idx], sp_pos_cell
 
 def nn_load_data(adata_sc,adata_sp,distdf,device,bath_size):
 

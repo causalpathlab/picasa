@@ -120,3 +120,175 @@ distdf.to_csv(wdir+'results/sc_sp_dist.csv.gz',index=False,compression='gzip')
 
 adata_sp.write(wdir+'data/pancreas_sp.h5ad',compression='gzip')
 
+
+####################################################
+##### from one single cell without spatial data 
+##### with down sample
+####################################################
+
+wdir = 'node/pancreas/'
+sc_ref_path = wdir+'/data/full_data/pancreas_sc.h5ad'
+
+rna = an.read_h5ad(sc_ref_path)
+
+gene_var = get_gene_norm_var(rna.X.todense())
+# (gene_var>2).sum()
+hvg_index = gene_var>2
+
+sc_exp_shape = rna.X.shape
+adata_sc = an.AnnData(X=rna.X)
+adata_sc.var_names = rna.var.index.values
+adata_sc.obs_names = rna.obs.index.values
+
+# n_samples = 100  
+# total_cells = adata_sc.shape[1]
+# sample_indices = np.random.choice(total_cells, size=n_samples, replace=False)
+adata_sc = adata_sc[:,hvg_index]
+
+adata_sp = an.AnnData(X=adata_sc.X)
+adata_sp.var_names = adata_sc.var.index.values
+adata_sp.obs_names = ['sp_'+str(x) for x in range(adata_sp.shape[0])]
+
+##now add position and celltype
+dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
+dfl = dfl[['Cell','Celltype (major-lineage)']]
+dfl.columns = ['cell','celltype']
+adata_sc.obs['celltype'] = pd.merge(rna.obs,dfl, right_on='cell',left_index=True)['celltype'].values
+
+
+ref_sp = an.read_h5ad('node/sim/data/sim_sp.h5ad')
+
+dfspl = ref_sp.uns['sp_pos'].sample(rna.X.shape[0]).reset_index(drop=True)
+dfspl = dfspl[['x','y']]
+
+adata_sp.uns['position'] = [ str(x)+'x'+str(y) for x,y in zip(dfspl['x'],dfspl['y'])]
+
+# this celltype assignment is not needed
+from sklearn.cluster import KMeans
+celltypes = adata_sc.obs['celltype'].unique()
+num_celltypes = adata_sc.obs['celltype'].nunique()
+kmeans = KMeans(n_clusters=num_celltypes)
+kmeans.fit(dfspl)
+dfspl['celltype'] = pd.Categorical(kmeans.labels_)
+ct_map = {x:y for x,y in zip(dfspl['celltype'].unique(),celltypes)}
+dfspl['celltype'] = [ct_map[x] for x in dfspl['celltype']]
+adata_sp.uns['celltype'] = dfspl['celltype']
+
+
+####single cell spatial map
+from scipy.spatial.distance import cdist
+
+
+distmat =  cdist(adata_sc.X.todense(), adata_sp.X.todense())
+sorted_indices = np.argsort(distmat, axis=1)
+distdf = pd.DataFrame(sorted_indices)
+
+f = [x for x in range(0,25)]
+l = [x for x in range(distdf.shape[1]-25,distdf.shape[1])]
+distdf = distdf[f+l]
+
+distdf.to_csv(wdir+'data/sc_sp_dist.csv.gz',index=False,compression='gzip')
+
+
+adata_sp.write(wdir+'data/pancreas_sp.h5ad',compression='gzip')
+adata_sc.write(wdir+'data/pancreas_sc.h5ad',compression='gzip')
+
+
+############pbmc
+
+
+import anndata as an
+import pandas as pd
+import numpy as np
+import sailr
+from scipy.sparse import csr_matrix 
+
+import scanpy as sc
+import matplotlib.pylab as plt
+
+wdir = 'node/pbmc/'
+adata = sc.read_10x_mtx(wdir+
+    "data/filtered_gene_bc_matrices/hg19/",  # the directory with the `.mtx` file
+    var_names="gene_symbols",  # use gene symbols for the variable names (variables-axis index)
+    cache=True,  # write a cache file for faster subsequent reading
+)
+
+adata.var_names_make_unique()
+sc.pp.filter_cells(adata, min_genes=200)
+sc.pp.filter_genes(adata, min_cells=3)
+# annotate the group of mitochondrial genes as "mt"
+adata.var["mt"] = adata.var_names.str.startswith("MT-")
+sc.pp.calculate_qc_metrics(
+    adata, qc_vars=["mt"], percent_top=None, log1p=False, inplace=True
+)
+adata = adata[adata.obs.n_genes_by_counts < 2500, :]
+adata = adata[adata.obs.pct_counts_mt < 5, :].copy()
+
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5)
+adata = adata[:, adata.var.highly_variable]
+sc.pp.regress_out(adata, ["total_counts", "pct_counts_mt"])
+sc.pp.scale(adata, max_value=10)
+sc.tl.pca(adata, svd_solver="arpack")
+sc.pp.neighbors(adata, n_neighbors=10, n_pcs=40)
+sc.tl.umap(adata)
+sc.tl.leiden(
+    adata,
+    resolution=0.9
+)
+sc.pl.umap(adata, color=["leiden", "CST3", "NKG7"])
+plt.savefig(wdir+'results/scanpy_umap.png');plt.close()
+
+
+adata_org = sc.read_10x_mtx(wdir+
+    "data/filtered_gene_bc_matrices/hg19/",  # the directory with the `.mtx` file
+    var_names="gene_symbols",  # use gene symbols for the variable names (variables-axis index)
+    cache=True,  # write a cache file for faster subsequent reading
+)
+
+hvg = [ True if x in adata.var.index.values else False for x in adata_org.var.index.values ]
+
+adata_org = adata_org[:,hvg]
+
+## add leiden
+adata_org.obs['leiden'] =pd.merge(adata_org.obs,adata.obs,left_index=True,right_index=True,how='left')['leiden'].values
+
+# adata_org.obs.fillna('unknown',inplace=True)
+
+smat = csr_matrix(adata_org.X)
+adata_sc = an.AnnData(X=smat)
+adata_sc.var_names = adata_org.var.index.values
+adata_sc.obs_names = adata_org.obs.index.values
+
+adata_sp = an.AnnData(X=adata_sc.X)
+adata_sp.var_names = adata_sc.var.index.values
+adata_sp.obs_names = ['sp_'+str(x) for x in range(adata_sp.shape[0])]
+
+adata_sc.obs['celltype'] = adata_org.obs.leiden.values
+
+
+ref_sp = an.read_h5ad('node/sim/data/sim_sp.h5ad')
+
+dfspl = ref_sp.uns['sp_pos'].sample(adata_sp.X.shape[0]).reset_index(drop=True)
+dfspl = dfspl[['x','y']]
+
+adata_sp.uns['position'] = [ str(x)+'x'+str(y) for x,y in zip(dfspl['x'],dfspl['y'])]
+
+from scipy.spatial.distance import cdist
+import numpy as np
+import pandas as pd
+
+distmat =  cdist(adata_sc.X.todense(), adata_sp.X.todense())
+sorted_indices = np.argsort(distmat, axis=1)
+distdf = pd.DataFrame(sorted_indices)
+
+f = [x for x in range(0,25)]
+l = [x for x in range(distdf.shape[1]-25,distdf.shape[1])]
+distdf = distdf[f+l]
+
+distdf.to_csv(wdir+'data/sc_sp_dist.csv.gz',index=False,compression='gzip')
+
+
+adata_sp.write(wdir+'data/pbmc_sp.h5ad',compression='gzip')
+adata_sc.write(wdir+'data/pbmc_sc.h5ad',compression='gzip')

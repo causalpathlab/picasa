@@ -92,8 +92,8 @@ def train(model,data,epochs,l_rate,temperature):
 
 			sailrout = model(x_sc,x_spp,x_spn)
 
-			# train_loss = tcl_loss(sailrout.z_sc, sailrout.z_spp, sailrout.z_spn, temperature)	
-			train_loss = tcl_ce_loss(sailrout.z_sc, sailrout.z_spp, sailrout.z_spn, temperature)	
+			train_loss = tcl_loss(sailrout.z_sc, sailrout.z_spp, sailrout.z_spn, temperature)	
+			# train_loss = tcl_ce_loss(sailrout.z_sc, sailrout.z_spp, sailrout.z_spn, temperature)	
 			train_loss.backward()
 
 			opt.step()
