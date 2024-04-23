@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 from torch.distributions.uniform import Uniform
 import pytorch_lightning as pl 
 from pytorch_lightning.plugins import DDPPlugin
+from torch.nn.parallel import DataParallel
 
 class SAILROUT:
 	def __init__(self,h_sc,h_spp,z_sc,z_spp,attn_sc, attn_spp):
@@ -104,7 +105,7 @@ class MLP(nn.Module):
 		return z
 
 class SAILRNET(nn.Module):
-	def __init__(self,input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers,features_low,features_high,corruption_rate):
+	def __init__(self,input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers):
 		super(SAILRNET,self).__init__()
 
 		self.embedding = GeneEmbedor(emb_dim,attn_dim)
@@ -155,14 +156,15 @@ def predict(model,data):
 	for x_sc,y, x_spp in data: break
 	return model(x_sc,x_spp),y
 
-
 class LitSAILRNET(pl.LightningModule):
+	
 	def __init__(self,input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers,features_low,features_high,corruption_rate,temperature,lossf):
 		super(LitSAILRNET,self).__init__()
 
 		self.sailrnet = SAILRNET(input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers,features_low,features_high,corruption_rate)
 		self.temperature = temperature 
 		self.lossf = lossf
+		self.sailrnet = DataParallel(self.sailrnet)
   
 	def forward(self,x_sc,x_spp):
   
@@ -175,6 +177,9 @@ class LitSAILRNET(pl.LightningModule):
 	def training_step(self,batch):
 
 		x_sc,y,x_spp = batch
+		device_of_model = next(self.sailrnet.parameters()).device
+		x_sc = x_sc.to(device_of_model)
+		x_spp = x_spp.to(device_of_model)
 
 		sailrout = self.sailrnet(x_sc,x_spp)
 

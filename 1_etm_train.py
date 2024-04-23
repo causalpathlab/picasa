@@ -10,16 +10,16 @@ import umap
 
 import logging
 
-sample = 'pancreas_sc'
-wdir = 'node/pancreas/'
+sample = 'pbmc_sc'
+wdir = 'node/pbmc/'
 
-device = 'cpu'
+device = 'cuda'
 batch_size = 128
-input_dims = 17543
+input_dims = 1000
 latent_dims = 10
 encoder_layers = [200,100,10]
 l_rate = 0.01
-epochs= 1000
+epochs= 200
 
 
 logging.basicConfig(filename=wdir+'results/1_etm_train.log',
@@ -50,7 +50,7 @@ def train():
 
 def eval():
 	logging.info('eval.....')
-	batch_size=4113
+	batch_size=1000
 	data_pred = sailr.du.nn_load_data(rna,device,batch_size)
 	sailr_model = sailr.nn_etm.SAILRNET(input_dims, latent_dims, encoder_layers).to(device)
 	sailr_model.load_state_dict(torch.load(wdir+'results/nn_etm.model'))
@@ -71,9 +71,8 @@ def eval():
 	# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
 
 	## for pancreas
-	dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
-	dfl = dfl[['Cell','Celltype (major-lineage)']]
-	dfl.columns = ['cell','celltype']
+	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl.columns = ['cell','celltype','batch']
 	df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
 
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_etm',pt_size=1.0,ftype='png')
@@ -106,5 +105,5 @@ def eval():
 	# plt.tight_layout()  
 	# plt.savefig('testnn_etm.png');plt.close()
 
-# train()
+train()
 eval()

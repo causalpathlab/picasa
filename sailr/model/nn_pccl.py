@@ -28,62 +28,70 @@ class Stacklayers(nn.Module):
 
 
 class SAILROUT:
-    def __init__(self,h_sc,h_spp,z_sc,z_spp):
-        self.h_sc = h_sc
-        self.h_spp = h_spp
-        self.z_sc = z_sc
-        self.z_spp = z_spp
-        
+	def __init__(self,h_sc,h_scc,z_sc,z_scc):
+		self.h_sc = h_sc
+		self.h_scc = h_scc
+		self.z_sc = z_sc
+		self.z_scc = z_scc
+		
+		
 class ENCODER(nn.Module):
 	def __init__(self,input_dims,layers):
 		super(ENCODER, self).__init__()
 		self.fc = Stacklayers(input_dims,layers)
-
+		self.depth = 1e4
+  
 	def forward(self, x):
 
 		x = torch.log1p(x)
 		x = x/torch.sum(x,dim=-1,keepdim=True)
-		h = self.fc(x)
-		return h
+		z = self.fc(x)
+
+		return z
 
 class MLP(nn.Module):
 	def __init__(self,input_dims,layers):
 		super(MLP, self).__init__()
 		self.fc = Stacklayers(input_dims,layers)
 
-	def forward(self, h):
-		z = self.fc(h)
+	def forward(self, x):
+		z = self.fc(x)
 		return z
 
 
 class SAILRNET(nn.Module):
-	def __init__(self,input_dims,latent_dims,encoder_layers,projection_layers):
+	def __init__(self,input_dims,latent_dims,encoder_layers,projection_layers,features_low,features_high,corruption_rate):
 		super(SAILRNET,self).__init__()
 		self.encoder = ENCODER(input_dims,encoder_layers)
 		self.projector = MLP(latent_dims, projection_layers)
+		self.marginals = Uniform(features_low,features_high)
+		self.corruption_rate = corruption_rate
 
-	def forward(self,x_sc, x_spp):
-       
+	def forward(self,x_sc):
+		corruption_mask = torch.randint_like(x_sc,high=x_sc.max()+1, device=x_sc.device) > ((x_sc.max()+1) *  self.corruption_rate)
+		x_random = self.marginals.sample(torch.Size(x_sc.size())).to(x_sc.device)
+		x_corrupted = torch.where(corruption_mask, x_random.int(), x_sc)
+  
 		h_sc = self.encoder(x_sc)
-		h_spp = self.encoder(x_spp)
+		h_scc = self.encoder(x_corrupted)
 
 		z_sc = self.projector(h_sc)
-		z_spp = self.projector(h_spp)
+		z_scc = self.projector(h_scc)
   
-		return SAILROUT(h_sc,h_spp,z_sc,z_spp)
+		return SAILROUT(h_sc,h_scc,z_sc,z_scc)
 
 def train(model,data,epochs,l_rate,temperature):
 	logger.info('Starting training....')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	for epoch in range(epochs):
 		loss = 0
-		for x_sc,y,x_spp in data:
+		for x_sc,y in data:
 			opt.zero_grad()
 
-			sailrout = model(x_sc,x_spp)
+			sailrout = model(x_sc)
 
-			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_spp,temperature)	
-			# train_loss = tcl_ce_loss(sailrout.z_sc, sailrout.z_spp, sailrout.z_spn, temperature)	
+			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_scc,temperature)	
+   
 			train_loss.backward()
 
 			opt.step()
@@ -94,5 +102,5 @@ def train(model,data,epochs,l_rate,temperature):
 
 
 def predict(model,data):
-	for x_sc,y, x_spp in data: break
-	return model(x_sc,x_spp),y
+	for x_sc,y in data: break
+	return model(x_sc),y

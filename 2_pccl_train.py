@@ -9,26 +9,28 @@ import torch
 import sys
 import logging
 
-sample = 'pancreas_sc'
-wdir = 'node/pancreas/'
-
-device = 'cpu'
-batch_size = 256
-eval_batch_size=9984
-input_dims = 17543
-latent_dims = 10
-encoder_layers = [200,100,10]
-projection_layers = [10,25,10]
-corruption_rate = 0.9
-l_rate = 0.001
-epochs= 2000
-
-temperature = 10 # higher scores smooths out the differences between the similarity scores.
-
+sample = 'pbmc_sc'
+wdir = 'node/pbmc/'
 
 rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
 
-logging.basicConfig(filename=wdir+'results/2_pcl_train.log',
+
+device = 'cuda'
+batch_size = 256
+eval_batch_size= rna.shape[0]
+input_dims = 1000
+latent_dims = 10
+encoder_layers = [200,100,10]
+projection_layers = [10,25,10]
+corruption_rate = 0.3
+l_rate = 0.001
+epochs= 200
+
+temperature = 1 # higher scores smooths out the differences between the similarity scores.
+
+
+
+logging.basicConfig(filename=wdir+'results/2_pccl_train.log',
 						format='%(asctime)s %(levelname)-8s %(message)s',
 						level=logging.INFO,
 						datefmt='%Y-%m-%d %H:%M:%S')
@@ -43,15 +45,15 @@ logging.info( f"Device: {device}, \
 def train():
 	logging.info('train...')
 	data = sailr.du.nn_load_data(rna,device,batch_size)
-	features_high = int(data.dataset.vals.max(axis=0).values)
-	features_low = int(data.dataset.vals.min(axis=0).values)
+	features_high = float(data.dataset.vals.max(axis=0).values)
+	features_low = float(data.dataset.vals.min(axis=0).values)
 
 	sailr_model = sailr.nn_pcl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
 	logging.info(sailr_model)
 
 	sailr.nn_pcl.train(sailr_model,data,epochs,l_rate,temperature)
 
-	torch.save(sailr_model.state_dict(),wdir+'results/nn_pcl.model')
+	torch.save(sailr_model.state_dict(),wdir+'results/nn_pccl.model')
 
 def eval():
     
@@ -65,7 +67,7 @@ def eval():
 	features_low = int(data_pred.dataset.vals.min(axis=0).values)
 
 	sailr_model = sailr.nn_pcl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
-	sailr_model.load_state_dict(torch.load(wdir+'results/nn_pcl.model'))
+	sailr_model.load_state_dict(torch.load(wdir+'results/nn_pccl.model'))
 	m,ylabel = sailr.nn_etm.predict(sailr_model,data_pred)
 
 
@@ -83,12 +85,16 @@ def eval():
 
 		# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
 
-		dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
-		dfl = dfl[['Cell','Celltype (major-lineage)']]
-		dfl.columns = ['cell','celltype']
+		# dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
+		# dfl = dfl[['Cell','Celltype (major-lineage)']]
+		# dfl.columns = ['cell','celltype']
+		# df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
+
+		dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+		dfl.columns = ['cell','celltype','batch']
 		df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
 
-		plot_umap_df(df_umap,'celltype',wdir+'results/nn_pcl_'+label,pt_size=1.0,ftype='png')
+		plot_umap_df(df_umap,'celltype',wdir+'results/nn_pccl_'+label,pt_size=1.0,ftype='png')
 
 
 	plot_latent(m.z_sc.cpu().detach().numpy(),'z_sc')
@@ -98,5 +104,5 @@ def eval():
 	plot_latent(m.h_scc.cpu().detach().numpy(),'h_scc')
 
 
-# train()
+train()
 eval()

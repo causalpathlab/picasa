@@ -11,26 +11,25 @@ import sys
 import logging
 
 sample = 'pbmc'
-wdir = 'node/pbmc/'
+wdir = 'znode/pbmc/'
 
 rna = an.read_h5ad(wdir+'data/'+sample+'_sc.h5ad')
 spatial = an.read_h5ad(wdir+'data/'+sample+'_sp.h5ad')
 distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
-distdf = distdf[['5','2699']]
+distdf = distdf[['0','2967']]
 
 
 device = 'cuda'
 batch_size = 256
-eval_batch_size=int(rna.X.shape[0]/2)
+eval_batch_size=rna.X.shape[0]
 input_dims = rna.X.shape[1]
 emb_dim = 1000
-att_dim = 5
-latent_dims = 10
-encoder_layers = [200,100,10]
-projection_layers = [10,25,10]
-corruption_rate = 0.9
+att_dim = 25
+latent_dims = 25
+encoder_layers = [200,200, 100, 100, 25]
+projection_layers = [25,50, 50,10]
 l_rate = 0.001
-epochs= 100
+epochs= 200
 
 temperature = 1.0 # higher scores smooths out the differences between the similarity scores.
 
@@ -45,17 +44,14 @@ logging.info( f"Device: {device}, \
 	Batch Size: {batch_size}, Evaluation Batch Size: {eval_batch_size}, \
 	Input Dimensions: {input_dims}, Latent Dimensions: {latent_dims}, \
 	Encoder Layers: {encoder_layers}, Projection Layers: {projection_layers}, \
-	Corruption Rate: {corruption_rate}, Learning Rate: {l_rate}, \
+	Learning Rate: {l_rate}, \
 	Epochs: {epochs}, temperature: {temperature}")
 
 def train():
 	logging.info('train...')
 	data = sailr.du.nn_load_data_pairs(rna,spatial,distdf,device,batch_size)
 
-	features_high = int(data.dataset.sp_vals.max(axis=0).values)
-	features_low = int(data.dataset.sp_vals.min(axis=0).values)
-
-	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
+	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
 	logging.info(sailr_model)
 
 	sailr.nn_attn.train(sailr_model,data,epochs,l_rate,temperature)
@@ -73,12 +69,13 @@ def train_mgpu():
 
 	lossf = wdir+'results/nn_attncl_model_loss.txt'
 	sailr_model = sailr.nn_attn.LitSAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate,temperature,lossf)
+	sailr_model.to(device)
  
 	logging.info(sailr_model)
  
 	trainer = sailr.nn_attn.pl.Trainer(
 	max_epochs=epochs,
-	accelerator='cpu',
+	accelerator='gpu',
 	plugins= sailr.nn_attn.DDPPlugin(find_unused_parameters=False),
 	gradient_clip_val=0.5,
 	progress_bar_refresh_rate=50,
@@ -97,34 +94,43 @@ def eval():
 	logging.info('eval...')
 	
 	device = 'cpu'
-	data_pred = sailr.du.nn_load_data_triplets(rna,spatial,distdf,device,eval_batch_size)
+	data_pred = sailr.du.nn_load_data_pairs(rna,spatial,distdf,device,eval_batch_size)
 
-	features_high = int(data_pred.dataset.sp_vals.max(axis=0).values)
-	features_low = int(data_pred.dataset.sp_vals.min(axis=0).values)
-
-	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
+	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
 	sailr_model.load_state_dict(torch.load(wdir+'results/nn_attncl.model'))
 	m,ylabel = sailr.nn_attn.predict(sailr_model,data_pred)
 
+
+	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl.columns = ['cell','celltype','batch']
+
+	dflv2 = dfl.loc[dfl['cell'].str.contains('V2'),:]
+	# selected_index = dflv2.loc[dflv2['celltype'] == "B cell"].index.values
+	selected_index = dflv2.loc[dflv2['celltype'] == "CD4+ T cell"].index.values
+
 	attn_mtx = m.attn_sc.cpu().detach().numpy()
-	selected_index = [x for x,y in enumerate(rna.obs.celltype.values) if y == '0']
-	# df_attn = pd.DataFrame(attn_mtx[selected_index].mean(0))
-	df_attn = pd.DataFrame(attn_mtx.mean(0))
+	selected_index = 0
+	# df_attn = pd.DataFrame(attn_mtx.mean(0))
+	df_attn = pd.DataFrame(attn_mtx[selected_index].mean(0))
 	df_attn.columns = rna.var.index.values
 	df_attn.index = rna.var.index.values
 	
-	sg = [ "CD79A", "MS4A1","LGALS3", "S100A8", "GNLY", "NKG7", "KLRB1","FCGR3A",  "FCER1A", "CST3", "PPBP"]
-	# sg = ["IL7R", "CD79A", "MS4A1", "CD8A", "CD8B", "LYZ", "CD14","LGALS3", "S100A8", "GNLY", "NKG7", "KLRB1","FCGR3A", "MS4A7", "FCER1A", "CST3", "PPBP"]
+	sg = ['IL7R', 'CD79A', 'MS4A1', 'CD8A', 'CD8B', 'LYZ', 'CD14', 'LGALS3',
+       'S100A8', 'GNLY', 'NKG7', 'KLRB1', 'FCGR3A', 'MS4A7', 'FCER1A',
+       'CST3', 'CD3D', 'CD27', 'SELL', 'CCR7', 'IL32', 'GZMA', 'GZMK',
+       'DUSP2', 'GZMH', 'GZMB', 'CD79B', 'CD86']
  
 	df_attn = df_attn.loc[sg,sg] 
 
 	sns.heatmap(df_attn)
-	plt.savefig(wdir+'results/attn_marker.png')
+	plt.savefig(wdir+'results/attn_markert.png')
 	plt.close()
 
+
 	def plot_latent(mtx,label):
+		mtx = m.h_sc.cpu().detach().numpy();label='h_sc'
 		dfh = pd.DataFrame(mtx)
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.2,metric='cosine').fit(dfh)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,metric='cosine').fit(dfh)
 
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = ylabel
@@ -133,15 +139,13 @@ def eval():
 
 		# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
 		# df_umap['celltype'] = rna.obs.celltype.values
-		df_umap['celltype'] = pd.merge(df_umap,rna.obs,left_on='cell',right_index=True,how='left')['celltype'].values
+		# df_umap['celltype'] = pd.merge(df_umap,rna.obs,left_on='cell',right_index=True,how='left')['celltype'].values
 
 
-		# dfl = pd.read_csv(wdir+'data/pancreas_meta.tsv',sep='\t')
-		# dfl = dfl[['Cell','Celltype (major-lineage)']]
-		# dfl.columns = ['cell','celltype']
-		# df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
+	
+		df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
 
-		plot_umap_df(df_umap,'celltype',wdir+'results/nn_pcl_'+label,pt_size=1.0,ftype='png')
+		plot_umap_df(df_umap,'celltype',wdir+'results/nn_pcl_'+label,pt_size=3.0,ftype='png')
 
 
 	plot_latent(m.h_sc.cpu().detach().numpy(),'h_sc')
@@ -152,6 +156,6 @@ def eval():
 
  
 
-# train()
-train_mgpu()
+train()
+# train_mgpu()
 # eval()

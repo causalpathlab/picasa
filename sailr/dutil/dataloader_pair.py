@@ -47,7 +47,6 @@ class SparseDataset(Dataset):
 
 		## use sc spatial map to get positive and negative index
 		sp_pos_idx = self.scsp_map[idx][0]
-		sp_neg_idx = self.scsp_map[idx][1]
   
 		sp_pos_cell = torch.zeros((self.sp_shape[1],), dtype=torch.int32, device=self.device)
 		sp_pos_ind1,sp_pos_ind2 = self.sp_indptr[sp_pos_idx],self.sp_indptr[sp_pos_idx+1]
@@ -99,12 +98,10 @@ class nn_load_data_mgpu(pl.LightningDataModule):
 		sc_shape = tuple(self.adata_sc.X.shape)
 		sc_label = self.adata_sc.obs.index.values
 
-		# if isinstance(adata_sp.X,np.ndarray):
-		spmat = sparse.csr_matrix(self.adata_sp.X)
 
-		sp_indptr = torch.tensor(spmat.indptr.astype(np.int32), dtype=torch.int32, device=device)
-		sp_indices = torch.tensor(spmat.indices.astype(np.int32), dtype=torch.int32, device=device)
-		sp_vals = torch.tensor(spmat.data.astype(np.int32), dtype=torch.int32, device=device)
+		sp_indptr = torch.tensor(self.adata_sp.X.indptr.astype(np.int32), dtype=torch.int32, device=device)
+		sp_indices = torch.tensor(self.adata_sp.X.indices.astype(np.int32), dtype=torch.int32, device=device)
+		sp_vals = torch.tensor(self.adata_sp.X.data.astype(np.int32), dtype=torch.int32, device=device)
 		sp_shape = tuple(self.adata_sp.X.shape)
 
 		scsp_map ={x:list(y) for x,y in zip(range(self.distdf.shape[0]),self.distdf.values)}
