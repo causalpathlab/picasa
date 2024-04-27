@@ -51,7 +51,7 @@ def pcl_loss(z_i, z_j,temperature = 1.0):
         loss = torch.sum(all_losses) / (2 * batch_size)
 
         return loss
-
+    
 def tcl_loss(z_a, z_p, z_n,temperature = 1.0):
     dist_pos = (z_a - z_p).pow(2).sum(1)
     dist_neg = (z_a - z_n).pow(2).sum(1)

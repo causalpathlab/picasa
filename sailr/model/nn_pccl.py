@@ -66,6 +66,7 @@ class SAILRNET(nn.Module):
 		self.projector = MLP(latent_dims, projection_layers)
 		self.marginals = Uniform(features_low,features_high)
 		self.corruption_rate = corruption_rate
+		self.entropy_weight = .1
 
 	def forward(self,x_sc):
 		corruption_mask = torch.randint_like(x_sc,high=x_sc.max()+1, device=x_sc.device) > ((x_sc.max()+1) *  self.corruption_rate)
@@ -78,8 +79,12 @@ class SAILRNET(nn.Module):
 		z_sc = self.projector(h_sc)
 		z_scc = self.projector(h_scc)
   
-		return SAILROUT(h_sc,h_scc,z_sc,z_scc)
+		# entropy regularization
+		pred_sc = torch.softmax(z_sc, dim=1)
+		entropy_loss = -torch.mean(torch.sum(pred_sc * torch.log(pred_sc + 1e-10), dim=1))
 
+		return SAILROUT(h_sc, h_scc, z_sc, z_scc), entropy_loss * self.entropy_weight
+  
 def train(model,data,epochs,l_rate,temperature):
 	logger.info('Starting training....')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
@@ -88,10 +93,10 @@ def train(model,data,epochs,l_rate,temperature):
 		for x_sc,y in data:
 			opt.zero_grad()
 
-			sailrout = model(x_sc)
+			sailrout, el = model(x_sc)
 
 			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_scc,temperature)	
-   
+			train_loss += el
 			train_loss.backward()
 
 			opt.step()

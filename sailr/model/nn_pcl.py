@@ -28,11 +28,12 @@ class Stacklayers(nn.Module):
 
 
 class SAILROUT:
-    def __init__(self,h_sc,h_spp,z_sc,z_spp):
+    def __init__(self,h_sc,h_spp,z_sc,z_spp,el):
         self.h_sc = h_sc
         self.h_spp = h_spp
         self.z_sc = z_sc
         self.z_spp = z_spp
+        self.entropy_loss = el
         
 class ENCODER(nn.Module):
 	def __init__(self,input_dims,layers):
@@ -57,10 +58,11 @@ class MLP(nn.Module):
 
 
 class SAILRNET(nn.Module):
-	def __init__(self,input_dims,latent_dims,encoder_layers,projection_layers):
+	def __init__(self,input_dims,latent_dims,encoder_layers,projection_layers,entropy_weight):
 		super(SAILRNET,self).__init__()
 		self.encoder = ENCODER(input_dims,encoder_layers)
 		self.projector = MLP(latent_dims, projection_layers)
+		self.entroy_weight = entropy_weight
 
 	def forward(self,x_sc, x_spp):
        
@@ -70,7 +72,16 @@ class SAILRNET(nn.Module):
 		z_sc = self.projector(h_sc)
 		z_spp = self.projector(h_spp)
   
-		return SAILROUT(h_sc,h_spp,z_sc,z_spp)
+  		# entropy regularization
+		pred_sc = torch.softmax(h_sc, dim=1)
+		entropy_loss_sc = -torch.mean(torch.sum(pred_sc * torch.log(pred_sc + 1e-10), dim=1))
+
+		pred_spp = torch.softmax(h_spp, dim=1)
+		entropy_loss_spp = -torch.mean(torch.sum(pred_spp * torch.log(pred_spp + 1e-10), dim=1))
+
+		entropy_loss = (entropy_loss_sc + entropy_loss_spp) * self.entroy_weight
+  
+		return SAILROUT(h_sc,h_spp,z_sc,z_spp,entropy_loss)
 
 def train(model,data,epochs,l_rate,temperature):
 	logger.info('Starting training....')
@@ -83,7 +94,8 @@ def train(model,data,epochs,l_rate,temperature):
 			sailrout = model(x_sc,x_spp)
 
 			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_spp,temperature)	
-			# train_loss = tcl_ce_loss(sailrout.z_sc, sailrout.z_spp, sailrout.z_spn, temperature)	
+			# train_loss = nt_xent_loss(sailrout.z_sc, sailrout.z_spp,temperature)	
+			train_loss += sailrout.entropy_loss	
 			train_loss.backward()
 
 			opt.step()

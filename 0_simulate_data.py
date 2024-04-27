@@ -292,3 +292,69 @@ distdf.to_csv(wdir+'data/sc_sp_dist.csv.gz',index=False,compression='gzip')
 
 adata_sp.write(wdir+'data/pbmc_sp.h5ad',compression='gzip')
 adata_sc.write(wdir+'data/pbmc_sc.h5ad',compression='gzip')
+
+
+
+#### prep colon data
+
+import anndata as an
+import pandas as pd
+import numpy as np
+from scipy.sparse import csr_matrix 
+
+import scanpy as sc
+import matplotlib.pylab as plt
+
+wdir = 'znode/colon/data/'
+df_sc = pd.read_csv(wdir+'CytoSPACE_example_colon_cancer_merscope/HumanColonCancerPatient2_scRNA_expressions_cytospace.tsv',sep='\t')
+df_sp = pd.read_csv(wdir+'CytoSPACE_example_colon_cancer_merscope/HumanColonCancerPatient2_ST_expressions_cytospace.tsv',sep='\t')
+
+df_sp.set_index('GENES',inplace=True)
+df_sc.set_index('GENES',inplace=True)
+
+df_sp = df_sp.loc[df_sc.index.values,:]
+
+df_sc = df_sc.T
+df_sp = df_sp.T
+
+
+smat = csr_matrix(df_sc.to_numpy())
+adata_sc = an.AnnData(X=smat)
+adata_sc.var_names = df_sc.columns.values
+adata_sc.obs_names = df_sc.index.values
+
+smatsp = csr_matrix(df_sp.to_numpy())
+adata_sp = an.AnnData(X=smatsp)
+adata_sp.var_names = df_sp.columns.values
+adata_sp.obs_names = df_sp.index.values
+
+
+
+
+
+dfspl = pd.read_csv(wdir+'CytoSPACE_example_colon_cancer_merscope/HumanColonCancerPatient2_ST_coordinates_cytospace.tsv',sep='\t')
+dfspl.set_index('SpotID',inplace=True)
+dfspl.columns = ['x','y']
+
+adata_sp.uns['position'] = [ str(x)+'x'+str(y) for x,y in zip(dfspl['x'],dfspl['y'])]
+
+
+from scipy.spatial.distance import cdist
+import numpy as np
+import pandas as pd
+
+distmat =  cdist(adata_sc.X.todense(), adata_sp.X.todense())
+sorted_indices = np.argsort(distmat, axis=1)
+distdf = pd.DataFrame(sorted_indices)
+
+# f = [x for x in range(0,25)]
+# l = [x for x in range(distdf.shape[1]-25,distdf.shape[1])]
+distdf = distdf[[0,52234]]
+
+distdf.to_csv(wdir+'data/sc_sp_dist.csv.gz',index=False,compression='gzip')
+
+
+
+adata_sp.write(wdir+'colon_sp.h5ad',compression='gzip')
+adata_sc.write(wdir+'colon_sc.h5ad',compression='gzip')
+

@@ -10,12 +10,13 @@ import umap
 
 import logging
 
-sample = 'pbmc_sc'
-wdir = 'node/pbmc/'
+sample = 'colon_sc'
+wdir = 'znode/colon/'
+rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
 
 device = 'cuda'
 batch_size = 128
-input_dims = 1000
+input_dims = rna.X.shape[1]
 latent_dims = 10
 encoder_layers = [200,100,10]
 l_rate = 0.01
@@ -27,7 +28,7 @@ logging.basicConfig(filename=wdir+'results/1_etm_train.log',
 						level=logging.INFO,
 						datefmt='%Y-%m-%d %H:%M:%S')
 
-rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
+
 
 
 def train():
@@ -50,8 +51,8 @@ def train():
 
 def eval():
 	logging.info('eval.....')
-	batch_size=1000
-	data_pred = sailr.du.nn_load_data(rna,device,batch_size)
+	eval_batch_size=rna.X.shape[0]
+	data_pred = sailr.du.nn_load_data(rna,device,eval_batch_size)
 	sailr_model = sailr.nn_etm.SAILRNET(input_dims, latent_dims, encoder_layers).to(device)
 	sailr_model.load_state_dict(torch.load(wdir+'results/nn_etm.model'))
 	m,ylabel = sailr.nn_etm.predict(sailr_model,data_pred)
@@ -68,20 +69,24 @@ def eval():
 	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
 	### for simulated brca
-	# df_umap['celltype'] = [x.split('_')[2] for x in df_umap['cell']]
+	# df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell']]
+	# df_umap['batch'] = [x.split('_')[1] for x in df_umap['cell']]
+
+	##colon
+	df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell']]
 
 	## for pancreas
-	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
-	dfl.columns = ['cell','celltype','batch']
-	df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values
+	# dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	# dfl.columns = ['cell','celltype','batch']
+	# df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell')['celltype'].values 
+	# df_umap['batch'] = [x.split('_')[2] for x in df_umap['cell']]
 
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_etm',pt_size=1.0,ftype='png')
+	# plot_umap_df(df_umap,'batch',wdir+'results/nn_etm',pt_size=1.0,ftype='png')
 
 	dfbeta = pd.DataFrame(m.beta.cpu().detach().numpy())
 	dfbeta.columns = rna.var.index.values
 	plot_gene_loading(dfbeta,top_n=5,max_thresh=100,fname=wdir+'results/beta')
-
-
 
 	# mats = [
 	#         m.z_sc.cpu().detach().numpy(),
@@ -105,5 +110,5 @@ def eval():
 	# plt.tight_layout()  
 	# plt.savefig('testnn_etm.png');plt.close()
 
-train()
+# train()
 eval()

@@ -10,7 +10,7 @@ import sys
 import logging
 
 sample = 'pbmc_sc'
-wdir = 'node/pbmc/'
+wdir = 'znode/pbmc/'
 
 rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
 
@@ -19,12 +19,13 @@ device = 'cuda'
 batch_size = 256
 eval_batch_size= rna.shape[0]
 input_dims = 1000
-latent_dims = 10
-encoder_layers = [200,100,10]
-projection_layers = [10,25,10]
+latent_dims = 25
+encoder_layers = [1000, 500,200, 100, 100, 25]
+projection_layers = [25,100, 50,10]
 corruption_rate = 0.3
 l_rate = 0.001
 epochs= 200
+
 
 temperature = 1 # higher scores smooths out the differences between the similarity scores.
 
@@ -48,10 +49,10 @@ def train():
 	features_high = float(data.dataset.vals.max(axis=0).values)
 	features_low = float(data.dataset.vals.min(axis=0).values)
 
-	sailr_model = sailr.nn_pcl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
+	sailr_model = sailr.nn_pccl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
 	logging.info(sailr_model)
 
-	sailr.nn_pcl.train(sailr_model,data,epochs,l_rate,temperature)
+	sailr.nn_pccl.train(sailr_model,data,epochs,l_rate,temperature)
 
 	torch.save(sailr_model.state_dict(),wdir+'results/nn_pccl.model')
 
@@ -66,17 +67,17 @@ def eval():
 	features_high = int(data_pred.dataset.vals.max(axis=0).values)
 	features_low = int(data_pred.dataset.vals.min(axis=0).values)
 
-	sailr_model = sailr.nn_pcl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
+	sailr_model = sailr.nn_pccl.SAILRNET(input_dims, latent_dims, encoder_layers, projection_layers,features_low,features_high,corruption_rate).to(device)
 	sailr_model.load_state_dict(torch.load(wdir+'results/nn_pccl.model'))
-	m,ylabel = sailr.nn_etm.predict(sailr_model,data_pred)
-
+	mm,ylabel = sailr.nn_pccl.predict(sailr_model,data_pred)
+	m = mm[0]
 
 
 
 
 	def plot_latent(mtx,label):
 		dfh = pd.DataFrame(mtx)
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.2,metric='cosine').fit(dfh)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.8,metric='cosine').fit(dfh)
 
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = ylabel
@@ -97,12 +98,16 @@ def eval():
 		plot_umap_df(df_umap,'celltype',wdir+'results/nn_pccl_'+label,pt_size=1.0,ftype='png')
 
 
-	plot_latent(m.z_sc.cpu().detach().numpy(),'z_sc')
-	plot_latent(m.z_scc.cpu().detach().numpy(),'z_scc')
+	# plot_latent(m.z_sc.cpu().detach().numpy(),'z_sc')
+	# plot_latent(m.z_scc.cpu().detach().numpy(),'z_scc')
 
 	plot_latent(m.h_sc.cpu().detach().numpy(),'h_sc')
 	plot_latent(m.h_scc.cpu().detach().numpy(),'h_scc')
 
-
-train()
-eval()
+if sys.argv[1] == 'eval':
+	eval()
+elif sys.argv[1] == 'train':
+	train()
+elif sys.argv[1] == 'both':
+	train()
+	eval()

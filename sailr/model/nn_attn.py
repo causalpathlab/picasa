@@ -1,6 +1,7 @@
 import torch
 torch.manual_seed(0)
 import torch.nn as nn
+import torch.nn.functional as F
 from .loss import pcl_loss
 import logging
 logger = logging.getLogger(__name__)
@@ -9,14 +10,16 @@ import pytorch_lightning as pl
 from pytorch_lightning.plugins import DDPPlugin
 from torch.nn.parallel import DataParallel
 
+
 class SAILROUT:
-	def __init__(self,h_sc,h_spp,z_sc,z_spp,attn_sc, attn_spp):
+	def __init__(self,h_sc,h_spp,z_sc,z_spp,attn_sc, attn_spp, el):
 		self.h_sc = h_sc
 		self.h_spp = h_spp
 		self.z_sc = z_sc
 		self.z_spp = z_spp
 		self.attn_sc = attn_sc
 		self.attn_spp = attn_spp
+		self.entropy_loss = el
 
 class Stacklayers(nn.Module):
 	def __init__(self,input_size,layers,dropout=0.1):
@@ -49,14 +52,16 @@ class GeneEmbedor(nn.Module):
 		x = self.emb_norm(x)
 		return x
 
+
 class ScaledDotAttention(nn.Module):
 	
-	def __init__(self, weight_dim):
+	def __init__(self, weight_dim,input_dim):
 		super(ScaledDotAttention, self).__init__()
 		self.W_query = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_key = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.model_dim = weight_dim
+		self.self_importance = nn.Parameter(torch.zeros(input_dim))
 		
 	def forward(self, query, key, value):
 
@@ -64,11 +69,18 @@ class ScaledDotAttention(nn.Module):
 		key_proj = torch.matmul(key, self.W_key)
 		value_proj = torch.matmul(value, self.W_value)
 		
+
 		scores = torch.matmul(query_proj, key_proj.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.model_dim).float())
+		diag_bias = torch.eye(scores.shape[1], dtype=scores.dtype, device=scores.device)
+		importance = torch.clamp(torch.exp(self.self_importance),max=3)
+		scores += (diag_bias * importance)
+  
 		attention_weights = torch.softmax(scores, dim=-1)
+		entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
+
 		output = torch.matmul(attention_weights, value_proj)
 		
-		return output, attention_weights
+		return output, attention_weights,entropy_loss_attn
 
 class AttentionPooling(nn.Module):
 	def __init__(self, model_dim):
@@ -109,20 +121,23 @@ class SAILRNET(nn.Module):
 		super(SAILRNET,self).__init__()
 
 		self.embedding = GeneEmbedor(emb_dim,attn_dim)
-		self.attention = ScaledDotAttention(attn_dim)
+		self.attention = ScaledDotAttention(attn_dim,input_dims)
 		self.pooling = AttentionPooling(attn_dim)
 
 		self.encoder = ENCODER(input_dims,encoder_layers)
 		self.projector = MLP(latent_dim, projection_layers)
+		
+		self.entropy_loss_cl = 0.1
+		self.entropy_loss_attn = 1.0
 
 	def forward(self,x_sc,x_spp):
 		x_sc_emb = self.embedding(x_sc)
 		x_spp_emb = self.embedding(x_spp)
   
-		x_sc_att_out, x_sc_att_w = self.attention(x_sc_emb,x_spp_emb,x_sc_emb)
+		x_sc_att_out, x_sc_att_w,el_attn = self.attention(x_sc_emb,x_spp_emb,x_spp_emb)
 		x_sc_pool_out = self.pooling(x_sc_att_out)
 
-		x_spp_att_out, x_spp_att_w = self.attention(x_spp_emb,x_sc_emb,x_spp_emb)
+		x_spp_att_out, x_spp_att_w,el_attn = self.attention(x_spp_emb,x_sc_emb,x_sc_emb)
 		x_spp_pool_out = self.pooling(x_spp_att_out)
 
 		h_sc = self.encoder(x_sc_pool_out)
@@ -130,8 +145,18 @@ class SAILRNET(nn.Module):
 
 		z_sc = self.projector(h_sc)
 		z_spp = self.projector(h_spp)
+		
+		pred_sc = torch.softmax(h_sc, dim=1)
+		entropy_loss_sc = -torch.mean(torch.sum(pred_sc * torch.log(pred_sc + 1e-10), dim=1))
+
+		pred_spp = torch.softmax(h_spp, dim=1)
+		entropy_loss_spp = -torch.mean(torch.sum(pred_spp * torch.log(pred_spp + 1e-10), dim=1))
+
+		entropy_loss = (entropy_loss_sc + entropy_loss_spp) * self.entropy_loss_cl
   
-		return SAILROUT(h_sc,h_spp,z_sc,z_spp,x_sc_att_w,x_spp_att_w)
+		entropy_loss += (el_attn) * self.entropy_loss_attn
+  
+		return SAILROUT(h_sc,h_spp,z_sc,z_spp,x_sc_att_w,x_spp_att_w,entropy_loss)
 
 def train(model,data,epochs,l_rate,temperature):
 	logger.info('Starting training....')
@@ -143,7 +168,8 @@ def train(model,data,epochs,l_rate,temperature):
 
 			sailrout = model(x_sc,x_spp)
 
-			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_spp,  temperature)	
+			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_spp,  temperature)
+			train_loss += sailrout.entropy_loss
 			train_loss.backward()
 
 			opt.step()
@@ -184,7 +210,7 @@ class LitSAILRNET(pl.LightningModule):
 		sailrout = self.sailrnet(x_sc,x_spp)
 
 		train_loss = pcl_loss(sailrout.z_sc, sailrout.z_spp,  self.temperature)
-  	
+	  
 		f = open(self.lossf, 'a')
 		f.write(str(torch.mean(train_loss).to('cpu').item()) + '\n')
 		f.close()
