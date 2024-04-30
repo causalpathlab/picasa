@@ -9,10 +9,10 @@ from torch.distributions.uniform import Uniform
 import pytorch_lightning as pl 
 from pytorch_lightning.plugins import DDPPlugin
 from torch.nn.parallel import DataParallel
-
+import math
 
 class SAILROUT:
-	def __init__(self,h_sc,h_spp,z_sc,z_spp,attn_sc, attn_spp, el):
+	def __init__(self,h_sc,h_spp,z_sc,z_spp,attn_sc=None, attn_spp=None, el=None):
 		self.h_sc = h_sc
 		self.h_spp = h_spp
 		self.z_sc = z_sc
@@ -44,6 +44,17 @@ class Stacklayers(nn.Module):
 class GeneEmbedor(nn.Module):
 	def __init__(self,emb_dim,out_dim):
 		super(GeneEmbedor, self).__init__()
+		self.embedding = nn.Embedding(emb_dim,out_dim)
+		self.emb_norm = nn.LayerNorm(out_dim)
+
+	def forward(self, x):
+		x = self.embedding(x)
+		x = self.emb_norm(x)
+		return x
+
+class PosEmbedor(nn.Module):
+	def __init__(self,emb_dim,out_dim):
+		super(PosEmbedor, self).__init__()
 		self.embedding = nn.Embedding(emb_dim,out_dim)
 		self.emb_norm = nn.LayerNorm(out_dim)
 
@@ -117,10 +128,11 @@ class MLP(nn.Module):
 		return z
 
 class SAILRNET(nn.Module):
-	def __init__(self,input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers):
+	def __init__(self,input_dims, emb_dim, pos_emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers):
 		super(SAILRNET,self).__init__()
 
 		self.embedding = GeneEmbedor(emb_dim,attn_dim)
+		self.pos_embedding = PosEmbedor(pos_emb_dim,attn_dim)
 		self.attention = ScaledDotAttention(attn_dim,input_dims)
 		self.pooling = AttentionPooling(attn_dim)
 
@@ -129,10 +141,21 @@ class SAILRNET(nn.Module):
 		
 		self.entropy_loss_cl = 0.1
 		self.entropy_loss_attn = 1.0
-
-	def forward(self,x_sc,x_spp):
+  
+	def forward(self,x_sc,x_spp,sp_x,sp_y):
 		x_sc_emb = self.embedding(x_sc)
 		x_spp_emb = self.embedding(x_spp)
+
+		x_spp_x_emb = self.pos_embedding(sp_x)
+		x_spp_y_emb = self.pos_embedding(sp_y)
+
+		input_d = x_spp_emb.shape[1]
+		batch_d = x_spp_x_emb.shape[0]
+		attn_d = x_spp_x_emb.shape[1]
+
+		x_spp_x_emb = x_spp_x_emb.unsqueeze(1).expand(batch_d, input_d, attn_d)
+		x_spp_y_emb = x_spp_y_emb.unsqueeze(1).expand(batch_d, input_d, attn_d)
+		x_spp_emb += (x_spp_x_emb+x_spp_y_emb) 
   
 		x_sc_att_out, x_sc_att_w,el_attn = self.attention(x_sc_emb,x_spp_emb,x_spp_emb)
 		x_sc_pool_out = self.pooling(x_sc_att_out)
@@ -159,14 +182,14 @@ class SAILRNET(nn.Module):
 		return SAILROUT(h_sc,h_spp,z_sc,z_spp,x_sc_att_w,x_spp_att_w,entropy_loss)
 
 def train(model,data,epochs,l_rate,temperature):
-	logger.info('Starting training....')
+	logger.info('Starting training....nn_attn')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	for epoch in range(epochs):
 		loss = 0
-		for x_sc,y,x_spp in data:
+		for x_sc,y,x_spp,sp_x,sp_y in data:
 			opt.zero_grad()
 
-			sailrout = model(x_sc,x_spp)
+			sailrout = model(x_sc,x_spp,sp_x,sp_y)
 
 			train_loss = pcl_loss(sailrout.z_sc, sailrout.z_spp,  temperature)
 			train_loss += sailrout.entropy_loss
@@ -179,8 +202,29 @@ def train(model,data,epochs,l_rate,temperature):
 			logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, loss/len(data)))
 
 def predict(model,data):
-	for x_sc,y, x_spp in data: break
+	for x_sc,y, x_spp,sp_x,sp_y in data: break
+	return model(x_sc,x_spp,sp_x,sp_y),y
+
+def predict_batch(model,x_sc,y, x_spp ):
 	return model(x_sc,x_spp),y
+
+def predict_scsp(model,x_sc):
+	x_sc_emb = model.embedding(x_sc)
+	x_spp_emb = model.embedding(x_sc)
+
+	x_sc_att_out, _,_ = model.attention(x_sc_emb,x_spp_emb,x_spp_emb)
+	x_sc_pool_out = model.pooling(x_sc_att_out)
+
+	x_spp_att_out, _,_ = model.attention(x_spp_emb,x_sc_emb,x_sc_emb)
+	x_spp_pool_out = model.pooling(x_spp_att_out)
+
+	h_sc = model.encoder(x_sc_pool_out)
+	h_spp = model.encoder(x_spp_pool_out)
+
+	z_sc = model.projector(h_sc)
+	z_spp = model.projector(h_spp)
+	
+	return SAILROUT(h_sc,h_spp,z_sc,z_spp)
 
 class LitSAILRNET(pl.LightningModule):
 	

@@ -19,18 +19,17 @@ rna = an.read_h5ad(wdir+'data/'+sample+'_sc.h5ad')
 spatial = an.read_h5ad(wdir+'data/'+sample+'_sp.h5ad')
 distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
 
-
 device = 'cuda'
 batch_size = 256
-eval_batch_size= int(rna.X.shape[0]/5)
 input_dims = rna.X.shape[1]
 emb_dim = 3000
+pos_emb_dim = 110
 att_dim = 10
 latent_dims = 10
 encoder_layers = [200,100,10]
 projection_layers = [10,25,25]
 l_rate = 0.001
-epochs= 1000
+epochs= 100
 
 temperature = 1.0 # higher scores smooths out the differences between the similarity scores.
 
@@ -42,7 +41,7 @@ logging.basicConfig(filename=wdir+'results/4_attncl_train.log',
 						datefmt='%Y-%m-%d %H:%M:%S')
 
 logging.info( f"Device: {device}, \
-	Batch Size: {batch_size}, Evaluation Batch Size: {eval_batch_size}, \
+	Batch Size: {batch_size}, \
 	Input Dimensions: {input_dims}, Latent Dimensions: {latent_dims}, \
 	Encoder Layers: {encoder_layers}, Projection Layers: {projection_layers}, \
 	Learning Rate: {l_rate}, \
@@ -52,7 +51,7 @@ def train():
 	logging.info('train...')
 	data = sailr.du.nn_load_data_pairs(rna,spatial,distdf,device,batch_size)
 
-	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
+	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim, pos_emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
 	logging.info(sailr_model)
 
 	sailr.nn_attn.train(sailr_model,data,epochs,l_rate,temperature)
@@ -92,9 +91,11 @@ def eval():
 	logging.info('eval...')
 	
 	device = 'cpu'
+	batch= 5
+	eval_batch_size = int(rna.shape[0]/batch)
 	data_pred = sailr.du.nn_load_data_pairs(rna,spatial,distdf,device,eval_batch_size)
 
-	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
+	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim, pos_emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
 	sailr_model.load_state_dict(torch.load(wdir+'results/nn_attncl.model'))
 	m,ylabel = sailr.nn_attn.predict(sailr_model,data_pred)
 
@@ -107,9 +108,10 @@ def eval():
 	# selected_index = dflv2.loc[dflv2['celltype'] == "CD4+ T cell"].index.values
 
 	attn_mtx = m.attn_sc.cpu().detach().numpy()
-	selected_index = [x for x,y in enumerate(ylabel) if 'T_' in y]
+	# selected_index = [x for x,y in enumerate(ylabel) if 'T_' in y]
 	df_attn = pd.DataFrame(attn_mtx.mean(0))
-	# df_attn = pd.DataFrame(attn_mtx[selected_index].mean(0))
+	# selected_index = 10	
+ 	# df_attn = pd.DataFrame(attn_mtx[selected_index])
 	df_attn.columns = rna.var.index.values
 	df_attn.index = rna.var.index.values
 	
@@ -127,10 +129,16 @@ def eval():
 	zscore_df = df_attn.apply(zscore)
 	
 	sns.heatmap(zscore_df,cmap='viridis')
-	plt.savefig(wdir+'results/attn_markert_mono.png')
+	plt.savefig(wdir+'results/attn_markert_test.png')
 	plt.close()
-	sns.clustermap(df_attn,cmap='viridis')
-	plt.savefig(wdir+'results/attn_markert_monoc.png')
+	sns.heatmap(df_attn,cmap='viridis')
+	plt.savefig(wdir+'results/attn_markert_test_df.png')
+	plt.close()
+	
+	zscore_df[zscore_df>5]=5
+	zscore_df[zscore_df<-5]=-5
+	sns.clustermap(zscore_df,cmap='viridis')
+	plt.savefig(wdir+'results/attn_markert_test_df_clust.png')
 	plt.close()
 
 
@@ -254,6 +262,71 @@ def eval2(rna,spatial,distdf):
 	
 	plot_umap_df(df_umap.loc[df_umap['batch']=='sc',:],'celltype',wdir+'results/n n_pcl_sc_',pt_size=1.0,ftype='png')
 	plot_umap_df(df_umap.loc[df_umap['batch']=='sp',:],'celltype',wdir+'results/n n_pcl_sp_',pt_size=1.0,ftype='png')
-# train()
-# train_mgpu()
+ 
+def eval3():
+	
+	import umap
+	from sailr.util.plots import plot_umap_df
+	
+	logging.info('eval...')
+	
+	device = 'cpu'
+	batch= 5
+	eval_batch_size = int(rna.shape[0]/batch)
+ 
+	sailr_model = sailr.nn_attn.SAILRNET(input_dims, emb_dim,att_dim,latent_dims, encoder_layers, projection_layers).to(device)
+	sailr_model.load_state_dict(torch.load(wdir+'results/nn_attncl.model'))
+	
+	data_pred = sailr.du.nn_load_data_pairs(rna,spatial,distdf,device,eval_batch_size)
+
+	dfsc = pd.DataFrame()
+	for x_sc,y,x_spp in data_pred:
+		m,ylabel = sailr.nn_attn.predict_batch(sailr_model,x_sc,y,x_spp)
+		dfsc = pd.concat([dfsc,pd.DataFrame(m.h_sc.cpu().detach().numpy(),index=ylabel)],axis=0)
+		print(dfsc.shape)
+
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,metric='cosine').fit(dfsc)
+
+	df_umap= pd.DataFrame()
+	df_umap['cell'] = dfsc.index.values
+	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
+
+	df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell']]
+
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_allsc_',pt_size=1.0,ftype='png')
+
+train()
 eval() 
+
+# sout = sailr.nn_attn.predict_scsp(sailr_model,x_sc)
+# dfsc = pd.DataFrame(sout.h_sc.cpu().detach().numpy(),index=y)
+# dfsp = pd.DataFrame(sout.h_spp.cpu().detach().numpy(),index=y)
+
+
+# umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,metric='cosine').fit(dfsc)
+# df_umap= pd.DataFrame()
+# df_umap['cell'] = dfsc.index.values
+# df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
+# df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell']]
+# plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_testsc_',pt_size=1.0,ftype='png')
+
+# umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,metric='cosine').fit(dfsp)
+# df_umap= pd.DataFrame()
+# df_umap['cell'] = dfsp.index.values
+# df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
+# df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell']]
+# plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_testsp_',pt_size=1.0,ftype='png')
+
+
+# dfsc.index = ['sc_'+x for x in dfsc.index.values]
+# dfsp.index = ['sp_'+x for x in dfsp.index.values]
+# df = pd.concat([dfsc,dfsp])
+
+# umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,metric='cosine').fit(df)
+# df_umap= pd.DataFrame()
+# df_umap['cell'] = df.index.values
+# df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
+# df_umap['celltype'] = [x.split('_')[1] for x in df_umap['cell']]
+# df_umap['batch'] = [x.split('_')[0] for x in df_umap['cell']]
+# plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_testsp_merge_',pt_size=1.0,ftype='png')
+# plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_testsp_merge_',pt_size=1.0,ftype='png')
