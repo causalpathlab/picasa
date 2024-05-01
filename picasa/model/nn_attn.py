@@ -52,7 +52,6 @@ class GeneEmbedor(nn.Module):
 		x = self.emb_norm(x)
 		return x
 
-
 class ScaledDotAttention(nn.Module):
 	
 	def __init__(self, weight_dim,input_dim):
@@ -62,6 +61,7 @@ class ScaledDotAttention(nn.Module):
 		self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.model_dim = weight_dim
 		self.self_importance = nn.Parameter(torch.zeros(input_dim))
+		self.attnnorm = nn.LayerNorm(weight_dim)
 		
 	def forward(self, query, key, value):
 
@@ -79,7 +79,10 @@ class ScaledDotAttention(nn.Module):
 		entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
 
 		output = torch.matmul(attention_weights, value_proj)
-		
+
+		## add layernorm and residul
+		output = self.attnnorm(output)	+ value
+  
 		return output, attention_weights,entropy_loss_attn
 
 class AttentionPooling(nn.Module):

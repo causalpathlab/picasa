@@ -24,7 +24,7 @@ class Stacklayers(nn.Module):
 		return nn.ReLU()
 
 
-class SAILROUT:
+class PICASAOUT:
 	def __init__(self,z_sc,theta,beta,tmean,tvar,bmean,bvar):
 		self.z_sc = z_sc
 		self.theta = theta
@@ -81,16 +81,16 @@ class Decoder(nn.Module):
 		z_beta = reparameterize(self.beta_mean,lv) 
 		return z_beta
 
-class SAILRNET(nn.Module):
+class PICASANET(nn.Module):
 	def __init__(self,input_dims,latent_dims,encoder_layers):
-		super(SAILRNET,self).__init__()
+		super(PICASANET,self).__init__()
 		self.encoder = Encoder(input_dims,latent_dims,encoder_layers)
 		self.decoder = Decoder(latent_dims, input_dims)
 
 	def forward(self,x_sc):
 		z_sc,theta_mean,theta_lnvar = self.encoder(x_sc)
 		beta_mean,beta_lnvar,theta,beta = self.decoder(z_sc)
-		return SAILROUT(z_sc,theta,beta,theta_mean,theta_lnvar,beta_mean,beta_lnvar)
+		return PICASAOUT(z_sc,theta,beta,theta_mean,theta_lnvar,beta_mean,beta_lnvar)
 
 def train(model,data,epochs,l_rate):
 	logger.info('Starting training....')
@@ -105,11 +105,11 @@ def train(model,data,epochs,l_rate):
 		loss_klb = 0
 		for x_sc,y in data:
 			opt.zero_grad()
-			sailrout = model(x_sc)
-			alpha = torch.exp(torch.clamp(torch.mm(sailrout.theta,sailrout.beta),-10,10))
+			PICASAout = model(x_sc)
+			alpha = torch.exp(torch.clamp(torch.mm(PICASAout.theta,PICASAout.beta),-10,10))
 			loglikloss = multi_dir_log_likelihood(x_sc,alpha)
-			kl = kl_loss(sailrout.theta_mean,sailrout.theta_lnvar)
-			klb = kl_loss(sailrout.beta_mean,sailrout.beta_lnvar)
+			kl = kl_loss(PICASAout.theta_mean,PICASAout.theta_lnvar)
+			klb = kl_loss(PICASAout.beta_mean,PICASAout.beta_lnvar)
 
 			train_loss = torch.mean(kl -loglikloss).add(torch.sum(klb)/data_size)
 			train_loss.backward()
