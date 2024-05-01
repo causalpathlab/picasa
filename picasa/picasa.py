@@ -1,11 +1,74 @@
-from .dutil import Dataset 
 from .util.typehint import Adata
+from . import dutil 
+from . import model 
+import torch
+import logging
+import pandas as pd
 
 
 class picasa(object):
-	def __init__(self, data: Dataset):
+	def __init__(self, data: dutil.data.Dataset, wdir: str):
 		self.data = data
-  
-def create_picasa_object(adata_list: Adata):
-	return picasa(Dataset(adata_list))
+		self.wdir = wdir
+	
+	def estimate_approximate_neighbour(self,scsp_map: pd.DataFrame):
+		self.scsp_map = scsp_map
+	
+	def set_nn_params(self,params: dict):
+		self.nn_params = params
+	
+	def train(self):
+	 
+		logging.basicConfig(filename=self.wdir+'results/4_attncl_train.log',
+						format='%(asctime)s %(levelname)-8s %(message)s',
+						level=logging.INFO,
+						datefmt='%Y-%m-%d %H:%M:%S')
 
+		logging.info('Starting training...')
+
+		logging.info(self.nn_params)
+  
+		data = dutil.nn_load_data_pairs(self.data.adata_list['sc'],self.data.adata_list['sp'],self.scsp_map,self.nn_params['device'],self.nn_params['batch_size'])
+
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_entropy_loss'],self.nn_params['lambda_cont_entropy_loss']).to(self.nn_params['device'])
+  
+		logging.info(picasa_model)
+
+		model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cont'],self.wdir+'results/4_attncl_train_loss.txt')
+
+		torch.save(picasa_model.state_dict(),self.wdir+'results/nn_attncl.model')
+
+		logging.info('Completed training...model saved in results/nn_attncl.model')
+ 
+	def load_model(self,eval_batch_size,device='cpu'):
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_entropy_loss'],self.nn_params['lambda_cont_entropy_loss']).to(self.nn_params['device'])
+		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model'))
+
+		data_pred = dutil.nn_load_data_pairs(self.data.adata_list['sc'],self.data.adata_list['sp'],self.scsp_map,device,eval_batch_size)
+  
+
+		df_h_sc = pd.DataFrame()
+		df_attn = pd.DataFrame()
+		c = 0
+		for x_sc,y,x_spp in data_pred:
+			m,ylabel = model.nn_attn.predict_batch(picasa_model,x_sc,y,x_spp)
+			df_h_sc = pd.concat([df_h_sc,pd.DataFrame(m.h_sc.cpu().detach().numpy(),index=ylabel)],axis=0)
+			if c == 0:
+				df_attn = pd.DataFrame(m.attn_sc.cpu().detach().numpy().mean(0))
+				c += 1
+			else:
+				df_attn_c = pd.DataFrame(m.attn_sc.cpu().detach().numpy().mean(0))
+				df_attn = (df_attn +df_attn_c)/2
+	
+		df_attn.columns = self.data.adata_list['sc'].var.index.values
+		df_attn.index = self.data.adata_list['sc'].var.index.values
+		
+		self.data.adata_list['sc'].uns = {}
+		self.data.adata_list['sc'].uns['mean_attention'] = df_attn
+		self.data.adata_list['sc'].uns['h_sc'] = df_h_sc.loc[self.data.adata_list['sc'].obs.index.values,:]
+  
+
+
+		
+def create_picasa_object(adata_list: Adata,wdir: str):
+	return picasa(dutil.data.Dataset(adata_list),wdir)

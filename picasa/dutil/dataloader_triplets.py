@@ -103,7 +103,6 @@ class nn_load_data_mgpu(pl.LightningDataModule):
 		sc_shape = tuple(self.adata_sc.X.shape)
 		sc_label = self.adata_sc.obs.index.values
 
-		# if isinstance(adata_sp.X,np.ndarray):
 		spmat = sparse.csr_matrix(self.adata_sp.X)
 
 		sp_indptr = torch.tensor(spmat.indptr.astype(np.int32), dtype=torch.int32, device=device)
