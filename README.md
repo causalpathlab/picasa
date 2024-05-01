@@ -1,1 +1,1 @@
-# SAILR - Spatial Alignment of single-cell by Interpretive contrastive LeaRning
+# PICASA - Pairwaise Integration of single Cells Aligned with Spatial Attention
