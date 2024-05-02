@@ -29,8 +29,7 @@ def cl_loss(anchor, positive, negative, margin=1.0):
     losses = F.relu(distance_positive - distance_negative + margin)
 
     return losses.mean()
-
-
+                 
 def pcl_loss(z_i, z_j,temperature = 1.0):
     
         batch_size = z_i.size(0)

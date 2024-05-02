@@ -32,6 +32,24 @@ def plot_umap_df(df_umap,col,fpath,pt_size=1.0,ftype='png'):
 	
 	p.save(filename = fname, height=10, width=15, units ='in', dpi=600)
 
+def plot_loss(loss_f,fpath,pt_size=4.0):
+    
+	plt.rcParams.update({'font.size': 20})
+ 
+	data = pd.read_csv(loss_f)
+	num_subplots = len(data.columns)
+	fig, axes = plt.subplots(num_subplots, 1, figsize=(10, 6*num_subplots), sharex=True)
+
+	for i, column in enumerate(data.columns):
+		data[[column]].plot(ax=axes[i], legend=None, linewidth=pt_size, marker='o') 
+		axes[i].set_ylabel(column)
+		axes[i].set_xlabel('epoch')
+		axes[i].grid(False)
+
+	plt.tight_layout()
+	plt.savefig(fpath);plt.close()
+
+
 def plot_gene_loading(df_beta,top_n,max_thresh,fname):
 	df_beta = df_beta.loc[:, ~df_beta.columns.duplicated(keep='first')]
 	df_top = get_topic_top_genes(df_beta.iloc[:,:],top_n)
