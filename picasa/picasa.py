@@ -18,7 +18,7 @@ class picasa(object):
 		datefmt='%Y-%m-%d %H:%M:%S')
 	
 	def estimate_neighbour(self,method='approx_50'):
-     
+	 
 		logging.info('Assign neighbour - '+ method)
 
 		if 'approx' in method :
@@ -122,9 +122,13 @@ class picasa(object):
 			for attr_name, attr_value in vars(self).items():
 				if isinstance(attr_value, pd.DataFrame):
 					f.create_dataset(attr_name, data=attr_value)
+				elif isinstance(attr_value, dict) and '_map' in attr_name:
+					df = pd.DataFrame(attr_value.items())
+					f.create_dataset(attr_name, data=df)
 
 	def plot_loss(self):
 		from picasa.util.plots import plot_loss
 		plot_loss(self.wdir+'results/4_attncl_train_loss.txt.gz',self.wdir+'results/4_attncl_train_loss.png')
+
 def create_picasa_object(adata_list: Adata,wdir: str):
 	return picasa(dutil.data.Dataset(adata_list),wdir)
