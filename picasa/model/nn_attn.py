@@ -97,15 +97,9 @@ class ENCODER(nn.Module):
 	def __init__(self,input_dims,layers):
 		super(ENCODER, self).__init__()
 		self.fc = Stacklayers(input_dims,layers)
-		self.depth = 1e4
   
 	def forward(self, x):
-
-		# x = torch.log1p(x)
-		# x = x/torch.sum(x,dim=-1,keepdim=True)
-		z = self.fc(x)
-
-		return z
+		return self.fc(x)
 
 class MLP(nn.Module):
 	def __init__(self,input_dims,layers):
@@ -117,7 +111,7 @@ class MLP(nn.Module):
 		return z
 
 class PICASANET(nn.Module):
-	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,lambda_attention_entropy_loss,lambda_cont_entropy_loss):
+	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,lambda_attention_sc_entropy_loss,lambda_attention_sp_entropy_loss,lambda_cl_sc_entropy_loss,lambda_cl_sp_entropy_loss):
 		super(PICASANET,self).__init__()
 
 		self.embedding = GeneEmbedor(embedding_dim,attention_dim)
@@ -127,8 +121,10 @@ class PICASANET(nn.Module):
 		self.encoder = ENCODER(input_dim,encoder_layers)
 		self.projector = MLP(latent_dim, projection_layers)
 		
-		self.lambda_attention_entropy_loss = lambda_attention_entropy_loss
-		self.lambda_cont_entropy_loss = lambda_cont_entropy_loss
+		self.lambda_attention_sc_entropy_loss = lambda_attention_sc_entropy_loss
+		self.lambda_attention_sp_entropy_loss = lambda_attention_sp_entropy_loss
+		self.lambda_cl_sc_entropy_loss = lambda_cl_sc_entropy_loss
+		self.lambda_cl_sp_entropy_loss = lambda_cl_sp_entropy_loss
 
 	def forward(self,x_sc,x_spp):
 		x_sc_emb = self.embedding(x_sc)
@@ -147,16 +143,16 @@ class PICASANET(nn.Module):
 		z_spp = self.projector(h_spp)
 		
 		pred_sc = torch.softmax(h_sc, dim=1)
-		entropy_loss_sc = -torch.mean(torch.sum(pred_sc * torch.log(pred_sc + 1e-10), dim=1))
+		el_cl_sc = -torch.mean(torch.sum(pred_sc * torch.log(pred_sc + 1e-10), dim=1))
 
 		pred_spp = torch.softmax(h_spp, dim=1)
-		entropy_loss_spp = -torch.mean(torch.sum(pred_spp * torch.log(pred_spp + 1e-10), dim=1))
+		el_cl_spp = -torch.mean(torch.sum(pred_spp * torch.log(pred_spp + 1e-10), dim=1))
 
-		entropy_loss = (el_attn_sc + el_attn_spp) * self.lambda_attention_entropy_loss
-		
-		entropy_loss += (entropy_loss_sc + entropy_loss_spp) * self.lambda_cont_entropy_loss
-  
-  
+		entropy_loss = (el_attn_sc * self.lambda_attention_sc_entropy_loss +
+						el_attn_spp * self.lambda_attention_sp_entropy_loss +
+						el_cl_sc * self.lambda_cl_sc_entropy_loss +
+						el_cl_spp * self.lambda_cl_sp_entropy_loss)
+
 		return PICASAOUT(h_sc,h_spp,z_sc,z_spp,x_sc_att_w,x_spp_att_w,entropy_loss)
 
 def train(model,data,epochs,l_rate,temperature,loss_file):

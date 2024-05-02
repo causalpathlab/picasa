@@ -45,8 +45,7 @@ class SparseDataset(Dataset):
 		sc_ind1,sc_ind2 = self.sc_indptr[idx],self.sc_indptr[idx+1]
 		sc_cell[self.sc_indices[sc_ind1:sc_ind2].long()] = self.sc_vals[sc_ind1:sc_ind2]
 
-		## use sc spatial map to get positive and negative index
-		sp_pos_idx = self.scsp_map[idx][0]
+		sp_pos_idx = self.scsp_map[idx]
   
 		sp_pos_cell = torch.zeros((self.sp_shape[1],), dtype=torch.int32, device=self.device)
 		sp_pos_ind1,sp_pos_ind2 = self.sp_indptr[sp_pos_idx],self.sp_indptr[sp_pos_idx+1]
@@ -54,7 +53,7 @@ class SparseDataset(Dataset):
 
 		return sc_cell, self.sc_label[idx], sp_pos_cell
 
-def nn_load_data(adata_sc,adata_sp,distdf,device,bath_size):
+def nn_load_data(adata_sc,adata_sp,scsp_map,device,bath_size):
 
 
 	device = torch.device(device)
@@ -72,8 +71,6 @@ def nn_load_data(adata_sc,adata_sp,distdf,device,bath_size):
 	sp_indices = torch.tensor(spmat.indices.astype(np.int32), dtype=torch.int32, device=device)
 	sp_vals = torch.tensor(spmat.data.astype(np.int32), dtype=torch.int32, device=device)
 	sp_shape = tuple(adata_sp.X.shape)
-
-	scsp_map ={x:list(y) for x,y in zip(range(distdf.shape[0]),distdf.values)}
  
 	spdata = SparseData(sc_indptr,sc_indices,sc_vals,sc_shape,sc_label,sp_indptr,sp_indices,sp_vals,sp_shape,scsp_map)
 
@@ -104,7 +101,7 @@ class nn_load_data_mgpu(pl.LightningDataModule):
 		sp_vals = torch.tensor(self.adata_sp.X.data.astype(np.int32), dtype=torch.int32, device=device)
 		sp_shape = tuple(self.adata_sp.X.shape)
 
-		scsp_map ={x:list(y) for x,y in zip(range(self.distdf.shape[0]),self.distdf.values)}
+		scsp_map ={x:y[0] for x,y in scsp_map}
 	
 		spdata = SparseData(sc_indptr,sc_indices,sc_vals,sc_shape,sc_label,sp_indptr,sp_indices,sp_vals,sp_shape,scsp_map)
 
