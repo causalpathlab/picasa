@@ -10,8 +10,8 @@ import picasa
 import torch
 import logging
 
-sample = 'colon'
-wdir = 'znode/colon/'
+sample = 'membryo'
+wdir = 'znode/membryo/'
 
 rna = an.read_h5ad(wdir+'data/'+sample+'_sc.h5ad')
 spatial = an.read_h5ad(wdir+'data/'+sample+'_sp.h5ad')
@@ -21,7 +21,7 @@ picasa_object = picasa.pic.create_picasa_object({'sc':rna,'sp':spatial},wdir)
 params = {'device' : 'cuda',
 		'batch_size' : 128,
 		'input_dim' : rna.X.shape[1],
-		'embedding_dim' : 3000,
+		'embedding_dim' : 2000,
 		'attention_dim' : 10,
 		'latent_dim' : 10,
 		'encoder_layers' : [200,100,10],
@@ -29,7 +29,7 @@ params = {'device' : 'cuda',
 		'learning_rate' : 0.001,
 		'lambda_attention_sc_entropy_loss' : 1.0,
 		'lambda_attention_sp_entropy_loss' : 0.0,
-		'lambda_cl_sc_entropy_loss' : 0.5,
+		'lambda_cl_sc_entropy_loss' : 1.0,
 		'lambda_cl_sp_entropy_loss' : 0.5,
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'exact',
@@ -58,7 +58,7 @@ def eval():
 	picasa_object.eval_model_sp(eval_batch_size,device)
 	picasa_object.save()
 
-def plot_latent(sample_size=5000):
+def plot_latent():
 	import umap
 	import h5py as hf
 	import random
@@ -68,13 +68,15 @@ def plot_latent(sample_size=5000):
 	df_sc = pd.DataFrame(picasa_h5['sc_latent'][:],index=rna.obs.index.values)
 	picasa_h5.close()
  
-	sel_indexes = random.sample(range(0,df_sc.shape[0]-1), sample_size)
-	ylabel = df_sc.index.values[sel_indexes]
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.6,metric='cosine').fit(df_sc.iloc[sel_indexes,:])
+	ylabel = df_sc.index.values
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,metric='cosine').fit(df_sc)
+
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = ylabel
 	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
-	df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell'].values]
+	
+	df_umap['celltype'] = rna.obs.loc[ylabel,:]['cell_type'].values
+
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_sc_latent',pt_size=1.0,ftype='png')
 
 def plot_spatial(label,position,sample_size=2500):
@@ -122,10 +124,10 @@ def plot_scsp_overlay():
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
 	df_sc = pd.DataFrame(picasa_h5['sc_latent'][:],index=rna.obs.index.values)
 	df_sp = pd.DataFrame(picasa_h5['sp_latent'][:],index=spatial.obs.index.values)
-	picasa_h5.close()
 
 	sc_sel_indxs = np.unique(np.array([ x[1] for x in np.array(picasa_h5['spsc_map']) ]))
 	sp_sel_indxs = np.unique(np.array([ x[1] for x in np.array(picasa_h5['scsp_map']) ]))
+	picasa_h5.close()
  
 	df_sc = df_sc.iloc[sc_sel_indxs]
 	df_sc.index = ['sc_'+x for x in df_sc.index.values]
@@ -156,7 +158,7 @@ def plot_scsp_overlay():
     ###################
     ####################
  
-	dfh = dfmain
+	# dfh = dfmain
 
     ###################
     ####################
@@ -169,16 +171,19 @@ def plot_scsp_overlay():
 
 
 	df_umap['batch'] = [x.split('_')[0] for x in df_umap['cell']]
-	df_umap['celltype'] = [x.split('_')[1] for x in df_umap['cell']]
 
  
-	dfspl = pd.read_csv(wdir+'data/CytoSPACE_example_colon_cancer_merscope/HumanColonCancerPatient2_ST_celltypes_cytospace.tsv',sep='\t')
+	dfscl = pd.DataFrame(rna.obs['cell_type'].reset_index())
+	dfscl.columns = ['cell','celltype']
+	dfspl = pd.DataFrame(spatial.obs['cell_type'].reset_index())
 	dfspl.columns = ['cell','celltype']
-	dfm = pd.DataFrame([x.replace('sp_','') for x in df_umap['cell']],columns=['cell'])
-	dfspmerge = pd.merge(dfm,dfspl,on='cell',how='right')
-	spmap = {x:y for x,y in zip(dfspmerge['cell'],dfspmerge['celltype'])}
+	dfl = pd.concat([dfscl,dfspl])
  
-	df_umap['celltype'] = [ 'sp_'+spmap[x.replace('sp_','')] if 'sp_' in x else 'sc_'+x.split('_')[1] for x in df_umap['cell'] ]
+	dfm = pd.DataFrame([x.replace('sp_','').replace('sc_','') for x in df_umap['cell']],columns=['cell'])
+	dflmerge = pd.merge(dfm,dfl,on='cell',how='right')
+	lmap = {x:y for x,y in zip(dflmerge['cell'],dflmerge['celltype'])}
+ 
+	df_umap['celltype'] = [ 'sp_'+lmap[x.replace('sp_','')] if 'sp_' in x else 'sc_'+lmap[x.replace('sc_','')] for x in df_umap['cell'] ]
  
 	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
@@ -187,8 +192,8 @@ def plot_scsp_overlay():
 train()
 eval()
 plot_latent()
-plot_attention()
-plot_scsp_overlay()
+# plot_attention()
+# plot_scsp_overlay()
 
 	
 

@@ -56,7 +56,7 @@ class picasa(object):
   
 		logging.info(picasa_model)
 
-		model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cont'],self.wdir+'results/4_attncl_train_loss.txt.gz')
+		model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss.txt.gz')
 
 		torch.save(picasa_model.state_dict(),self.wdir+'results/nn_attncl.model')
 

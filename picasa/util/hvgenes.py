@@ -36,7 +36,7 @@ def calc_res(mtx,sum_gene,sum_cell,sum_total,theta,clip,n_gene,n_cell):
 
     return norm_gene_var
 
-def select_hvgenes(mtx,genef_index,gene_var_z):
+def select_hvgenes(mtx,gene_var_z):
     '''
     adapted from pyliger plus scanpy's seurat high variable gene selection
 
@@ -54,23 +54,4 @@ def select_hvgenes(mtx,genef_index,gene_var_z):
     norm_gene_var = np.nan_to_num(norm_gene_var)
     select_genes = norm_gene_var>gene_var_z
 
-    ### combine two - zero sum genes and high variable gene filters
-    genef2_index = np.array([a and b for a, b in zip(genef_index, select_genes)]) 
-    return genef2_index
-
-def get_gene_norm_var(mtx):
-        
-    sum_gene = np.array(mtx.sum(axis=0)).ravel()
-    sum_cell = np.array(mtx.sum(axis=1)).ravel()
-    sum_total = np.float64(np.sum(sum_gene).ravel())
-    n_gene = mtx.shape[1]
-    n_cell = mtx.shape[0]
-    
-    theta = np.float64(100)
-    clip = np.float64(np.sqrt(n_cell))
-    
-    norm_gene_var = calc_res(mtx,sum_gene,sum_cell,sum_total,theta,clip,n_gene,n_cell)
-    
-    norm_gene_var = np.nan_to_num(norm_gene_var)
-    
-    return norm_gene_var    
+    return select_genes
