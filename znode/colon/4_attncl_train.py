@@ -28,9 +28,9 @@ params = {'device' : 'cuda',
 		'projection_layers' : [10,25,25],
 		'learning_rate' : 0.001,
 		'lambda_attention_sc_entropy_loss' : 1.0,
-		'lambda_attention_sp_entropy_loss' : 0.0,
-		'lambda_cl_sc_entropy_loss' : 0.5,
-		'lambda_cl_sp_entropy_loss' : 0.5,
+		'lambda_attention_sp_entropy_loss' : 1.0,
+		'lambda_cl_sc_entropy_loss' : 1.0,
+		'lambda_cl_sp_entropy_loss' : 1.0,
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'exact',
 		'epochs': 100
@@ -39,11 +39,11 @@ params = {'device' : 'cuda',
 
 def train():
     
-	# distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
-	# scsp_map = {x:y[0] for x,y in enumerate(distdf.values)}
-	# picasa_object.assign_neighbour(scsp_map,None)
+	distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
+	scsp_map = {x:y[0] for x,y in enumerate(distdf.values)}
+	picasa_object.assign_neighbour(scsp_map,None)
 	
-	picasa_object.estimate_neighbour(params['neighbour_method'])
+	# picasa_object.estimate_neighbour(params['neighbour_method'])
 	
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
@@ -55,7 +55,7 @@ def eval():
 	picasa_object.nn_params['device'] = device
 	eval_batch_size = int(rna.shape[0]/5)
 	picasa_object.eval_model_sc(eval_batch_size,device)
-	picasa_object.eval_model_sp(eval_batch_size,device)
+	# picasa_object.eval_model_sp(eval_batch_size,device)
 	picasa_object.save()
 
 def plot_latent(sample_size=5000):
@@ -67,12 +67,21 @@ def plot_latent(sample_size=5000):
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
 	df_sc = pd.DataFrame(picasa_h5['sc_latent'][:],index=rna.obs.index.values)
 	picasa_h5.close()
- 
+
 	sel_indexes = random.sample(range(0,df_sc.shape[0]-1), sample_size)
-	ylabel = df_sc.index.values[sel_indexes]
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.6,metric='cosine').fit(df_sc.iloc[sel_indexes,:])
+	df_sc = df_sc.iloc[sel_indexes,:]
+ 
+	# from sklearn.cluster import KMeans
+	# kmeans = KMeans(n_clusters=df_sc.shape[1]*2, random_state=0)
+	# kmeans.fit(df_sc)
+	# sel_clusters = pd.Series(kmeans.labels_).value_counts().index.values[:df_sc.shape[1]+int(df_sc.shape[1]/2)]
+	# sel_clusters_index = pd.Series(kmeans.labels_).isin(sel_clusters).values
+	# df_sc = df_sc[sel_clusters_index] 
+ 
+ 
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,metric='cosine').fit(df_sc)
 	df_umap= pd.DataFrame()
-	df_umap['cell'] = ylabel
+	df_umap['cell'] = df_sc.index.values
 	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 	df_umap['celltype'] = [x.split('_')[0] for x in df_umap['cell'].values]
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_sc_latent',pt_size=1.0,ftype='png')
@@ -186,9 +195,9 @@ def plot_scsp_overlay():
 
 train()
 eval()
-plot_latent()
 plot_attention()
-plot_scsp_overlay()
+plot_latent()
+# plot_scsp_overlay()
 
 	
 

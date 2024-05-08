@@ -19,7 +19,7 @@ def assign_sc_to_spatial(
 	):
 	
 	adata = an.read_h5ad(sp_ref_path)
-	dfsp = pd.DataFrame(np.array([[float(x.split('x')[0]),float(x.split('x')[1])] for x in adata.obs.position]))
+	dfsp = pd.DataFrame(np.array([[float(x.split('x')[0]),float(x.split('x')[1])] for x in adata.uns['position']]))
 
 	kmeans = KMeans(n_clusters=num_celltypes)
 	kmeans.fit(dfsp)
@@ -51,7 +51,7 @@ def generate_simdata(
 	sp_ref_path: str, 
 	num_celltypes: int, 
 	sc_size_per_spot: int = 1, 
-	sc_depth: int = 10000,
+	sc_depth: int = 1000,
 	rho: float = 0.9,
 	seed: int = 42
 	)-> dict:

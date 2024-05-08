@@ -22,14 +22,14 @@ class PICASAOUT:
 		self.attn_sp = attn_sp
 
 class PICASAel:
-    def __init__(self,el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp,entropy_loss):
-        self.el_attn_sc = el_attn_sc
-        self.el_attn_sp = el_attn_sp
-        self.el_cl_sc = el_cl_sc
-        self.el_cl_sp = el_cl_sp
-        self.entropy_loss = entropy_loss
-        
-           
+	def __init__(self,el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp,entropy_loss):
+		self.el_attn_sc = el_attn_sc
+		self.el_attn_sp = el_attn_sp
+		self.el_cl_sc = el_cl_sc
+		self.el_cl_sp = el_cl_sp
+		self.entropy_loss = entropy_loss
+		
+		   
 class Stacklayers(nn.Module):
 	def __init__(self,input_size,layers,dropout=0.1):
 		super(Stacklayers, self).__init__()
@@ -55,11 +55,15 @@ class GeneEmbedor(nn.Module):
 		super(GeneEmbedor, self).__init__()
 		self.embedding = nn.Embedding(emb_dim,out_dim)
 		self.emb_norm = nn.LayerNorm(out_dim)
+		self.emb_dim = emb_dim
 
 	def forward(self, x):
-		x = self.embedding(x)
-		x = self.emb_norm(x)
-		return x
+		
+		row_sums = x.sum(dim=1, keepdim=True)
+		x_norm = torch.div(x, row_sums) * (self.emb_dim -1)
+		return self.emb_norm(self.embedding(x_norm.int()))
+
+		# return self.emb_norm(self.embedding(x))
 
 
 class ScaledDotAttention(nn.Module):
@@ -120,7 +124,7 @@ class MLP(nn.Module):
 		return z
 
 class PICASANET(nn.Module):
-	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,lambda_attention_sc_entropy_loss,lambda_attention_sp_entropy_loss,lambda_cl_sc_entropy_loss,lambda_cl_sp_entropy_loss):
+	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,lambda_attention_sc_entropy_loss,lambda_attention_sp_entropy_loss,lambda_cl_sc_entropy_loss,lambda_cl_sp_entropy_loss,corruption_rate = 0.0):
 		super(PICASANET,self).__init__()
 
 		self.embedding = GeneEmbedor(embedding_dim,attention_dim)
@@ -134,10 +138,21 @@ class PICASANET(nn.Module):
 		self.lambda_attention_sp_entropy_loss = lambda_attention_sp_entropy_loss
 		self.lambda_cl_sc_entropy_loss = lambda_cl_sc_entropy_loss
 		self.lambda_cl_sp_entropy_loss = lambda_cl_sp_entropy_loss
+		self.corruption_rate = corruption_rate
 
 	def forward(self,x_sc,x_sp):
+		
 		x_sc_emb = self.embedding(x_sc)
-		x_sp_emb = self.embedding(x_sp)
+		
+		if self.corruption_rate != 0.0:
+			corruption_mask = torch.rand(x_sp.shape,device=x_sp.device) < self.corruption_rate
+			marginals = Uniform(float(x_sp.min()),float(x_sp.max()))
+			x_random = marginals.sample(torch.Size(x_sp.size())).to(x_sp.device)
+			x_sp_corrupted = torch.where(corruption_mask, x_random.int(), x_sp)
+			x_sp_emb = self.embedding(x_sp_corrupted)
+   
+		else:
+			x_sp_emb = self.embedding(x_sp)
   
 		x_sc_att_out, x_sc_att_w,el_attn_sc = self.attention(x_sc_emb,x_sp_emb,x_sp_emb)
 		x_sc_pool_out = self.pooling(x_sc_att_out)
