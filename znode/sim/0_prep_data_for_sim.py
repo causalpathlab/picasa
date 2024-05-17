@@ -15,6 +15,17 @@ from scipy.sparse import csr_matrix
 
 ############# data prep for simulation 
 
+dfb = pd.read_csv('MN_CyTOF_Bpanel_matrix.csv')
+dft = pd.read_csv('MN_CyTOF_Tpanel_matrix.csv')
+
+
+dfsp = pd.read_csv('mibi_subexpression.csv')
+dfsp_loc = pd.read_csv('mibi_sublocation.csv')
+
+sample_n = 3000
+dfb = dfb.sample(sample_n)
+dft = dft.sample(sample_n)
+dfsc = pd.merge(dft,dfb,on='File.Name',how='left')
 
 rna = ad.read_h5ad('brca_sc.h5ad')
 spatial = ad.read_h5ad('brca_sp.h5ad')

@@ -27,13 +27,13 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,10],
 		'projection_layers' : [25,25],
 		'learning_rate' : 0.001,
-		'lambda_attention_sc_entropy_loss' : 1.0,
-		'lambda_attention_sp_entropy_loss' : 1.0,
-		'lambda_cl_sc_entropy_loss' : 0.5,
-		'lambda_cl_sp_entropy_loss' : 0.5,
+		'lambda_attention_sc_entropy_loss' : -0.5,
+		'lambda_attention_sp_entropy_loss' : -0.5,
+		'lambda_cl_sc_entropy_loss' : 0.0,
+		'lambda_cl_sp_entropy_loss' : 0.0,
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'exact',
-     	'corruption_rate' : 1.0,
+     	'corruption_rate' : 0.0,
 		'epochs': 100
 		}  
 
@@ -114,6 +114,28 @@ def plot_attention():
 	sns.clustermap(zscore_df,cmap='viridis')
 	plt.savefig(wdir+'results/sc_attention.png')
 	plt.close()
+	sns.heatmap(zscore_df,cmap='viridis')
+	plt.savefig(wdir+'results/sc_attention_hmap.png')
+	plt.close()
+	
+	marker =['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FCGR3A',
+       'GNLY', 'NKG7', 'CST3', 'CD3E', 'FCER1A', 'CD74', 'LST1', 'CCL5',
+       'HLA-DPA1', 'LDHB', 'CD79A', 'FCER1G', 'GZMB', 'S100A9',
+       'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
+       'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN']
+ 
+	# marker = np.array(pd.Series(marker).unique())
+	zscore_df = zscore_df.loc[:,marker]
+	zscore_df = zscore_df.loc[marker,:]
+	clip = 1.0
+	zscore_df[zscore_df>clip]=clip
+	zscore_df[zscore_df<-clip]=-clip
+ 
+	plt.rcParams["figure.figsize"] = (30,30)
+ 
+	sns.clustermap(zscore_df,cmap='viridis')
+	plt.savefig(wdir+'results/sc_attention_marker.png')
+	plt.close()
 
 def plot_scsp_overlay():
 	import umap
@@ -124,15 +146,16 @@ def plot_scsp_overlay():
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
 	df_sc = pd.DataFrame(picasa_h5['sc_latent'][:],index=rna.obs.index.values)
 	df_sp = pd.DataFrame(picasa_h5['sp_latent'][:],index=spatial.obs.index.values)
+
+	# sc_sel_indxs = np.unique(np.array([ x[1] for x in np.array(picasa_h5['spsc_map']) ]))
+	# sp_sel_indxs = np.unique(np.array([ x[1] for x in np.array(picasa_h5['scsp_map']) ]))
+ 
 	picasa_h5.close()
 
-	sc_sel_indxs = np.unique(np.array([ x[1] for x in np.array(picasa_h5['spsc_map']) ]))
-	sp_sel_indxs = np.unique(np.array([ x[1] for x in np.array(picasa_h5['scsp_map']) ]))
- 
-	df_sc = df_sc.iloc[sc_sel_indxs]
+	# df_sc = df_sc.iloc[sc_sel_indxs]
 	df_sc.index = ['sc_'+x for x in df_sc.index.values]
 
-	df_sp = df_sp.iloc[sp_sel_indxs]
+	# df_sp = df_sp.iloc[sp_sel_indxs]
 	df_sp.index = ['sp_'+x for x in df_sp.index.values]
 
 	dfmain = pd.concat([df_sc,df_sp])
@@ -163,7 +186,7 @@ def plot_scsp_overlay():
     ###################
     ####################
  
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.8,metric='cosine').fit(dfh)
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,metric='cosine').fit(dfh)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
@@ -171,25 +194,30 @@ def plot_scsp_overlay():
 
 
 	df_umap['batch'] = [x.split('_')[0] for x in df_umap['cell']]
-	df_umap['celltype'] = [x.split('_')[1] for x in df_umap['cell']]
 
- 
-	dfspl = pd.read_csv(wdir+'data/CytoSPACE_example_colon_cancer_merscope/HumanColonCancerPatient2_ST_celltypes_cytospace.tsv',sep='\t')
-	dfspl.columns = ['cell','celltype']
-	dfm = pd.DataFrame([x.replace('sp_','') for x in df_umap['cell']],columns=['cell'])
-	dfspmerge = pd.merge(dfm,dfspl,on='cell',how='right')
+	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
+
+	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl.columns = ['cell','celltype','batch']
+	df_umap['celltype'] = pd.merge(df_umap,dfl, on='cell',how='left')['celltype'].values
+
+	dfm = pd.DataFrame([x.replace('sp_','').replace('sc_','') for x in df_umap['cell']],columns=['cell'])
+	dfspmerge = pd.merge(dfm,dfl,on='cell',how='right')
 	spmap = {x:y for x,y in zip(dfspmerge['cell'],dfspmerge['celltype'])}
  
-	df_umap['celltype'] = [ 'sp_'+spmap[x.replace('sp_','')] if 'sp_' in x else 'sc_'+x.split('_')[1] for x in df_umap['cell'] ]
+	df_umap['celltype'] = [ 'sp_'+spmap[x.replace('sp_','')] if 'sp_' in x else 'sc_'+spmap[x.replace('sc_','')] for x in df_umap['cell'] ]
  
-	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
+
+	df_umap['celltype2'] = [ x.replace('sp_','').replace('sc_','') for x in df_umap['celltype'] ]
+ 
+	plot_umap_df(df_umap,'celltype2',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
 
 
 # train()
 # eval()
-# plot_attention()
-plot_latent()
+plot_attention()
+# plot_latent()
 # plot_scsp_overlay()
 
 	
