@@ -150,6 +150,12 @@ class PICASANET(nn.Module):
 			x_random = marginals.sample(torch.Size(x_sp.size())).to(x_sp.device)
 			x_sp_corrupted = torch.where(corruption_mask, x_random.int(), x_sp)
 			x_sp_emb = self.embedding(x_sp_corrupted)
+
+			corruption_mask = torch.rand(x_sc.shape,device=x_sc.device) < self.corruption_rate
+			marginals = Uniform(float(x_sc.min()),float(x_sc.max()))
+			x_random = marginals.sample(torch.Size(x_sc.size())).to(x_sc.device)
+			x_sc_corrupted = torch.where(corruption_mask, x_random.int(), x_sc)
+			x_sc_emb = self.embedding(x_sc_corrupted)
    
 		else:
 			x_sp_emb = self.embedding(x_sp)

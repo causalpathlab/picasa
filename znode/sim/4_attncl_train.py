@@ -23,20 +23,19 @@ params = {'device' : 'cuda',
 		'input_dim' : rna.X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 10,
-		'latent_dim' : 7,
-		'encoder_layers' : [100,7],
-		'projection_layers' : [7,7],
+		'latent_dim' : 10,
+		'encoder_layers' : [100,10],
+		'projection_layers' : [25,25],
 		'learning_rate' : 0.001,
-		'lambda_attention_sc_entropy_loss' : 1.0,
-		'lambda_attention_sp_entropy_loss' : 0.1,
-		'lambda_cl_sc_entropy_loss' : 0.5,
-		'lambda_cl_sp_entropy_loss' : 0.1,
+		'lambda_attention_sc_entropy_loss' : 0.5,
+		'lambda_attention_sp_entropy_loss' : 0.5,
+		'lambda_cl_sc_entropy_loss' : 0.0,
+		'lambda_cl_sp_entropy_loss' : 0.0,
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'exact',
-   		'corruption_rate' : 1.0,
-		'epochs': 200
+     	'corruption_rate' : 0.0,
+		'epochs': 100
 		}  
-
 
 def train():
     

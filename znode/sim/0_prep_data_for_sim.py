@@ -14,19 +14,6 @@ from scipy.sparse import csr_matrix
 
 
 ############# data prep for simulation 
-
-dfb = pd.read_csv('MN_CyTOF_Bpanel_matrix.csv')
-dft = pd.read_csv('MN_CyTOF_Tpanel_matrix.csv')
-
-
-dfsp = pd.read_csv('mibi_subexpression.csv')
-dfsp_loc = pd.read_csv('mibi_sublocation.csv')
-
-sample_n = 3000
-dfb = dfb.sample(sample_n)
-dft = dft.sample(sample_n)
-dfsc = pd.merge(dft,dfb,on='File.Name',how='left')
-
 rna = ad.read_h5ad('brca_sc.h5ad')
 spatial = ad.read_h5ad('brca_sp.h5ad')
 
@@ -43,25 +30,27 @@ dfl.columns = ['cell','celltype']
 rna.obs['celltype'] = pd.merge(rna.obs,dfl,left_index=True, right_on='cell',how='left')['celltype'].values
 
 sel_ct_map = {
-'T cells CD8':'Lymphoid', 
-'T cells CD4':'Lymphoid', 
+'T cells CD8':'T', 
+'T cells CD4':'T', 
 'Monocytes and Macrophages':'Myeloid',
 'Epithelial cells':'Epithelial', 
-'NK cells':'Lymphoid', 
+'NK cells':'NK', 
 'Fibroblasts':'Fibroblast', 
 'Endothelial cells':'Endothelial',
-'B cells':'Lymphoid', 
+'B cells':'B', 
 'PVL':'PVL', 
 'PCs':'PCs', 
 'Dendritic cells':'Dendritic'
 }
 
-sel_ct = ['Endothelial', 'Fibroblast', 'Lymphoid','Myeloid', 'Epithelial']
+sel_ct = ['Endothelial', 'Fibroblast', 'T','B','NK','Myeloid', 'Epithelial']
 
 rna.obs['celltype'] = [sel_ct_map[x] for x in rna.obs['celltype']]
 rna = rna[rna.obs['celltype'].isin(sel_ct)] 
 
-
+# rna.obs.celltype.value_counts()
+# sel_cells = rna.obs.groupby('celltype').sample(n=265).index.values
+# rna = rna[sel_cells]
 
 rna.write('sim_sc.h5ad',compression='gzip')
 

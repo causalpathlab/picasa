@@ -13,17 +13,17 @@ import umap
 
 import logging
 
-sample = 'sim_sc'
-wdir = 'znode/sim/'
+sample = 'sim1_sc'
+wdir = 'znode/sim1/'
 rna = an.read_h5ad(wdir+'data/'+sample+'.h5ad')
 
 device = 'cuda'
 batch_size = 128
 input_dims = rna.X.shape[1]
 latent_dims = 10
-encoder_layers = [200,100,10]
+encoder_layers = [100,50,10]
 l_rate = 0.01
-epochs= 100
+epochs= 500
 
 
 logging.basicConfig(filename=wdir+'results/1_etm_train.log',
@@ -66,7 +66,7 @@ def eval():
 	from picasa.util.plots import plot_umap_df,plot_gene_loading
 
 	dfh = pd.DataFrame(m.theta.cpu().detach().numpy())
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,metric='euclidean').fit(dfh)
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.1,metric='cosine').fit(dfh)
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = ylabel
 	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
@@ -74,7 +74,7 @@ def eval():
 
 	df_umap['celltype'] = rna.obs.loc[ylabel,:]['celltype'].values
 
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_etm',pt_size=2.0,ftype='png')
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_etm',pt_size=1.0,ftype='png')
 
 	dfbeta = pd.DataFrame(m.beta.cpu().detach().numpy())
 	dfbeta.columns = rna.var.index.values

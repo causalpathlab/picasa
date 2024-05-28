@@ -21,14 +21,14 @@ picasa_object = picasa.pic.create_picasa_object({'sc':rna,'sp':spatial},wdir)
 params = {'device' : 'cuda',
 		'batch_size' : 128,
 		'input_dim' : rna.X.shape[1],
-		'embedding_dim' : 10000,
+		'embedding_dim' : 1000,
 		'attention_dim' : 10,
 		'latent_dim' : 10,
 		'encoder_layers' : [100,10],
 		'projection_layers' : [25,25],
 		'learning_rate' : 0.001,
-		'lambda_attention_sc_entropy_loss' : -0.5,
-		'lambda_attention_sp_entropy_loss' : -0.5,
+		'lambda_attention_sc_entropy_loss' : 0.0,
+		'lambda_attention_sp_entropy_loss' : 0.0,
 		'lambda_cl_sc_entropy_loss' : 0.0,
 		'lambda_cl_sp_entropy_loss' : 0.0,
 		'temperature_cl' : 1.0,
@@ -214,11 +214,11 @@ def plot_scsp_overlay():
 	plot_umap_df(df_umap,'celltype2',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
 
 
-# train()
-# eval()
+train()
+eval()
 plot_attention()
-# plot_latent()
-# plot_scsp_overlay()
+plot_latent()
+plot_scsp_overlay()
 
 	
 
