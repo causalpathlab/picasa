@@ -10,17 +10,19 @@ import picasa
 import torch
 import logging
 
-sample = 'pbmc'
-wdir = 'znode/pbmc/'
+sample = 'sim3'
+wdir = 'znode/sim3/'
 
-batch1 = an.read_h5ad(wdir+'data/'+sample+'_pbmc1.h5ad')
-batch2 = an.read_h5ad(wdir+'data/'+sample+'_pbmc2.h5ad')
+batch1 = an.read_h5ad(wdir+'data/'+sample+'_batch1.h5ad')
+batch2 = an.read_h5ad(wdir+'data/'+sample+'_batch2.h5ad')
+batch3 = an.read_h5ad(wdir+'data/'+sample+'_batch3.h5ad')
 
 picasa_object = picasa.pic.create_picasa_object(
-	{'pbmc1':batch1,
-	 'pbmc2':batch2
-	 },
-	wdir)
+    {'batch1':batch1,
+     'batch2':batch2,
+     'batch3':batch3
+     },
+    wdir)
 
 params = {'device' : 'cuda',
 		'batch_size' : 64,
@@ -37,14 +39,14 @@ params = {'device' : 'cuda',
 		'lambda_cl_sp_entropy_loss' : 0.5,
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
+     	'corruption_rate' : 0.0,
 		'epochs': 1,
 		'titration': 10
 		}  
 
 
 def train():
-	
+    
 	# distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
 	# scsp_map = {x:y[0] for x,y in enumerate(distdf.values)}
 	# picasa_object.assign_neighbour(scsp_map,None)
@@ -69,7 +71,7 @@ def plot_latent():
 	import random
 	from picasa.util.plots import plot_umap_df
 	
-	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl = pd.read_csv(wdir+'data/sim3_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
  
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
@@ -78,15 +80,27 @@ def plot_latent():
 	for batch in batch_keys:
 		df = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
 
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.8,n_neighbors=30,metric='cosine').fit(df)
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = df.index.values
 		df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
 
+		# from sklearn.manifold import TSNE
+		# tsne_2d = TSNE(n_components=2, init='random', random_state=0, perplexity=15, metric='cosine')
+		# tsne_embedding = tsne_2d.fit_transform(df_sc)
+		# df_tsne = pd.DataFrame()
+		# df_tsne['cell'] = df_sc.index.values
+		# df_tsne[['tsne1', 'tsne2']] = tsne_embedding[:, [0, 1]]
+		# df_tsne.rename(columns={'tsne1':'umap1','tsne2':'umap2'},inplace=True)
+		# df_umap = df_tsne
+	
+	
 		df_umap['celltype'] = pd.merge(df_umap,dfl.loc[dfl['batch']==batch],on='cell',how='left')['celltype'].values
 		plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_'+batch,pt_size=1.0,ftype='png')
 
+		df_umap['celltype2'] = [ x.split('-')[0] for x in df_umap['celltype']]
+		plot_umap_df(df_umap,'celltype2',wdir+'results/nn_attncl_lat_'+batch,pt_size=1.0,ftype='png')
 	picasa_h5.close()
 
 def plot_attention():
@@ -96,25 +110,34 @@ def plot_attention():
 	
 	### mean 
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
- 
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
- 
-	batch = batch_keys[0]
- 	
+	df_attn = pd.DataFrame(np.mean(picasa_h5['sc_attention'],axis=0),index=batch1.var.index.values,columns=batch1.var.index.values)
+	picasa_h5.close()
+	zscore_df = df_attn.apply(zscore)
+	zscore_df[zscore_df>5]=5
+	zscore_df[zscore_df<-5]=-5
+	sns.clustermap(zscore_df,cmap='viridis')
+	plt.savefig(wdir+'results/sc_attention_mean.png')
+	plt.close()
+	
 	### celltype 
-	ylabel = np.array([x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
+	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
+	ylabel = np.array([x.decode('utf-8') for x in picasa_h5['sc_ylabel']])
 
 	unique_celltypes = batch1.obs['celltype'].unique()
 	num_celltypes = len(unique_celltypes)
 	top_genes = []
-	top_n = 10
+	top_n = 5
 	for idx, ct in enumerate(unique_celltypes):
 		ct_ylabel = batch1.obs[batch1.obs['celltype'] == ct].index.values
 		ct_yindxs = np.where(np.isin(ylabel, ct_ylabel))[0]
-		df_attn = pd.DataFrame(np.mean(picasa_h5[batch+'_attention'][ct_yindxs], axis=0),
+		df_attn = pd.DataFrame(np.mean(picasa_h5['sc_attention'][ct_yindxs], axis=0),
 							index=batch1.var.index.values, columns=batch1.var.index.values)
+		df_attn = df_attn.apply(zscore)
+		df_attn[df_attn > 5] = 5
+		df_attn[df_attn < -5] = -5
+
 		df_attn = df_attn.unstack().reset_index()
-		# df_attn = df_attn[df_attn['level_0'] != df_attn['level_1']]
+		df_attn = df_attn[df_attn['level_0'] != df_attn['level_1']]
 		df_attn = df_attn.sort_values(0,ascending=False)
 		top_genes.append(df_attn['level_0'].unique()[:top_n])
 	top_genes = np.unique(np.array(top_genes).flatten())
@@ -130,7 +153,7 @@ def plot_attention():
 	for idx, ct in enumerate(unique_celltypes):
 		ct_ylabel = batch1.obs[batch1.obs['celltype'] == ct].index.values
 		ct_yindxs = np.where(np.isin(ylabel, ct_ylabel))[0]
-		df_attn = pd.DataFrame(np.mean(picasa_h5[batch+'_attention'][ct_yindxs], axis=0),
+		df_attn = pd.DataFrame(np.mean(picasa_h5['sc_attention'][ct_yindxs], axis=0),
 							index=batch1.var.index.values, columns=batch1.var.index.values)
 		
 		df_attn = df_attn.apply(zscore)
@@ -148,125 +171,28 @@ def plot_attention():
 	plt.tight_layout()
 	plt.savefig(wdir + 'results/sc_attention_allct.png')
 	plt.close()
-
-	marker =['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FCGR3A',
-	   'GNLY', 'NKG7', 'CST3', 'CD3E', 'FCER1A', 'CD74', 'LST1', 'CCL5',
-	   'HLA-DPA1', 'LDHB', 'CD79A', 'FCER1G', 'GZMB', 'S100A9',
-	   'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
-	   'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN']
-	
+ 
 	for idx, ct in enumerate(unique_celltypes):
 		ct_ylabel = batch1.obs[batch1.obs['celltype'] == ct].index.values
 		ct_yindxs = np.where(np.isin(ylabel, ct_ylabel))[0]
-		df_attn = pd.DataFrame(np.mean(picasa_h5[batch+'_attention'][ct_yindxs], axis=0),
+		df_attn = pd.DataFrame(np.mean(picasa_h5['sc_attention'][ct_yindxs], axis=0),
 							index=batch1.var.index.values, columns=batch1.var.index.values)
 		
 		df_attn = df_attn.apply(zscore)
 		df_attn[df_attn > 5] = 5
 		df_attn[df_attn < -5] = -5
 
-		df_attn = df_attn.loc[:,marker]
-		df_attn = df_attn.loc[marker,:]
-  
+		# df = df_attn.unstack().reset_index()
+		# df = df[df['level_0'] != df['level_1']]
+		# df = df.sort_values(0,ascending=False)
+		# tg = df['level_0'].unique()[:top_n]
+		# df_attn = df_attn.loc[:,tg]
+		# df_attn = df_attn.loc[tg,:]
+
 		sns.clustermap(df_attn, cmap='viridis')
 		plt.tight_layout()
 		plt.savefig(wdir + 'results/sc_attention_'+ct+'.png')
 		plt.close()
-
-
-	fig, axes = plt.subplots(rows, cols, figsize=(10 * cols, 10 * rows))  # Adjust figure size as needed
-
-	axes = axes.flatten()
-
-	for idx, ct in enumerate(unique_celltypes):
-		ct_ylabel = batch1.obs[batch1.obs['celltype'] == ct].index.values
-		ct_yindxs = np.where(np.isin(ylabel, ct_ylabel))[0]
-		df_attn = pd.DataFrame(np.mean(picasa_h5[batch+'_attention'][ct_yindxs], axis=0),
-							index=batch1.var.index.values, columns=batch1.var.index.values)
-		
-		df_attn = df_attn.apply(zscore)
-		df_attn[df_attn > 5] = 5
-		df_attn[df_attn < -5] = -5
-		df_attn = df_attn.loc[:,marker]
-		df_attn = df_attn.loc[marker,:]
-
-		sns.heatmap(df_attn, cmap='viridis', ax=axes[idx])
-		axes[idx].set_title(f"Clustermap for {ct}")
-
-	for j in range(idx + 1, rows * cols):
-		fig.delaxes(axes[j])
-
-	plt.tight_layout()
-	plt.savefig(wdir + 'results/sc_attention_allct_marker.png')
-	plt.close()
-
-def plot_context():
-	
-	import h5py as hf 
-	from scipy.stats import zscore
-
-	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
-
-	# since we have only one pair 
-	p1,p2 = batch_keys[0],batch_keys[1]
-
-	adata_p1 = picasa_object.data.adata_list[p1]
-	adata_p2 = picasa_object.data.adata_list[p2]
-	nbr_map = {x:y for x,y in list(picasa_h5[p1+'_'+p2])}
-
-	device = 'cpu'
-	picasa_object.set_nn_params(params)
-	picasa_object.nn_params['device'] = device
-	eval_batch_size = int(batch1.shape[0]/5)
-	p1_emb,p1_context,p1_context_pooled,p1_ylabel = picasa_object.eval_context(adata_p1,adata_p2,nbr_map,eval_batch_size,device)
-	
-	marker =['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FCGR3A',
-	   'GNLY', 'NKG7', 'CST3', 'CD3E', 'FCER1A', 'CD74', 'LST1', 'CCL5',
-	   'HLA-DPA1', 'LDHB', 'CD79A', 'FCER1G', 'GZMB', 'S100A9',
-	   'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
-	   'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN']
-	
-	df_context = pd.DataFrame(np.mean(p1_context, axis=0),
-							index=adata_p1.var.index.values)
-	df_context = df_context.apply(zscore)
-	df_context[df_context > 1] = 1
-	df_context[df_context < -1] = -1
-	# df_context = df_context.loc[marker,:]
-	sns.clustermap(df_context, cmap='viridis')
-	plt.tight_layout()
-	plt.savefig(wdir + 'results/sc_context_allct.png')
-	plt.close()
-
-	unique_celltypes = adata_p1.obs['celltype'].unique()
-	num_celltypes = len(unique_celltypes)
-	cols = 3  
-	rows = int(np.ceil(num_celltypes / cols))
-
-	fig, axes = plt.subplots(rows, cols, figsize=(10 * cols, 10 * rows))  # Adjust figure size as needed
-
-	axes = axes.flatten()
-
-	for idx, ct in enumerate(unique_celltypes):
-		ct_ylabel = batch1.obs[adata_p1.obs['celltype'] == ct].index.values
-		ct_yindxs = np.where(np.isin(p1_ylabel, ct_ylabel))[0]
-		df_context = pd.DataFrame(np.mean(p1_context[ct_yindxs], axis=0),
-							index=adata_p1.var.index.values)
-		
-		df_context = df_context.apply(zscore)
-		df_context[df_context > 5] = 5
-		df_context[df_context < -5] = -5
-		df_context = df_context.loc[marker,:]
-
-		sns.heatmap(df_context, cmap='viridis', ax=axes[idx])
-		axes[idx].set_title(f"Clustermap for {ct}")
-
-	for j in range(idx + 1, rows * cols):
-		fig.delaxes(axes[j])
-
-	plt.tight_layout()
-	plt.savefig(wdir + 'results/sc_context_allct_marker.png')
-	plt.close()
 
 def plot_scsp_overlay():
 	import umap
@@ -285,8 +211,8 @@ def plot_scsp_overlay():
   
 	picasa_h5.close()
 
-	###################
-	####################
+    ###################
+    ####################
 
 	# use std norm or quant norm 
 	# from sklearn.preprocessing import StandardScaler
@@ -297,28 +223,37 @@ def plot_scsp_overlay():
 	# 	return pd.Series(row_standardized, index=row.index)
 	# dfh = dfmain.apply(standardize_row, axis=1)
 	# dfh.index = dfmain.index.values
-	# ######
+    # ######
 	
 	# from asappy.util.analysis import quantile_normalization
 	# sc_norm,sp_norm = quantile_normalization(df_sc.to_numpy(),df_sp.to_numpy())
 	# dfh = pd.DataFrame(np.concatenate([sc_norm, sp_norm], axis=0))
 	# dfh.index = dfmain.index.values
-	###################
-	####################
+    ###################
+    ####################
  
 	dfh = dfmain
 
-	###################
-	####################
+    ###################
+    ####################
  
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(dfh)
+	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=30,metric='cosine').fit(dfh)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
 	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
+
+	# from sklearn.manifold import TSNE
+	# tsne_2d = TSNE(n_components=2, init='random', random_state=0, perplexity=10, metric='euclidean')
+	# tsne_embedding = tsne_2d.fit_transform(dfh)
+	# df_tsne = pd.DataFrame()
+	# df_tsne['cell'] = dfh.index.values
+	# df_tsne[['tsne1', 'tsne2']] = tsne_embedding[:, [0, 1]]
+	# df_tsne.rename(columns={'tsne1':'umap1','tsne2':'umap2'},inplace=True)
+	# df_umap = df_tsne
  
-	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl = pd.read_csv(wdir+'data/sim3_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
 	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
  
@@ -327,16 +262,18 @@ def plot_scsp_overlay():
  
 	df_umap['celltype'] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
 	df_umap['batch'] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')['batch'].values
+	df_umap['celltype2'] = [ x.split('-')[0] for x in df_umap['celltype']]
+ 
 	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'celltype2',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
 
 
-# train()
-# eval()
-# plot_latent()
+train()
+eval()
+plot_latent()
 # plot_scsp_overlay()
 # plot_attention()
-plot_context()
 
 	

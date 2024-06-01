@@ -7,7 +7,7 @@ from ..util.typehint import Adata
 
 import numpy as np
 from scipy.sparse import csr_matrix 
-
+import h5py as hf
 
 def configure_dataset(
     adata : Adata
@@ -44,3 +44,23 @@ def load_data(adata, start_index: int, end_index: int)-> np.array:
             shape=(1,shape[1])).todense()).flatten())
         
         return np.asarray(mtx)
+
+def write_h5(fname,row_names,col_names,smat):
+
+	f = hf.File(fname+'.h5','w')
+
+	grp = f.create_group('matrix')
+
+	grp.create_dataset('barcodes', data = row_names ,compression='gzip')
+
+	grp.create_dataset('indptr',data=smat.indptr,compression='gzip')
+	grp.create_dataset('indices',data=smat.indices,compression='gzip')
+	grp.create_dataset('data',data=smat.data,compression='gzip')
+
+	data_shape = np.array([len(row_names),len(col_names)])
+	grp.create_dataset('shape',data=data_shape)
+	
+	f['matrix'].create_group('features')
+	f['matrix']['features'].create_dataset('id',data=col_names,compression='gzip')
+
+	f.close()

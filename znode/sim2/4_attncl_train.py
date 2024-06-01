@@ -10,23 +10,19 @@ import picasa
 import torch
 import logging
 
-sample = 'sim1'
-wdir = 'znode/sim1/'
+sample = 'sim2'
+wdir = 'znode/sim2/'
 
 batch1 = an.read_h5ad(wdir+'data/'+sample+'_Batch1.h5ad')
 batch2 = an.read_h5ad(wdir+'data/'+sample+'_Batch2.h5ad')
 batch3 = an.read_h5ad(wdir+'data/'+sample+'_Batch3.h5ad')
 batch4 = an.read_h5ad(wdir+'data/'+sample+'_Batch4.h5ad')
-batch5 = an.read_h5ad(wdir+'data/'+sample+'_Batch5.h5ad')
-batch6 = an.read_h5ad(wdir+'data/'+sample+'_Batch6.h5ad')
 
 picasa_object = picasa.pic.create_picasa_object(
     {'batch1':batch1,
      'batch2':batch2,
      'batch3':batch3,
-     'batch4':batch4,
-     'batch5':batch5,
-     'batch6':batch6
+     'batch4':batch4
      },
     wdir)
 
@@ -76,8 +72,8 @@ def plot_latent():
 	import random
 	from picasa.util.plots import plot_umap_df
 	
-	dfl = pd.read_csv(wdir+'data/sim1_label.csv.gz')
-	dfl.columns = ['cell','batch','celltype']
+	dfl = pd.read_csv(wdir+'data/sim2_label.csv.gz')
+	dfl.columns = ['index','cell','batch','celltype']
  
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
 	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
@@ -268,8 +264,8 @@ def plot_scsp_overlay():
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
 
-train()
-eval()
+# train()
+# eval()
 # plot_attention()
 plot_latent()
 plot_scsp_overlay()

@@ -31,15 +31,16 @@ class picasa(object):
 			for ad_pair in self.adata_pairs:
 				p1 = self.adata_keys[ad_pair[0]]
 				p2 = self.adata_keys[ad_pair[1]]
+				logging.info('Generating neighbour using approximate method - ANNOY...'+p1+'_'+p2)
 				logging.info(str(self.data.adata_list[p1].X.shape))
 				logging.info(str(self.data.adata_list[p2].X.shape))
 				self.nbr_map[p1+'_'+p2] = neighbour.generate_neighbours(self.data.adata_list[p2],self.data.adata_list[p1],p1+p2,number_of_trees)
 				self.nbr_map[p2+'_'+p1] = neighbour.generate_neighbours(self.data.adata_list[p1],self.data.adata_list[p2],p2+p1,number_of_trees)
-    
+	
 		elif method == 'exact':
 			from scipy.spatial.distance import cdist
 			logging.info('Generating neighbour list using exact method - cdist...')
-      
+	  
 			for ad_pair in self.adata_pairs:
 				p1 = self.adata_keys[ad_pair[0]]
 				p2 = self.adata_keys[ad_pair[1]]
@@ -57,7 +58,7 @@ class picasa(object):
 	def set_nn_params(self,params: dict):
 		self.nn_params = params
 	
-	def train(self):
+	def train(self,titration):
 
 		logging.info('Starting training...')
 
@@ -66,22 +67,26 @@ class picasa(object):
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_sc_entropy_loss'],self.nn_params['lambda_attention_sp_entropy_loss'],self.nn_params['lambda_cl_sc_entropy_loss'],self.nn_params['lambda_cl_sp_entropy_loss'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		logging.info(picasa_model)
+
+		for it in range(titration):
+		
+			logging.info('titration : '+ str(it))
   
-		for ad_pair in self.adata_pairs:
-			p1 = self.adata_keys[ad_pair[0]]
-			p2 = self.adata_keys[ad_pair[1]]
-   
-			logging.info('Training...model-'+p1+'_'+p2)
+			for ad_pair in self.adata_pairs:
+				p1 = self.adata_keys[ad_pair[0]]
+				p2 = self.adata_keys[ad_pair[1]]
 	
-			data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
+				logging.info('Training...model-'+p1+'_'+p2)
+		
+				data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
-			model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz')
-   
-			logging.info('Training...model-'+p2+'_'+p1)
-   
-			data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
+				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz')
+	
+				logging.info('Training...model-'+p2+'_'+p1)
+	
+				data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
-			model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p2+'_'+p1+'.txt.gz')
+				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p2+'_'+p1+'.txt.gz')
 
 		torch.save(picasa_model.state_dict(),self.wdir+'results/nn_attncl.model')
 
@@ -96,7 +101,7 @@ class picasa(object):
 		self.ylabel = {}
 
 		for ad_pair in self.adata_pairs:
-      
+	  
 			p1 = self.adata_keys[ad_pair[0]]
 			p2 = self.adata_keys[ad_pair[1]]
    
@@ -131,6 +136,31 @@ class picasa(object):
 			self.latent[p2] = df_h_sc
 			self.ylabel[p2] = df_h_sc.index.values
 
+	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,device='cpu'):
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_sc_entropy_loss'],self.nn_params['lambda_attention_sp_entropy_loss'],self.nn_params['lambda_cl_sc_entropy_loss'],self.nn_params['lambda_cl_sp_entropy_loss'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+  
+		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model'))
+
+		data_pred = dutil.nn_load_data_pairs(adata_p1, adata_p2, adata_nbr_map,device,eval_batch_size)
+
+		emb_list = []
+		context_list = []
+		context_pooled_list = []
+		ylabel_list = []
+
+		for x_sc,y,x_spp in data_pred:
+			x_emb, x_context, x_context_pooled = model.nn_attn.predict_context(picasa_model,x_sc,x_spp)
+			emb_list.append(x_emb.cpu().detach().numpy())
+			context_list.append(x_context.cpu().detach().numpy())
+			context_pooled_list.append(x_context_pooled.cpu().detach().numpy())
+			ylabel_list.append(y)
+		
+		emb_list = np.concatenate(emb_list, axis=0)
+		context_list = np.concatenate(context_list, axis=0)
+		context_pooled_list = np.concatenate(context_pooled_list, axis=0)
+		ylabel_list = np.concatenate(ylabel_list, axis=0)
+
+		return emb_list,context_list,context_pooled_list,ylabel_list
   
 	def save(self):
 		import h5py

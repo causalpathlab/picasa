@@ -264,8 +264,8 @@ library(splatter)
 params <- newSplatParams()
 
 params <- setParam(params, "nGenes", 500)
-params <- setParam(params, "batchCells", c(3000,2900))
-params <- setParam(params, "group.prob", c(1/5,1/5,1/5,1/5,1/5))
+params <- setParam(params, "batchCells", c(2000,2100,2200))
+params <- setParam(params, "group.prob", c(1/3,1/3,1/3))
 
 sim <- splatSimulate(params, method="groups", verbose=FALSE)
 
@@ -287,43 +287,19 @@ import scanpy as sc
 import matplotlib.pylab as plt
 
 
-wdir = 'znode/scdesign/'
-
-df = pd.read_csv(wdir+'data/sim_count.csv.gz',header=0)
+df = pd.read_csv('sim_count.csv.gz',header=0)
 df = df.T
 df.columns = df.iloc[0,:]
 df = df.iloc[1:,:]
 df = df.astype(int)
 
 
-dfl = pd.read_csv(wdir+'data/sim_label.csv.gz',header=0)
+dfl = pd.read_csv('sim_label.csv.gz',header=0)
 
-df.index = [x+'_'+y for x,y in zip(dfl.Batch.values,df.index.values)]
-df.index = [x+'_'+y for x,y in zip(dfl.Group.values,df.index.values)]
-
-dfv2 = df.iloc[(dfl['Batch']=='Batch1').values,:]
-dfv3 = df.iloc[(dfl['Batch']=='Batch2').values,:]
-
-smatv2 = csr_matrix(dfv2.to_numpy())
-adata_sc = an.AnnData(X=smatv2)
-adata_sc.var_names = dfv2.columns.values
-adata_sc.obs_names = dfv2.index.values
-
-smatv3 = csr_matrix(dfv3.to_numpy())
-adata_sp = an.AnnData(X=smatv3)
-adata_sp.var_names = dfv3.columns.values
-adata_sp.obs_names = dfv3.index.values
-
-# adata_sc.obs['celltype'] = adata_org.obs.leiden.values
-
-
-ref_sp = an.read_h5ad(wdir+'data/sim_old_sp.h5ad')
-
-dfspl = ref_sp.uns['sp_pos'].sample(adata_sp.X.shape[0]).reset_index(drop=True)
-dfspl = dfspl[['x','y']]
-
-adata_sp.uns['position'] = [ str(x)+'x'+str(y) for x,y in zip(dfspl['x'],dfspl['y'])]
-
-
-adata_sp.write(wdir+'data/sim_sp.h5ad',compression='gzip')
-adata_sc.write(wdir+'data/sim_sc.h5ad',compression='gzip')
+smat = csr_matrix(df.to_numpy())
+adata = an.AnnData(X=smat)
+adata.var_names = df.columns.values
+adata.obs_names = df.index.values
+adata.obs['celltype'] = dfl['Group'].values
+adata.obs['Batch'] = dfl['Batch'].values
+adata.write('sim2.h5ad',compression='gzip')

@@ -214,7 +214,7 @@ def train(model,data,epochs,l_rate,temperature,loss_file):
 		if epoch % 10 == 0:
 			logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
 	
-	pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,index=False,compression='gzip')	
+	pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,mode='a',index=False,compression='gzip')	
  
 
 def predict(model,data):
@@ -224,23 +224,15 @@ def predict(model,data):
 def predict_batch(model,x_sc,y, x_sp ):
 	return model(x_sc,x_sp),y
 
-def predict_scsp(model,x_sc):
+def predict_context(model,x_sc,x_sp):
 	x_sc_emb = model.embedding(x_sc)
-	x_sp_emb = model.embedding(x_sc)
+	x_sp_emb = model.embedding(x_sp)
 
-	x_sc_att_out, _,_ = model.attention(x_sc_emb,x_sp_emb,x_sp_emb)
-	x_sc_pool_out = model.pooling(x_sc_att_out)
-
-	x_sp_att_out, _,_ = model.attention(x_sp_emb,x_sc_emb,x_sc_emb)
-	x_sp_pool_out = model.pooling(x_sp_att_out)
-
-	h_sc = model.encoder(x_sc_pool_out)
-	h_sp = model.encoder(x_sp_pool_out)
-
-	z_sc = model.projector(h_sc)
-	z_sp = model.projector(h_sp)
+	x_sc_context,_,_ = model.attention(x_sc_emb,x_sp_emb,x_sp_emb)
+	x_sc_context_pooled = model.pooling(x_sc_context)
 	
-	return PICASAOUT(h_sc,h_sp,z_sc,z_sp)
+	return x_sc_emb,x_sc_context,x_sc_context_pooled
+
 
 class LitPICASANET(pl.LightningModule):
 	

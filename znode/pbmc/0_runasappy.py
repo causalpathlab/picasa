@@ -10,14 +10,14 @@ import picasa
 
 ############## convert to asap data format
 
-rna = an.read_h5ad('znode/pbmc/data/pbmc_sc_2b.h5ad')
+# rna = an.read_h5ad('znode/pbmc/data/pbmc_sc_2b.h5ad')
 
 
-fname='znode/pbmc/data/pbmc_sc_2b'
-row_names = rna.obs.index.values
-col_names = rna.var.index.values
-smat = rna.X
-picasa.preprocessing.read_write.write_h5(fname,row_names,col_names,smat)
+# fname='znode/pbmc/data/pbmc_sc_2b'
+# row_names = rna.obs.index.values
+# col_names = rna.var.index.values
+# smat = rna.X
+# picasa.preprocessing.read_write.write_h5(fname,row_names,col_names,smat)
 
 
 ############## 
@@ -53,15 +53,15 @@ asappy.leiden_cluster(asap_adata,resolution=cluster_resolution)
 print(asap_adata.obs.cluster.value_counts())
 	
 ## min distance 0.5 paper
-asappy.run_umap(asap_adata,distance='euclidean',min_dist=0.1)
+asappy.run_umap(asap_adata,distance='euclidean',min_dist=1.0)
 
-asappy.plot_umap(asap_adata,col='cluster',pt_size=0.5,ftype='png')
+asappy.plot_umap(asap_adata,col='cluster',pt_size=1.0,ftype='png')
 
 asap_adata.obs['batch'] = [x.split('_')[2] for x in asap_adata.obs.index.values]
-asappy.plot_umap(asap_adata,col='batch',pt_size=0.5,ftype='png')
+asappy.plot_umap(asap_adata,col='batch',pt_size=1.0,ftype='png')
 
 dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
 dfl.columns = ['cell','celltype','batch']
 asap_adata.obs['celltype'] = pd.merge(asap_adata.obs,dfl, right_on='cell',left_index=True)['celltype'].values
-asappy.plot_umap(asap_adata,col='celltype',pt_size=0.5,ftype='png')
+asappy.plot_umap(asap_adata,col='celltype',pt_size=1.0,ftype='png')
 	
