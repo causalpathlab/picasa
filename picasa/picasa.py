@@ -58,17 +58,17 @@ class picasa(object):
 	def set_nn_params(self,params: dict):
 		self.nn_params = params
 	
-	def train(self,titration):
+	def train(self):
 
 		logging.info('Starting training...')
 
 		logging.info(self.nn_params)
   
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_sc_entropy_loss'],self.nn_params['lambda_attention_sp_entropy_loss'],self.nn_params['lambda_cl_sc_entropy_loss'],self.nn_params['lambda_cl_sp_entropy_loss'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		logging.info(picasa_model)
 
-		for it in range(titration):
+		for it in range(self.nn_params['titration']):
 		
 			logging.info('titration : '+ str(it))
   
@@ -80,20 +80,20 @@ class picasa(object):
 		
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
-				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz')
+				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz')
 	
 				logging.info('Training...model-'+p2+'_'+p1)
 	
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
-				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p2+'_'+p1+'.txt.gz')
+				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p2+'_'+p1+'.txt.gz')
 
 		torch.save(picasa_model.state_dict(),self.wdir+'results/nn_attncl.model')
 
 		logging.info('Completed training...model saved in results/nn_attncl.model')
  
 	def eval_model(self,eval_batch_size,device='cpu'):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_sc_entropy_loss'],self.nn_params['lambda_attention_sp_entropy_loss'],self.nn_params['lambda_cl_sc_entropy_loss'],self.nn_params['lambda_cl_sp_entropy_loss'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model'))
 		self.attention = {}
@@ -137,7 +137,7 @@ class picasa(object):
 			self.ylabel[p2] = df_h_sc.index.values
 
 	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,device='cpu'):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['lambda_attention_sc_entropy_loss'],self.nn_params['lambda_attention_sp_entropy_loss'],self.nn_params['lambda_cl_sc_entropy_loss'],self.nn_params['lambda_cl_sp_entropy_loss'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model'))
 
@@ -186,6 +186,8 @@ class picasa(object):
 		for ad_pair in self.adata_pairs:
 			p1 = self.adata_keys[ad_pair[0]]
 			p2 = self.adata_keys[ad_pair[1]]
+			print('---')
+			print(p1,p2)
 
 			plot_loss(self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz',self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.png')
 

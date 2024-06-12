@@ -23,7 +23,7 @@ input_dims = rna.X.shape[1]
 latent_dims = 10
 encoder_layers = [100,10]
 l_rate = 0.01
-epochs= 1000
+epochs= 250
 
 
 logging.basicConfig(filename=wdir+'results/1_etm_train.log',

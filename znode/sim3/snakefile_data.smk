@@ -9,10 +9,10 @@ input_dir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/znode/sim3/data/
 output_dir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/znode/sim3/results/'
 scripts_dir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/znode/sim3/'
 
-RHO = [0.90] 
+RHO = [0.5] 
 DEPTH = [10000]
 SIZE = [500] ## total cell ~3k
-SEED = [3]
+SEED = [1,2,3]
 TOPIC = [13]
 RES =[0.5]
 

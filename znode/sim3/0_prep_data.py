@@ -33,7 +33,7 @@ def get_adata(fn,batch):
 
     return adata
 
-wdir = 'znode/sim3/data/'
+wdir = 'data/'
 ad1 = get_adata(wdir+'sim3_b1.h5','batch1')
 ad2 = get_adata(wdir+'sim3_b2.h5','batch2')
 ad3 = get_adata(wdir+'sim3_b3.h5','batch3')

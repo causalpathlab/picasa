@@ -1,5 +1,6 @@
 import torch
 torch.manual_seed(0)
+import os
 import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
@@ -22,12 +23,11 @@ class PICASAOUT:
 		self.attn_sp = attn_sp
 
 class PICASAel:
-	def __init__(self,el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp,entropy_loss):
+	def __init__(self,el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp):
 		self.el_attn_sc = el_attn_sc
 		self.el_attn_sp = el_attn_sp
 		self.el_cl_sc = el_cl_sc
 		self.el_cl_sp = el_cl_sp
-		self.entropy_loss = entropy_loss
 		
 		   
 class Stacklayers(nn.Module):
@@ -74,7 +74,7 @@ class ScaledDotAttention(nn.Module):
 		self.W_key = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.model_dim = weight_dim
-		self.self_importance = nn.Parameter(torch.zeros(input_dim))
+		# self.self_importance = nn.Parameter(torch.zeros(input_dim))
 		
 	def forward(self, query, key, value):
 
@@ -84,9 +84,10 @@ class ScaledDotAttention(nn.Module):
 		
 
 		scores = torch.matmul(query_proj, key_proj.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.model_dim).float())
-		diag_bias = torch.eye(scores.shape[1], dtype=scores.dtype, device=scores.device)
-		importance = torch.clamp(torch.exp(self.self_importance),max=3)
-		scores += (diag_bias * importance)
+
+		# diag_bias = torch.eye(scores.shape[1], dtype=scores.dtype, device=scores.device)
+		# importance = torch.clamp(torch.exp(self.self_importance),max=3)
+		# scores += (diag_bias * importance)
   
 		attention_weights = torch.softmax(scores, dim=-1)
 		entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
@@ -124,7 +125,7 @@ class MLP(nn.Module):
 		return z
 
 class PICASANET(nn.Module):
-	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,lambda_attention_sc_entropy_loss,lambda_attention_sp_entropy_loss,lambda_cl_sc_entropy_loss,lambda_cl_sp_entropy_loss,corruption_rate = 0.0):
+	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_rate):
 		super(PICASANET,self).__init__()
 
 		self.embedding = GeneEmbedor(embedding_dim,attention_dim)
@@ -134,10 +135,6 @@ class PICASANET(nn.Module):
 		self.encoder = ENCODER(input_dim,encoder_layers)
 		self.projector = MLP(latent_dim, projection_layers)
 		
-		self.lambda_attention_sc_entropy_loss = lambda_attention_sc_entropy_loss
-		self.lambda_attention_sp_entropy_loss = lambda_attention_sp_entropy_loss
-		self.lambda_cl_sc_entropy_loss = lambda_cl_sc_entropy_loss
-		self.lambda_cl_sp_entropy_loss = lambda_cl_sp_entropy_loss
 		self.corruption_rate = corruption_rate
 
 	def forward(self,x_sc,x_sp):
@@ -178,17 +175,15 @@ class PICASANET(nn.Module):
 		pred_sp = torch.softmax(h_sp, dim=1)
 		el_cl_sp = -torch.mean(torch.sum(pred_sp * torch.log(pred_sp + 1e-10), dim=1))
 
-		entropy_loss = (el_attn_sc * self.lambda_attention_sc_entropy_loss +
-						el_attn_sp * self.lambda_attention_sp_entropy_loss +
-						el_cl_sc * self.lambda_cl_sc_entropy_loss +
-						el_cl_sp * self.lambda_cl_sp_entropy_loss)
+		return PICASAOUT(h_sc,h_sp,z_sc,z_sp,x_sc_att_w,x_sp_att_w), PICASAel(el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp)
 
-		return PICASAOUT(h_sc,h_sp,z_sc,z_sp,x_sc_att_w,x_sp_att_w), PICASAel(el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp,entropy_loss)
-
-def train(model,data,epochs,l_rate,temperature,loss_file):
+def train(model,data,epochs,lambda_loss,l_rate,temperature,loss_file):
 	logger.info('Init training....nn_attn')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	epoch_losses = []
+	lambda_attn_loss = float(lambda_loss[0])
+	lambda_latent_loss = float(lambda_loss[1])
+	lambda_cl_loss = float(lambda_loss[2])
 	for epoch in range(epochs):
 		epoch_l, cl, el, el_attn_sc, el_attn_sp, el_cl_sc, el_cl_sp = (0,) * 7
 		for x_sc,y,x_sp in data:
@@ -196,14 +191,18 @@ def train(model,data,epochs,l_rate,temperature,loss_file):
 
 			picasa_out,picasa_el = model(x_sc,x_sp)
 
-			cl_loss = pcl_loss(picasa_out.z_sc, picasa_out.z_sp,  temperature)
-			train_loss = cl_loss + picasa_el.entropy_loss
+			cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_sc, picasa_out.z_sp,temperature)
+			entropy_loss = (picasa_el.el_attn_sc * lambda_attn_loss +
+						picasa_el.el_attn_sp * (lambda_attn_loss/2) +
+						picasa_el.el_cl_sc * lambda_latent_loss +
+						picasa_el.el_cl_sp * (lambda_latent_loss/2))
+			train_loss = cl_loss + entropy_loss
 			train_loss.backward()
 
 			opt.step()
 			epoch_l += train_loss.item()
 			cl += cl_loss.item()
-			el += picasa_el.entropy_loss.item()
+			el += entropy_loss.item()
 			el_attn_sc += picasa_el.el_attn_sc.item()
 			el_attn_sp += picasa_el.el_attn_sp.item()
 			el_cl_sc += picasa_el.el_cl_sc.item()
@@ -213,8 +212,12 @@ def train(model,data,epochs,l_rate,temperature,loss_file):
 		
 		if epoch % 10 == 0:
 			logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
-	
-	pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,mode='a',index=False,compression='gzip')	
+
+
+	if os.path.isfile(loss_file):
+		pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,mode='a',index=False,compression='gzip',header=False)	
+	else:
+		pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,index=False,compression='gzip',header=True)	
  
 
 def predict(model,data):
@@ -232,38 +235,4 @@ def predict_context(model,x_sc,x_sp):
 	x_sc_context_pooled = model.pooling(x_sc_context)
 	
 	return x_sc_emb,x_sc_context,x_sc_context_pooled
-
-
-class LitPICASANET(pl.LightningModule):
-	
-	def __init__(self,input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers,features_low,features_high,corruption_rate,temperature,lossf):
-		super(LitPICASANET,self).__init__()
-
-		self.PICASAnet = PICASANET(input_dims, emb_dim, attn_dim, latent_dim,encoder_layers,projection_layers,features_low,features_high,corruption_rate)
-		self.temperature = temperature 
-		self.lossf = lossf
-		self.PICASAnet = DataParallel(self.PICASAnet)
-  
-	def forward(self,x_sc,x_sp):
-  
-		return self.PICASAnet(x_sc,x_sp)
-
-	def configure_optimizers(self):
-		optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
-		return optimizer
-
-	def training_step(self,batch):
-
-		x_sc,y,x_sp = batch
-		device_of_model = next(self.PICASAnet.parameters()).device
-		x_sc = x_sc.to(device_of_model)
-		x_sp = x_sp.to(device_of_model)
-
-		PICASAout = self.PICASAnet(x_sc,x_sp)
-
-		train_loss = pcl_loss(PICASAout.z_sc, PICASAout.z_sp,  self.temperature)
-	  
-		f = open(self.lossf, 'a')
-		f.write(str(torch.mean(train_loss).to('cpu').item()) + '\n')
-		f.close()
 

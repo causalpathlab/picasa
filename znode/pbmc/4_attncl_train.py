@@ -22,26 +22,42 @@ picasa_object = picasa.pic.create_picasa_object(
 	 },
 	wdir)
 
+# params = {'device' : 'cuda',
+# 		'batch_size' : 64,
+# 		'input_dim' : batch1.X.shape[1],
+# 		'embedding_dim' : 10000,
+# 		'attention_dim' : 10,
+# 		'latent_dim' : 10,
+# 		'encoder_layers' : [100,10],
+# 		'projection_layers' : [10,10],
+# 		'learning_rate' : 0.001,
+# 		'lambda_attention_sc_entropy_loss' : 1.0,
+# 		'lambda_attention_sp_entropy_loss' : 1.0,
+# 		'lambda_cl_sc_entropy_loss' : 0.5,
+# 		'lambda_cl_sp_entropy_loss' : 0.5,
+# 		'temperature_cl' : 1.0,
+# 		'neighbour_method' : 'approx_50',
+# 	 	'corruption_rate' : 0.0,
+# 		'epochs': 1,
+# 		'titration': 10
+# 		}  
+
 params = {'device' : 'cuda',
 		'batch_size' : 64,
 		'input_dim' : batch1.X.shape[1],
-		'embedding_dim' : 10000,
+		'embedding_dim' : 1000,
 		'attention_dim' : 10,
 		'latent_dim' : 10,
 		'encoder_layers' : [100,10],
 		'projection_layers' : [10,10],
 		'learning_rate' : 0.001,
-		'lambda_attention_sc_entropy_loss' : 1.0,
-		'lambda_attention_sp_entropy_loss' : 1.0,
-		'lambda_cl_sc_entropy_loss' : 0.5,
-		'lambda_cl_sp_entropy_loss' : 0.5,
+		'lambda_loss' : [0.5,0.1,1.0],
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
+     	'corruption_rate' : 0.0,
 		'epochs': 1,
-		'titration': 10
+		'titration': 24
 		}  
-
 
 def train():
 	
@@ -52,8 +68,8 @@ def train():
 	picasa_object.estimate_neighbour(params['neighbour_method'])
 	
 	picasa_object.set_nn_params(params)
-	picasa_object.train(params['titration'])
-	# picasa_object.plot_loss()
+	picasa_object.train()
+	picasa_object.plot_loss()
 
 def eval():
 	device = 'cpu'
@@ -332,11 +348,11 @@ def plot_scsp_overlay():
 
 
 
-# train()
-# eval()
-# plot_latent()
-# plot_scsp_overlay()
-# plot_attention()
+train()
+eval()
+plot_attention()
+plot_latent()
+plot_scsp_overlay()
 plot_context()
 
 	
