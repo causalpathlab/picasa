@@ -16,13 +16,13 @@ class picasa(object):
 		format='%(asctime)s %(levelname)-8s %(message)s',
 		level=logging.INFO,
 		datefmt='%Y-%m-%d %H:%M:%S')
+		self.adata_pairs = list(itertools.combinations(range(len(self.data.adata_list)), 2))	
+		self.adata_keys = list(self.data.adata_list.keys())
 	
 	def estimate_neighbour(self,method='approx_50'):
 	 
 		logging.info('Assign neighbour - '+ method)
 		self.nbr_map = {}
-		self.adata_pairs = list(itertools.combinations(range(len(self.data.adata_list)), 2))	
-		self.adata_keys = list(self.data.adata_list.keys())
   
 		if 'approx' in method :
 
@@ -67,6 +67,8 @@ class picasa(object):
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		logging.info(picasa_model)
+  
+		loss = []
 
 		for it in range(self.nn_params['titration']):
 		
@@ -80,16 +82,21 @@ class picasa(object):
 		
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
-				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz')
+				loss_p1_p2 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'])
 	
 				logging.info('Training...model-'+p2+'_'+p1)
 	
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
-				model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'],self.wdir+'results/4_attncl_train_loss'+p2+'_'+p1+'.txt.gz')
+				loss_p2_p1 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'])
+
+				loss_p1_p2 = np.array(loss_p1_p2)
+				loss_p2_p1 = np.array(loss_p2_p1)
+				stacked_loss_p = np.vstack((loss_p1_p2, loss_p2_p1))
+				loss.append(np.mean(stacked_loss_p, axis=0))
 
 		torch.save(picasa_model.state_dict(),self.wdir+'results/nn_attncl.model')
-
+		pd.DataFrame(loss,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(self.wdir+'results/4_attncl_train_loss.txt.gz',index=False,compression='gzip',header=True)
 		logging.info('Completed training...model saved in results/nn_attncl.model')
  
 	def eval_model(self,eval_batch_size,device='cpu'):
@@ -108,33 +115,33 @@ class picasa(object):
 
 			data_pred = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],device,eval_batch_size)
 	
-			df_h_sc = pd.DataFrame()
+			df_h_c1 = pd.DataFrame()
 			attn_list = []
 
-			for x_sc,y,x_spp in data_pred:
-				m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_sc,y,x_spp)
+			for x_c1,y,x_c2 in data_pred:
+				m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_c1,y,x_c2)
 				m = m_el[0]
-				df_h_sc = pd.concat([df_h_sc,pd.DataFrame(m.h_sc.cpu().detach().numpy(),index=ylabel)],axis=0)
-				attn_list.append(m.attn_sc.cpu().detach().numpy())
+				df_h_c1 = pd.concat([df_h_c1,pd.DataFrame(m.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
+				attn_list.append(m.attn_c1.cpu().detach().numpy())
 	
 			self.attention[p1] = np.concatenate(attn_list, axis=0)
-			self.latent[p1] = df_h_sc
-			self.ylabel[p1] = df_h_sc.index.values
+			self.latent[p1] = df_h_c1
+			self.ylabel[p1] = df_h_c1.index.values
    
 			data_pred = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],device,eval_batch_size)
 	
-			df_h_sc = pd.DataFrame()
+			df_h_c1 = pd.DataFrame()
 			attn_list = []
 
-			for x_sc,y,x_spp in data_pred:
-				m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_sc,y,x_spp)
+			for x_c1,y,x_c2 in data_pred:
+				m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_c1,y,x_c2)
 				m = m_el[0]
-				df_h_sc = pd.concat([df_h_sc,pd.DataFrame(m.h_sc.cpu().detach().numpy(),index=ylabel)],axis=0)
-				attn_list.append(m.attn_sc.cpu().detach().numpy())
+				df_h_c1 = pd.concat([df_h_c1,pd.DataFrame(m.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
+				attn_list.append(m.attn_c1.cpu().detach().numpy())
 	
 			self.attention[p2] = np.concatenate(attn_list, axis=0)
-			self.latent[p2] = df_h_sc
-			self.ylabel[p2] = df_h_sc.index.values
+			self.latent[p2] = df_h_c1
+			self.ylabel[p2] = df_h_c1.index.values
 
 	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,device='cpu'):
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
@@ -148,8 +155,8 @@ class picasa(object):
 		context_pooled_list = []
 		ylabel_list = []
 
-		for x_sc,y,x_spp in data_pred:
-			x_emb, x_context, x_context_pooled = model.nn_attn.predict_context(picasa_model,x_sc,x_spp)
+		for x_c1,y,x_c2 in data_pred:
+			x_emb, x_context, x_context_pooled = model.nn_attn.predict_context(picasa_model,x_c1,x_c2)
 			emb_list.append(x_emb.cpu().detach().numpy())
 			context_list.append(x_context.cpu().detach().numpy())
 			context_pooled_list.append(x_context_pooled.cpu().detach().numpy())
@@ -183,13 +190,8 @@ class picasa(object):
 
 	def plot_loss(self):
 		from picasa.util.plots import plot_loss
-		for ad_pair in self.adata_pairs:
-			p1 = self.adata_keys[ad_pair[0]]
-			p2 = self.adata_keys[ad_pair[1]]
-			print('---')
-			print(p1,p2)
 
-			plot_loss(self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.txt.gz',self.wdir+'results/4_attncl_train_loss'+p1+'_'+p2+'.png')
+		plot_loss(self.wdir+'results/4_attncl_train_loss.txt.gz',self.wdir+'results/4_attncl_train_loss.png')
 
 def create_picasa_object(adata_list: Adata,wdir: str):
 	return picasa(dutil.data.Dataset(adata_list),wdir)

@@ -14,20 +14,20 @@ from torch.nn.parallel import DataParallel
 
 
 class PICASAOUT:
-	def __init__(self,h_sc,h_sp,z_sc,z_sp,attn_sc=None, attn_sp=None):
-		self.h_sc = h_sc
-		self.h_sp = h_sp
-		self.z_sc = z_sc
-		self.z_sp = z_sp
-		self.attn_sc = attn_sc
-		self.attn_sp = attn_sp
+	def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1=None, attn_c2=None):
+		self.h_c1 = h_c1
+		self.h_c2 = h_c2
+		self.z_c1 = z_c1
+		self.z_c2 = z_c2
+		self.attn_c1 = attn_c1
+		self.attn_c2 = attn_c2
 
 class PICASAel:
-	def __init__(self,el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp):
-		self.el_attn_sc = el_attn_sc
-		self.el_attn_sp = el_attn_sp
-		self.el_cl_sc = el_cl_sc
-		self.el_cl_sp = el_cl_sp
+	def __init__(self,el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2):
+		self.el_attn_c1 = el_attn_c1
+		self.el_attn_c2 = el_attn_c2
+		self.el_cl_c1 = el_cl_c1
+		self.el_cl_c2 = el_cl_c2
 		
 		   
 class Stacklayers(nn.Module):
@@ -63,7 +63,6 @@ class GeneEmbedor(nn.Module):
 		x_norm = torch.div(x, row_sums) * (self.emb_dim -1)
 		return self.emb_norm(self.embedding(x_norm.int()))
 
-		# return self.emb_norm(self.embedding(x))
 
 
 class ScaledDotAttention(nn.Module):
@@ -74,7 +73,6 @@ class ScaledDotAttention(nn.Module):
 		self.W_key = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.model_dim = weight_dim
-		# self.self_importance = nn.Parameter(torch.zeros(input_dim))
 		
 	def forward(self, query, key, value):
 
@@ -82,12 +80,7 @@ class ScaledDotAttention(nn.Module):
 		key_proj = torch.matmul(key, self.W_key)
 		value_proj = torch.matmul(value, self.W_value)
 		
-
 		scores = torch.matmul(query_proj, key_proj.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.model_dim).float())
-
-		# diag_bias = torch.eye(scores.shape[1], dtype=scores.dtype, device=scores.device)
-		# importance = torch.clamp(torch.exp(self.self_importance),max=3)
-		# scores += (diag_bias * importance)
   
 		attention_weights = torch.softmax(scores, dim=-1)
 		entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
@@ -137,47 +130,47 @@ class PICASANET(nn.Module):
 		
 		self.corruption_rate = corruption_rate
 
-	def forward(self,x_sc,x_sp):
+	def forward(self,x_c1,x_c2):
 		
-		x_sc_emb = self.embedding(x_sc)
+		x_c1_emb = self.embedding(x_c1)
 		
 		if self.corruption_rate != 0.0:
-			corruption_mask = torch.rand(x_sp.shape,device=x_sp.device) < self.corruption_rate
-			marginals = Uniform(float(x_sp.min()),float(x_sp.max()))
-			x_random = marginals.sample(torch.Size(x_sp.size())).to(x_sp.device)
-			x_sp_corrupted = torch.where(corruption_mask, x_random.int(), x_sp)
-			x_sp_emb = self.embedding(x_sp_corrupted)
+			corruption_mask = torch.rand(x_c2.shape,device=x_c2.device) < self.corruption_rate
+			marginals = Uniform(float(x_c2.min()),float(x_c2.max()))
+			x_random = marginals.sample(torch.Size(x_c2.size())).to(x_c2.device)
+			x_c2_corrupted = torch.where(corruption_mask, x_random.int(), x_c2)
+			x_c2_emb = self.embedding(x_c2_corrupted)
 
-			corruption_mask = torch.rand(x_sc.shape,device=x_sc.device) < self.corruption_rate
-			marginals = Uniform(float(x_sc.min()),float(x_sc.max()))
-			x_random = marginals.sample(torch.Size(x_sc.size())).to(x_sc.device)
-			x_sc_corrupted = torch.where(corruption_mask, x_random.int(), x_sc)
-			x_sc_emb = self.embedding(x_sc_corrupted)
+			corruption_mask = torch.rand(x_c1.shape,device=x_c1.device) < self.corruption_rate
+			marginals = Uniform(float(x_c1.min()),float(x_c1.max()))
+			x_random = marginals.sample(torch.Size(x_c1.size())).to(x_c1.device)
+			x_c1_corrupted = torch.where(corruption_mask, x_random.int(), x_c1)
+			x_c1_emb = self.embedding(x_c1_corrupted)
    
 		else:
-			x_sp_emb = self.embedding(x_sp)
+			x_c2_emb = self.embedding(x_c2)
   
-		x_sc_att_out, x_sc_att_w,el_attn_sc = self.attention(x_sc_emb,x_sp_emb,x_sp_emb)
-		x_sc_pool_out = self.pooling(x_sc_att_out)
+		x_c1_att_out, x_c1_att_w,el_attn_c1 = self.attention(x_c1_emb,x_c2_emb,x_c2_emb)
+		x_c1_pool_out = self.pooling(x_c1_att_out)
 
-		x_sp_att_out, x_sp_att_w,el_attn_sp = self.attention(x_sp_emb,x_sc_emb,x_sc_emb)
-		x_sp_pool_out = self.pooling(x_sp_att_out)
+		x_c2_att_out, x_c2_att_w,el_attn_c2 = self.attention(x_c2_emb,x_c1_emb,x_c1_emb)
+		x_c2_pool_out = self.pooling(x_c2_att_out)
 
-		h_sc = self.encoder(x_sc_pool_out)
-		h_sp = self.encoder(x_sp_pool_out)
+		h_c1 = self.encoder(x_c1_pool_out)
+		h_c2 = self.encoder(x_c2_pool_out)
 
-		z_sc = self.projector(h_sc)
-		z_sp = self.projector(h_sp)
+		z_c1 = self.projector(h_c1)
+		z_c2 = self.projector(h_c2)
 		
-		pred_sc = torch.softmax(h_sc, dim=1)
-		el_cl_sc = -torch.mean(torch.sum(pred_sc * torch.log(pred_sc + 1e-10), dim=1))
+		pred_c1 = torch.softmax(h_c1, dim=1)
+		el_cl_c1 = -torch.mean(torch.sum(pred_c1 * torch.log(pred_c1 + 1e-10), dim=1))
 
-		pred_sp = torch.softmax(h_sp, dim=1)
-		el_cl_sp = -torch.mean(torch.sum(pred_sp * torch.log(pred_sp + 1e-10), dim=1))
+		pred_c2 = torch.softmax(h_c2, dim=1)
+		el_cl_c2 = -torch.mean(torch.sum(pred_c2 * torch.log(pred_c2 + 1e-10), dim=1))
 
-		return PICASAOUT(h_sc,h_sp,z_sc,z_sp,x_sc_att_w,x_sp_att_w), PICASAel(el_attn_sc,el_attn_sp, el_cl_sc,el_cl_sp)
+		return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
 
-def train(model,data,epochs,lambda_loss,l_rate,temperature,loss_file):
+def train(model,data,epochs,lambda_loss,l_rate,temperature,pair_alignment=0.5):
 	logger.info('Init training....nn_attn')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	epoch_losses = []
@@ -185,17 +178,17 @@ def train(model,data,epochs,lambda_loss,l_rate,temperature,loss_file):
 	lambda_latent_loss = float(lambda_loss[1])
 	lambda_cl_loss = float(lambda_loss[2])
 	for epoch in range(epochs):
-		epoch_l, cl, el, el_attn_sc, el_attn_sp, el_cl_sc, el_cl_sp = (0,) * 7
-		for x_sc,y,x_sp in data:
+		epoch_l, cl, el, el_attn_c1, el_attn_c2, el_cl_c1, el_cl_c2 = (0,) * 7
+		for x_c1,y,x_c2 in data:
 			opt.zero_grad()
 
-			picasa_out,picasa_el = model(x_sc,x_sp)
+			picasa_out,picasa_el = model(x_c1,x_c2)
 
-			cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_sc, picasa_out.z_sp,temperature)
-			entropy_loss = (picasa_el.el_attn_sc * lambda_attn_loss +
-						picasa_el.el_attn_sp * (lambda_attn_loss/2) +
-						picasa_el.el_cl_sc * lambda_latent_loss +
-						picasa_el.el_cl_sp * (lambda_latent_loss/2))
+			cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
+			entropy_loss = (picasa_el.el_attn_c1 * lambda_attn_loss +
+						picasa_el.el_attn_c2 * (lambda_attn_loss/pair_alignment) +
+						picasa_el.el_cl_c1 * lambda_latent_loss +
+						picasa_el.el_cl_c2 * (lambda_latent_loss/pair_alignment))
 			train_loss = cl_loss + entropy_loss
 			train_loss.backward()
 
@@ -203,36 +196,32 @@ def train(model,data,epochs,lambda_loss,l_rate,temperature,loss_file):
 			epoch_l += train_loss.item()
 			cl += cl_loss.item()
 			el += entropy_loss.item()
-			el_attn_sc += picasa_el.el_attn_sc.item()
-			el_attn_sp += picasa_el.el_attn_sp.item()
-			el_cl_sc += picasa_el.el_cl_sc.item()
-			el_cl_sp += picasa_el.el_cl_sp.item()
+			el_attn_c1 += picasa_el.el_attn_c1.item()
+			el_attn_c2 += picasa_el.el_attn_c2.item()
+			el_cl_c1 += picasa_el.el_cl_c1.item()
+			el_cl_c2 += picasa_el.el_cl_c2.item()
    		
-		epoch_losses.append([epoch_l/len(data),cl/len(data),el/len(data),el_attn_sc/len(data),el_attn_sp/len(data),el_cl_sc/len(data),el_cl_sp/len(data)])  
+		epoch_losses.append([epoch_l/len(data),cl/len(data),el/len(data),el_attn_c1/len(data),el_attn_c2/len(data),el_cl_c1/len(data),el_cl_c2/len(data)])  
 		
 		if epoch % 10 == 0:
 			logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
 
-
-	if os.path.isfile(loss_file):
-		pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,mode='a',index=False,compression='gzip',header=False)	
-	else:
-		pd.DataFrame(epoch_losses,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(loss_file,index=False,compression='gzip',header=True)	
+		return epoch_losses
  
 
 def predict(model,data):
-	for x_sc,y, x_sp in data: break
-	return model(x_sc,x_sp),y
+	for x_c1,y, x_c2 in data: break
+	return model(x_c1,x_c2),y
 
-def predict_batch(model,x_sc,y, x_sp ):
-	return model(x_sc,x_sp),y
+def predict_batch(model,x_c1,y, x_c2 ):
+	return model(x_c1,x_c2),y
 
-def predict_context(model,x_sc,x_sp):
-	x_sc_emb = model.embedding(x_sc)
-	x_sp_emb = model.embedding(x_sp)
+def predict_context(model,x_c1,x_c2):
+	x_c1_emb = model.embedding(x_c1)
+	x_c2_emb = model.embedding(x_c2)
 
-	x_sc_context,_,_ = model.attention(x_sc_emb,x_sp_emb,x_sp_emb)
-	x_sc_context_pooled = model.pooling(x_sc_context)
+	x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
+	x_c1_context_pooled = model.pooling(x_c1_context)
 	
-	return x_sc_emb,x_sc_context,x_sc_context_pooled
+	return x_c1_emb,x_c1_context,x_c1_context_pooled
 

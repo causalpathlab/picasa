@@ -337,8 +337,6 @@ def plot_scsp_overlay():
 	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
 	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
- 
-
 	pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
  
 	df_umap['celltype'] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
@@ -347,6 +345,51 @@ def plot_scsp_overlay():
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
 
+def calc_score(true_labels,cluster_labels):
+
+	from sklearn.metrics import normalized_mutual_info_score
+	from sklearn.metrics.cluster import adjusted_rand_score
+	from collections import Counter
+
+	cluster_set = set(cluster_labels)
+	total_correct = sum(max(Counter(true_labels[i] for i, cl in enumerate(cluster_labels) if cl == cluster).values()) 
+                        for cluster in cluster_set)
+	purity = total_correct / len(true_labels)
+
+	nmi =  normalized_mutual_info_score(true_labels,cluster_labels)
+	ari = adjusted_rand_score(true_labels,cluster_labels)
+
+	return (purity,nmi,ari)
+
+
+def kmeans_cluster(df,k):
+		from sklearn.cluster import KMeans
+		kmeans = KMeans(n_clusters=k, init='k-means++',random_state=0).fit(df)
+		return kmeans.labels_
+
+	
+def get_score():
+	import h5py as hf
+	
+	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
+	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
+	
+	dfmain = pd.DataFrame()
+	for batch in batch_keys:
+		df_c = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
+		df_c.index = [batch+'_'+str(x) for x in df_c.index.values]
+		dfmain = pd.concat([dfmain,df_c],axis=0)
+  
+	picasa_h5.close()
+ 
+	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl.columns = ['index','cell','batch','celltype']
+	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
+	celltype = pd.merge(dfmain,dfl,right_on='cell',left_index=True,how='left')['celltype'].values
+	n_topics = pd.Series(celltype).nunique()
+	cluster = kmeans_cluster(dfmain.to_numpy(),n_topics)
+
+	print(calc_score(celltype,cluster))
 
 train()
 eval()
