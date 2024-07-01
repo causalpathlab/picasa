@@ -10,20 +10,21 @@ import picasa
 
 ############## convert to asap data format
 
-# rna = an.read_h5ad('znode/pbmc/data/pbmc_sc_2b.h5ad')
+rna = an.read_h5ad('znode/pbmc/data/pbmc_pbmc1.h5ad')
 
 
-# fname='znode/pbmc/data/pbmc_sc_2b'
-# row_names = rna.obs.index.values
-# col_names = rna.var.index.values
-# smat = rna.X
-# picasa.preprocessing.read_write.write_h5(fname,row_names,col_names,smat)
+fname='znode/pbmc/data/pbmc_sc_1b'
+row_names = rna.obs.index.values
+col_names = rna.var.index.values
+smat = rna.X
+picasa.preprocessing.read_write.write_h5(fname,row_names,col_names,smat)
 
 
 ############## 
 
 import asappy 
-sample = 'pbmc_sc_2b'
+# sample = 'pbmc_sc_2b'
+sample = 'pbmc_sc_1b'
 
 wdir = 'znode/pbmc/asap/'
 
@@ -48,20 +49,20 @@ asap_adata = an.read_h5ad(wdir+'results/'+sample+'.h5asap')
 ## top 10 main paper
 asappy.plot_gene_loading(asap_adata,top_n=10,max_thresh=25)
 	
-cluster_resolution= 0.1 ## paper
+cluster_resolution= 0.5 ## paper
 asappy.leiden_cluster(asap_adata,resolution=cluster_resolution)
 print(asap_adata.obs.cluster.value_counts())
 	
 ## min distance 0.5 paper
-asappy.run_umap(asap_adata,distance='euclidean',min_dist=1.0)
+asappy.run_umap(asap_adata,distance='euclidean',min_dist=0.5)
 
-asappy.plot_umap(asap_adata,col='cluster',pt_size=1.0,ftype='png')
+asappy.plot_umap(asap_adata,col='cluster',pt_size=3.0,ftype='png')
 
 asap_adata.obs['batch'] = [x.split('_')[2] for x in asap_adata.obs.index.values]
-asappy.plot_umap(asap_adata,col='batch',pt_size=1.0,ftype='png')
+asappy.plot_umap(asap_adata,col='batch',pt_size=2.0,ftype='png')
 
 dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
 dfl.columns = ['cell','celltype','batch']
 asap_adata.obs['celltype'] = pd.merge(asap_adata.obs,dfl, right_on='cell',left_index=True)['celltype'].values
-asappy.plot_umap(asap_adata,col='celltype',pt_size=1.0,ftype='png')
+asappy.plot_umap(asap_adata,col='celltype',pt_size=3.0,ftype='png')
 	

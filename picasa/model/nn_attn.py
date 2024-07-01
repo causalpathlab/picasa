@@ -208,20 +208,22 @@ def train(model,data,epochs,lambda_loss,l_rate,temperature,pair_alignment=0.5):
 
 		return epoch_losses
  
-
-def predict(model,data):
-	for x_c1,y, x_c2 in data: break
-	return model(x_c1,x_c2),y
-
 def predict_batch(model,x_c1,y, x_c2 ):
 	return model(x_c1,x_c2),y
+
+
+def predict_attention(model,x_c1,x_c2):
+	x_c1_emb = model.embedding(x_c1)
+	x_c2_emb = model.embedding(x_c2)
+
+	_,x_c1_attention,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
+	
+	return x_c1_attention
 
 def predict_context(model,x_c1,x_c2):
 	x_c1_emb = model.embedding(x_c1)
 	x_c2_emb = model.embedding(x_c2)
 
 	x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
-	x_c1_context_pooled = model.pooling(x_c1_context)
 	
-	return x_c1_emb,x_c1_context,x_c1_context_pooled
-
+	return x_c1_context

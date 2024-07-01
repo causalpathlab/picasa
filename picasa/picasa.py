@@ -4,6 +4,8 @@ from . import model
 from . import neighbour
 import torch
 import logging
+import gc
+import os
 import pandas as pd
 import numpy as np
 import itertools
@@ -64,7 +66,7 @@ class picasa(object):
 
 		logging.info(self.nn_params)
   
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		logging.info(picasa_model)
   
@@ -98,76 +100,110 @@ class picasa(object):
 		torch.save(picasa_model.state_dict(),self.wdir+'results/nn_attncl.model')
 		pd.DataFrame(loss,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(self.wdir+'results/4_attncl_train_loss.txt.gz',index=False,compression='gzip',header=True)
 		logging.info('Completed training...model saved in results/nn_attncl.model')
- 
-	def eval_model(self,eval_batch_size,device='cpu'):
+  
+	def eval_model(self,eval_batch_size,eval_total_size,device='cpu'):
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
-		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model'))
-		self.attention = {}
+		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
+  
 		self.latent = {}
 		self.ylabel = {}
 
-		for ad_pair in self.adata_pairs:
+		evaled = []
+  
+		for ad_pair in list(self.nbr_map.keys()):
 	  
-			p1 = self.adata_keys[ad_pair[0]]
-			p2 = self.adata_keys[ad_pair[1]]
+			p1 = ad_pair.split('_')[0]
+			p2 = ad_pair.split('_')[1]
+
+			if p1 not in evaled:
+				logging.info('eval :'+p1+'_'+p2)
+				data_pred = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],device,eval_batch_size)
+		
+				df_latent = pd.DataFrame()
+
+				for x_c1,y,x_c2 in data_pred:
+					m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_c1,y,x_c2)
+					m = m_el[0]
+					df_latent = pd.concat([df_latent,pd.DataFrame(m.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
+
+					del x_c1, y, x_c2, m_el, ylabel
+					gc.collect()
+
+					if df_latent.shape[0]>eval_total_size:
+						break
+
+		
+				self.latent[p1] = df_latent
+				self.ylabel[p1] = df_latent.index.values
+				evaled.append(p1)
+
    
-
-			data_pred = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],device,eval_batch_size)
-	
-			df_h_c1 = pd.DataFrame()
-			attn_list = []
-
-			for x_c1,y,x_c2 in data_pred:
-				m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_c1,y,x_c2)
-				m = m_el[0]
-				df_h_c1 = pd.concat([df_h_c1,pd.DataFrame(m.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
-				attn_list.append(m.attn_c1.cpu().detach().numpy())
-	
-			self.attention[p1] = np.concatenate(attn_list, axis=0)
-			self.latent[p1] = df_h_c1
-			self.ylabel[p1] = df_h_c1.index.values
-   
-			data_pred = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],device,eval_batch_size)
-	
-			df_h_c1 = pd.DataFrame()
-			attn_list = []
-
-			for x_c1,y,x_c2 in data_pred:
-				m_el,ylabel = model.nn_attn.predict_batch(picasa_model,x_c1,y,x_c2)
-				m = m_el[0]
-				df_h_c1 = pd.concat([df_h_c1,pd.DataFrame(m.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
-				attn_list.append(m.attn_c1.cpu().detach().numpy())
-	
-			self.attention[p2] = np.concatenate(attn_list, axis=0)
-			self.latent[p2] = df_h_c1
-			self.ylabel[p2] = df_h_c1.index.values
-
-	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,device='cpu'):
+	def eval_attention(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size,device='cpu'):
+		
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
-		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model'))
+		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
 
 		data_pred = dutil.nn_load_data_pairs(adata_p1, adata_p2, adata_nbr_map,device,eval_batch_size)
 
-		emb_list = []
-		context_list = []
-		context_pooled_list = []
+		attn_list = []
 		ylabel_list = []
+		y_count = 0
 
 		for x_c1,y,x_c2 in data_pred:
-			x_emb, x_context, x_context_pooled = model.nn_attn.predict_context(picasa_model,x_c1,x_c2)
-			emb_list.append(x_emb.cpu().detach().numpy())
-			context_list.append(x_context.cpu().detach().numpy())
-			context_pooled_list.append(x_context_pooled.cpu().detach().numpy())
+			x_c1_attn = model.nn_attn.predict_attention(picasa_model,x_c1,x_c2)
+			attn_list.append(x_c1_attn.cpu().detach().numpy())
 			ylabel_list.append(y)
-		
-		emb_list = np.concatenate(emb_list, axis=0)
-		context_list = np.concatenate(context_list, axis=0)
-		context_pooled_list = np.concatenate(context_pooled_list, axis=0)
+			
+			y_count += len(y)
+			if y_count>eval_total_size:
+				break
+			
+			del x_c1_attn, y
+			gc.collect()
+
+		attn_list = np.concatenate(attn_list, axis=0)
 		ylabel_list = np.concatenate(ylabel_list, axis=0)
 
-		return emb_list,context_list,context_pooled_list,ylabel_list
+		return attn_list,ylabel_list
+
+
+		# attn_file_p1 = self.wdir+'results/'+p1+'_attention.npz'
+		# index_file_p1 = self.wdir+'results/'+p1+'_index.csv.gz'
+			
+		# np.savez_compressed(attn_file_p1, np.concatenate(attn_list, axis=0))
+		# pd.DataFrame(ylabel_list).index.to_series().to_csv(index_file_p1, compression='gzip')
+
+
+	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size, device='cpu'):
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+  
+		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
+
+		data_pred = dutil.nn_load_data_pairs(adata_p1, adata_p2, adata_nbr_map,device,eval_batch_size)
+
+		context_list = []
+		ylabel_list = []
+		y_count = 0
+  
+		for x_c1,y,x_c2 in data_pred:
+			x_context = model.nn_attn.predict_context(picasa_model,x_c1,x_c2)
+			context_list.append(x_context.cpu().detach().numpy())
+			ylabel_list.append(y)
+
+			y_count += len(y)
+			if y_count>eval_total_size:
+				break
+
+			del x_context, y
+			gc.collect()
+
+
+		context_list = np.concatenate(context_list, axis=0)
+		ylabel_list = np.concatenate(ylabel_list, axis=0)
+
+		return context_list,ylabel_list
   
 	def save(self):
 		import h5py
@@ -179,7 +215,6 @@ class picasa(object):
 			f.create_dataset('batch_keys', data=adata_keys,dtype=h5py.string_dtype(encoding='utf-8'))
 			for k in adata_keys:
 				f.create_dataset(k+'_latent', data=self.latent[k])
-				f.create_dataset(k+'_attention', data=self.attention[k])
 				f.create_dataset(k+'_ylabel', data=self.ylabel[k])
 
 			for attr_name, attr_value in vars(self).items():
