@@ -29,7 +29,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('brca_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count > 1:
+	if batch_count >10:
 		break
 
 
@@ -55,7 +55,7 @@ params = {'device' : 'cuda',
 		'neighbour_method' : 'approx_50',
 	 	'corruption_rate' : 0.0,
 		'epochs': 1,
-		'titration': 3
+		'titration': 40
 		}  
 
 picasa_object.estimate_neighbour(params['neighbour_method'])	
@@ -67,5 +67,16 @@ def train():
 	picasa_object.plot_loss()
 
 
+def eval():
+	device = 'cpu'
+	picasa_object.set_nn_params(params)
+	picasa_object.nn_params['device'] = device
+	eval_batch_size = 100
+	eval_total_size_per_batch = 3000
+	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
+	picasa_object.save()
+
+
 
 train()
+eval()

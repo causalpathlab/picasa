@@ -37,14 +37,10 @@ params = {'device' : 'cuda',
 		'neighbour_method' : 'approx_50',
      	'corruption_rate' : 0.0,
 		'epochs': 1,
-		'titration': 100
+		'titration': 50
 		}  
 
 def train():
-	
-	# distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
-	# scsp_map = {x:y[0] for x,y in enumerate(distdf.values)}
-	# picasa_object.assign_neighbour(scsp_map,None)
 	
 	picasa_object.estimate_neighbour(params['neighbour_method'])
 	
@@ -57,7 +53,8 @@ def eval():
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
 	eval_batch_size = int(batch1.shape[0]/5)
-	picasa_object.eval_model(eval_batch_size,device)
+	eval_total_size = 3000
+	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
 	picasa_object.save()
 
 def plot_latent():
@@ -226,12 +223,15 @@ def plot_scsp_overlay():
 	###################
 	####################
  
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,n_neighbors=50,metric='cosine').fit(dfh)
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.3)
+ 
+	pd.Series(cluster).value_counts()
+	
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.3,n_neighbors=20,distance='cosine')
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
-	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
-
+	df_umap[['umap1','umap2']] = umap_2d
  
 	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']

@@ -139,3 +139,63 @@ def quantile_normalization(ds1,ds2,	do_center=True, refine_knn=True, max_sample=
 					adata_list[k][cells2, i] = new_vals
 
 	return adata_list[0],adata_list[1]
+
+
+def run_umap(mtx,
+			 snn_graph = None,
+		 	 use_snn = True,
+			 k=2,
+			 distance="euclidean",
+			 n_neighbors=15,
+			 min_dist=0.1,
+			 rand_seed=42):
+    
+	logging.info('Running umap embedding....')
+	logging.info('min_dist: '+str(min_dist))
+	logging.info('n_neighbors: '+str(n_neighbors))
+	logging.info('distance: '+str(distance))
+	
+	if use_snn:
+
+		from umap.umap_ import find_ab_params, simplicial_set_embedding
+		
+		n_components = k
+		spread: float = 1.0
+		alpha: float = 1.0
+		gamma: float = 1.0
+		negative_sample_rate: int = 5
+		maxiter = None
+		default_epochs = 500 if snn_graph.shape[0] <= 10000 else 200
+		n_epochs = default_epochs if maxiter is None else maxiter
+		random_state = np.random.RandomState(rand_seed)
+
+		a, b = find_ab_params(spread, min_dist)
+
+		umap_coords = simplicial_set_embedding(
+			data = mtx,
+			graph = snn_graph,
+			n_components=n_components,
+			initial_alpha = alpha,
+			a = a,
+			b = b,
+			gamma = gamma,
+			negative_sample_rate = negative_sample_rate,
+			n_epochs = n_epochs,
+			init='spectral',
+			random_state = random_state,
+			metric = distance,
+			metric_kwds = {},
+			densmap=False,
+			densmap_kwds={},
+			output_dens=False
+			)
+		return umap_coords[0]
+
+	else:
+		import umap
+		
+		umap_coords = umap.UMAP(n_components=k, metric=distance,
+							n_neighbors=n_neighbors, min_dist=min_dist,
+							random_state=rand_seed).fit_transform(mtx)
+
+		return umap_coords	
