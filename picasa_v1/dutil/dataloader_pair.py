@@ -74,7 +74,7 @@ def nn_load_data(adata_sc,adata_sp,scsp_map,device,bath_size):
  
 	spdata = SparseData(sc_indptr,sc_indices,sc_vals,sc_shape,sc_label,sp_indptr,sp_indices,sp_vals,sp_shape,scsp_map)
 
-	return DataLoader(SparseDataset(spdata,device), batch_size=bath_size, shuffle=True, drop_last=True)
+	return DataLoader(SparseDataset(spdata,device), batch_size=bath_size, shuffle=True)
 
 class nn_load_data_mgpu(pl.LightningDataModule):
 	

@@ -37,27 +37,50 @@ params = {'device' : 'cuda',
 		'neighbour_method' : 'approx_50',
      	'corruption_rate' : 0.0,
 		'epochs': 1,
-		'titration': 100
+		'titration': 20
 		}  
 
+## add prior gene programs
+dfp = pd.read_csv(wdir+'data/gene_programs.csv.gz')
+# find matched genes
+mgenes =  np.intersect1d(dfp['gene'].values,batch1.var.index.values)
+# find unmatched genes
+unmgenes  = np.setdiff1d( batch1.var.index.values,dfp['gene'].values)
+# select matched genes and make it index
+dfp = dfp[dfp['gene'].isin(mgenes)]
+dfp.set_index('gene',inplace=True)
+# new df with unmatched genes
+# append to dfp and change gene order as in batch data
+new_rows = pd.DataFrame(0, index=unmgenes, columns=dfp.columns)
+dfp = pd.concat((dfp,new_rows),axis=0)
+dfp = dfp.loc[batch1.var.index.values]
+
+gp_array = dfp.values
+
+picasa_object.estimate_neighbour(params['neighbour_method'])
 def train():
 	
-	# distdf = pd.read_csv(wdir+'data/sc_sp_dist.csv.gz')
-	# scsp_map = {x:y[0] for x,y in enumerate(distdf.values)}
-	# picasa_object.assign_neighbour(scsp_map,None)
 	
-	picasa_object.estimate_neighbour(params['neighbour_method'])
-	
+	gp_tensor = torch.tensor(gp_array, dtype=torch.float32,requires_grad=False).to(params['device'])
+	gp_tensor = gp_tensor.unsqueeze(0).expand(params['batch_size'], -1, -1) 
+	params['gene_programs'] = gp_tensor
+ 
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
 	picasa_object.plot_loss()
 
 def eval():
 	device = 'cpu'
+	gp_tensor = torch.tensor(gp_array, dtype=torch.float32).to(device)
+	gp_tensor = gp_tensor.unsqueeze(0).expand(params['batch_size'], -1, -1) 
+	params['gene_programs'] = gp_tensor
+
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-	eval_batch_size = int(batch1.shape[0]/5)
-	picasa_object.eval_model(eval_batch_size,device)
+	eval_batch_size = params['batch_size']
+	# eval_batch_size = 200
+	eval_total_size = 3000
+	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
 	picasa_object.save()
 
 def plot_latent():
@@ -226,12 +249,15 @@ def plot_scsp_overlay():
 	###################
 	####################
  
-	umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,n_neighbors=50,metric='cosine').fit(dfh)
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.3)
+ 
+	pd.Series(cluster).value_counts()
+	
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.3,n_neighbors=20,distance='cosine')
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
-	df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
-
+	df_umap[['umap1','umap2']] = umap_2d
  
 	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
@@ -296,9 +322,9 @@ def get_score():
 	print(calc_score(dfc.celltype.values,dfc.cluster.values))
 
 # train()
-# eval()
+eval()
 # plot_latent()
-# plot_scsp_overlay()
+plot_scsp_overlay()
 # plot_attention()
-get_score()
+# get_score()
 # (0.8358827278521351, 0.6235707295082915, 0.47349793429028464)

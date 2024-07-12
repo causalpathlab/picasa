@@ -63,68 +63,31 @@ class GeneEmbedor(nn.Module):
 		x_norm = torch.div(x, row_sums) * (self.emb_dim -1)
 		return self.emb_norm(self.embedding(x_norm.int()))
 
+
+
 class ScaledDotAttention(nn.Module):
 	
-	def __init__(self, weight_dim,prior_gene_programs=None):
+	def __init__(self, weight_dim,input_dim):
 		super(ScaledDotAttention, self).__init__()
 		self.W_query = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_key = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.model_dim = weight_dim
-		self.prior_gene_programs = prior_gene_programs
-		self.W_reduce = nn.Linear(weight_dim+prior_gene_programs.shape[2], weight_dim)
 		
 	def forward(self, query, key, value):
 
 		query_proj = torch.matmul(query, self.W_query)
 		key_proj = torch.matmul(key, self.W_key)
 		value_proj = torch.matmul(value, self.W_value)
-  
-		gene_proj = self.append_gene_programs(value_proj)
-		# print(gene_proj.shape)
+		
 		scores = torch.matmul(query_proj, key_proj.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.model_dim).float())
   
-		attention_weights = self.update_attention(scores)
-  
-		attention_weights = torch.softmax(attention_weights, dim=-1)
-  
+		attention_weights = torch.softmax(scores, dim=-1)
 		entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
 
-		output_vp = torch.matmul(attention_weights, value_proj)
-		output_gp = torch.matmul(attention_weights, gene_proj)
-		concatenated_output = torch.cat((output_vp, output_gp), dim=-1)
-		output = self.W_reduce(concatenated_output)
-  
+		output = torch.matmul(attention_weights, value_proj)
+		
 		return output, attention_weights,entropy_loss_attn
-
-	def append_gene_programs(self, value_proj):
-		if self.prior_gene_programs is not None:
-			prior_gene_programs_detached = self.prior_gene_programs.detach()
-			
-			with torch.no_grad():
-				average_value = value_proj.max()
-			
-			prior_gene_programs_detached = torch.where(prior_gene_programs_detached != 0, average_value, prior_gene_programs_detached)
-			
-			# value_proj = torch.cat((value_proj, prior_gene_programs_detached), dim=-1)
-   
-			return prior_gene_programs_detached
-
-	def update_attention(self, attention_weights):
-		if self.prior_gene_programs is not None:
-			
-			gene_programs = self.prior_gene_programs[0].detach()
-			gene_programs = gene_programs.T
-      
-			# num_genes = gene_programs.size(0)
-			# correlation_matrix = torch.matmul(gene_programs.T, gene_programs) / (num_genes - 1)
-   
-			correlation_matrix = torch.matmul(gene_programs.T, gene_programs) 
-   
-			attention_weights = attention_weights + correlation_matrix
-   			
-		return attention_weights
-	 
 
 class AttentionPooling(nn.Module):
 	def __init__(self, model_dim):
@@ -155,14 +118,12 @@ class MLP(nn.Module):
 		return z
 
 class PICASANET(nn.Module):
-	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_rate,prior_gene_programs):
+	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_rate):
 		super(PICASANET,self).__init__()
 
 		self.embedding = GeneEmbedor(embedding_dim,attention_dim)
-		self.attention = ScaledDotAttention(attention_dim,prior_gene_programs)
+		self.attention = ScaledDotAttention(attention_dim,input_dim)
 		self.pooling = AttentionPooling(attention_dim)
-		# self.pooling = AttentionPooling(attention_dim+prior_gene_programs.shape[2])
-		# self.pooling = AttentionPooling(prior_gene_programs.shape[2])
 
 		self.encoder = ENCODER(input_dim,encoder_layers)
 		self.projector = MLP(latent_dim, projection_layers)

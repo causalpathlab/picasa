@@ -14,11 +14,11 @@ import logging
 import glob
 import os
 
-sample = 'brca'
-wdir = 'znode/brca/'
+sample = 'gbm'
+wdir = 'znode/gbm/'
 
 directory = wdir+'/data'
-pattern = 'brca_*.h5ad'
+pattern = 'gbm_*.h5ad'
 
 file_paths = glob.glob(os.path.join(directory, pattern))
 file_names = [os.path.basename(file_path) for file_path in file_paths]
@@ -27,13 +27,13 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('brca_','')] = an.read_h5ad(wdir+'data/'+file_name)
+	batch_map[file_name.replace('.h5ad','').replace('gbm_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >10:
+	if batch_count >25:
 		break
 
 
-file_name = file_names[0].replace('.h5ad','').replace('brca_','')
+file_name = file_names[0].replace('.h5ad','').replace('gbm_','')
 
 picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
@@ -43,9 +43,9 @@ picasa_object = picasa.pic.create_picasa_object(
 
 params = {'device' : 'cuda',
 		'batch_size' : 64,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('brca_','')].X.shape[1],
+		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('gbm_','')].X.shape[1],
 		'embedding_dim' : 1000,
-		'attention_dim' : 25,
+		'attention_dim' : 15,
 		'latent_dim' : 15,
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
@@ -55,7 +55,7 @@ params = {'device' : 'cuda',
 		'neighbour_method' : 'approx_50',
 	 	'corruption_rate' : 0.0,
 		'epochs': 1,
-		'titration': 40
+		'titration': 50
 		}  
 
 picasa_object.estimate_neighbour(params['neighbour_method'])	
@@ -71,12 +71,12 @@ def eval():
 	device = 'cpu'
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-	eval_batch_size = 100
-	eval_total_size_per_batch = 3000
+	eval_batch_size = 500
+	eval_total_size_per_batch = 10000
 	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
 	picasa_object.save()
 
 
 
-train()
+# train()
 eval()

@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix
 
 import scanpy as sc
 
-wdir = '/data/sishir/data/pancreas/'
+wdir = '/data/sishir/data/batch_correction/pancreas/'
 
 adata = an.read_h5ad(wdir+'pancreas_raw.h5ad')
 

@@ -14,47 +14,9 @@ import logging
 import glob
 import os
 
-sample = 'brca'
-wdir = 'znode/brca/'
+sample = 'gbm'
+wdir = 'znode/gbm/'
 
-directory = wdir+'/data'
-pattern = 'brca_*.h5ad'
-
-file_paths = glob.glob(os.path.join(directory, pattern))
-file_names = [os.path.basename(file_path) for file_path in file_paths]
-
-batch_map = {}
-batch_count = 0
-for file_name in file_names:
-	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('brca_','')] = an.read_h5ad(wdir+'data/'+file_name)
-	batch_count += 1
-	if batch_count > 2:
-		break
-
-
-file_name = file_names[0].replace('.h5ad','').replace('brca_','')
-
-picasa_object = picasa.pic.create_picasa_object(
-	batch_map,
-	wdir)
-
-params = {'device' : 'cuda',
-		'batch_size' : 64,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('brca_','')].X.shape[1],
-		'embedding_dim' : 1000,
-		'attention_dim' : 25,
-		'latent_dim' : 15,
-		'encoder_layers' : [100,15],
-		'projection_layers' : [15,15],
-		'learning_rate' : 0.001,
-		'lambda_loss' : [0.5,0.1,2.0],
-		'temperature_cl' : 1.0,
-		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
-		'epochs': 1,
-		'titration': 3
-		}  
 
 def plot_latent():
 	import umap
@@ -63,7 +25,7 @@ def plot_latent():
 	from picasa.util.plots import plot_umap_df
 	
 	dfl = pd.read_csv(wdir+'data/'+sample+'_label.csv.gz')
-	dfl = dfl[['cell','batch','celltype']]
+	# dfl = dfl[['cell','batch','celltype']]
  
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
 	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
@@ -127,24 +89,25 @@ def plot_scsp_overlay():
  
 	pd.Series(cluster).value_counts()
 	
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.8)
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
 	df_umap['cluster'] = pd.Categorical(cluster)
 	df_umap[['umap1','umap2']] = umap_2d
+	df_umap['batch'] = [x.split('_')[1] for x in df_umap['cell'].values]
+ 
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
- 
 	
-	dfl = pd.read_csv(wdir+'data/metadata.csv.gz') 
-	dfl.rename(columns={'Unnamed: 0':'cell'},inplace=True)
-	dfl = dfl[['cell', 'orig.ident','subtype', 'celltype_subset', 'celltype_minor', 'celltype_major']]
+	# dfl = pd.read_csv(wdir+'data/gbm_label_leiden.csv.gz') 	 
+	# df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
+	
+	# df_umap['leiden'] = pd.Categorical(df_umap['leiden'])
+	# plot_umap_df(df_umap,'leiden',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
  
-	for col in dfl.columns[1:]:
-		print(col)
-		df_umap[col] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')[col].values
-		df_umap[col] = pd.Categorical(df_umap[col])
-		plot_umap_df(df_umap,col,wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
 
 def calc_score(true_labels,cluster_labels):
 
