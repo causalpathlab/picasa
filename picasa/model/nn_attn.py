@@ -185,10 +185,8 @@ def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_
 			picasa_out,picasa_el = model(x_c1,x_c2)
 
 			if rare_ct_mode:
-				logging.info('pcl_clust')	
 				cl_loss = lambda_cl_loss * pcl_loss_cluster(picasa_out.z_c1, picasa_out.z_c2,num_clusters, rare_group_threshold, rare_group_weight,temperature)
 			else:
-				logging.info('pcl')	
 				cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
 
 
