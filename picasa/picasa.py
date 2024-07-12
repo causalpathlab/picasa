@@ -66,7 +66,7 @@ class picasa(object):
 
 		logging.info(self.nn_params)
   
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['gene_programs']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		logging.info(picasa_model)
   
@@ -84,13 +84,13 @@ class picasa(object):
 		
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
-				loss_p1_p2 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'])
+				loss_p1_p2 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['rare_ct_mode'],self.nn_params['num_clusters'],self.nn_params['rare_group_threshold'], self.nn_params['rare_group_weight'],self.nn_params['temperature_cl'])
 	
 				logging.info('Training...model-'+p2+'_'+p1)
 	
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
-				loss_p2_p1 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'])
+				loss_p2_p1 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['rare_ct_mode'],self.nn_params['num_clusters'],self.nn_params['rare_group_threshold'], self.nn_params['rare_group_weight'],self.nn_params['temperature_cl'])
 
 				loss_p1_p2 = np.array(loss_p1_p2)
 				loss_p2_p1 = np.array(loss_p2_p1)
@@ -102,11 +102,9 @@ class picasa(object):
 		logging.info('Completed training...model saved in results/nn_attncl.model')
   
 	def eval_model(self,eval_batch_size,eval_total_size,device='cpu'):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['gene_programs']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
-  
-		logging.info(picasa_model)
   
 		self.latent = {}
 		self.ylabel = {}
@@ -143,7 +141,7 @@ class picasa(object):
    
 	def eval_attention(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size,device='cpu'):
 		
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['gene_programs']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
 
@@ -179,7 +177,7 @@ class picasa(object):
 
 
 	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size, device='cpu'):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['gene_programs']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
 

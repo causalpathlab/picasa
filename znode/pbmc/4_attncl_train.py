@@ -1,3 +1,4 @@
+
 import sys 
 sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa')
 
@@ -24,7 +25,7 @@ picasa_object = picasa.pic.create_picasa_object(
 
 
 params = {'device' : 'cuda',
-		'batch_size' : 64,
+		'batch_size' : 128,
 		'input_dim' : batch1.X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 25,
@@ -36,49 +37,27 @@ params = {'device' : 'cuda',
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
      	'corruption_rate' : 0.0,
+      	'rare_ct_mode' : True, 
+      	'num_clusters' : 5, 
+        'rare_group_threshold' : 0.1, 
+        'rare_group_weight': 2.0,
 		'epochs': 1,
-		'titration': 20
+		'titration': 50
 		}  
 
-## add prior gene programs
-dfp = pd.read_csv(wdir+'data/gene_programs.csv.gz')
-# find matched genes
-mgenes =  np.intersect1d(dfp['gene'].values,batch1.var.index.values)
-# find unmatched genes
-unmgenes  = np.setdiff1d( batch1.var.index.values,dfp['gene'].values)
-# select matched genes and make it index
-dfp = dfp[dfp['gene'].isin(mgenes)]
-dfp.set_index('gene',inplace=True)
-# new df with unmatched genes
-# append to dfp and change gene order as in batch data
-new_rows = pd.DataFrame(0, index=unmgenes, columns=dfp.columns)
-dfp = pd.concat((dfp,new_rows),axis=0)
-dfp = dfp.loc[batch1.var.index.values]
-
-gp_array = dfp.values
-
-picasa_object.estimate_neighbour(params['neighbour_method'])
 def train():
 	
+	picasa_object.estimate_neighbour(params['neighbour_method'])
 	
-	gp_tensor = torch.tensor(gp_array, dtype=torch.float32,requires_grad=False).to(params['device'])
-	gp_tensor = gp_tensor.unsqueeze(0).expand(params['batch_size'], -1, -1) 
-	params['gene_programs'] = gp_tensor
- 
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
 	picasa_object.plot_loss()
 
 def eval():
 	device = 'cpu'
-	gp_tensor = torch.tensor(gp_array, dtype=torch.float32).to(device)
-	gp_tensor = gp_tensor.unsqueeze(0).expand(params['batch_size'], -1, -1) 
-	params['gene_programs'] = gp_tensor
-
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-	eval_batch_size = params['batch_size']
-	# eval_batch_size = 200
+	eval_batch_size = int(batch1.shape[0]/5)
 	eval_total_size = 3000
 	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
 	picasa_object.save()
@@ -321,7 +300,7 @@ def get_score():
 	# dfc = dfc.loc[dfc.celltype.isin(sel_ct)]
 	print(calc_score(dfc.celltype.values,dfc.cluster.values))
 
-# train()
+train()
 eval()
 # plot_latent()
 plot_scsp_overlay()
