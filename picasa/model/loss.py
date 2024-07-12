@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from sklearn.cluster import KMeans
 
 def reparameterize(mean,lnvar):
 	sig = torch.exp(lnvar/2.)
@@ -29,7 +30,46 @@ def cl_loss(anchor, positive, negative, margin=1.0):
     losses = F.relu(distance_positive - distance_negative + margin)
 
     return losses.mean()
-                 
+
+def identify_rare_groups(latent_space, num_clusters, rare_group_threshold):
+    kmeans = KMeans(n_clusters=num_clusters)
+    cluster_labels = kmeans.fit_predict(latent_space.cpu().detach().numpy())
+    
+    cluster_counts = torch.tensor([(cluster_labels == i).sum() for i in range(num_clusters)])
+    total_samples = len(cluster_labels)
+    rare_clusters = cluster_counts < (rare_group_threshold * total_samples)
+    
+    return torch.tensor(cluster_labels, device=latent_space.device), rare_clusters
+
+def pcl_loss_cluster(z_i, z_j, num_clusters, rare_group_threshold, rare_group_weight,temperature=1.0):
+    batch_size = z_i.size(0)
+
+    z = torch.cat([z_i, z_j], dim=0)
+    similarity = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2)
+
+    sim_ij = torch.diag(similarity, batch_size)
+    sim_ji = torch.diag(similarity, -batch_size)
+    positives = torch.cat([sim_ij, sim_ji], dim=0)
+
+    mask = (~torch.eye(batch_size * 2, batch_size * 2, dtype=torch.bool, device=z_i.device)).float()
+    numerator = torch.exp(positives / temperature)
+    denominator = mask * torch.exp(similarity / temperature)
+
+    all_losses = -torch.log(numerator / torch.sum(denominator, dim=1))
+
+    cluster_labels, rare_clusters = identify_rare_groups(z, num_clusters, rare_group_threshold)
+    
+    weights = torch.ones_like(all_losses, device=z_i.device)
+    for cluster_idx in range(num_clusters):
+        if rare_clusters[cluster_idx]:
+            cluster_indices = (cluster_labels == cluster_idx).nonzero(as_tuple=True)[0]
+            weights[cluster_indices] = rare_group_weight
+    weighted_losses = all_losses * weights
+    loss = torch.sum(weighted_losses) / (2 * batch_size)
+
+    return loss
+
+
 def pcl_loss(z_i, z_j,temperature = 1.0):
     
         batch_size = z_i.size(0)

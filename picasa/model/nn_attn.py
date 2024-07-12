@@ -4,7 +4,7 @@ import os
 import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
-from .loss import pcl_loss
+from .loss import pcl_loss,pcl_loss_cluster
 import logging
 logger = logging.getLogger(__name__)
 from torch.distributions.uniform import Uniform
@@ -170,7 +170,7 @@ class PICASANET(nn.Module):
 
 		return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
 
-def train(model,data,epochs,lambda_loss,l_rate,temperature,pair_alignment=0.5):
+def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_group_threshold, rare_group_weight,temperature,pair_alignment=0.5):
 	logger.info('Init training....nn_attn')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	epoch_losses = []
@@ -184,7 +184,14 @@ def train(model,data,epochs,lambda_loss,l_rate,temperature,pair_alignment=0.5):
 
 			picasa_out,picasa_el = model(x_c1,x_c2)
 
-			cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
+			if rare_ct_mode:
+				logging.info('pcl_clust')	
+				cl_loss = lambda_cl_loss * pcl_loss_cluster(picasa_out.z_c1, picasa_out.z_c2,num_clusters, rare_group_threshold, rare_group_weight,temperature)
+			else:
+				logging.info('pcl')	
+				cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
+
+
 			entropy_loss = (picasa_el.el_attn_c1 * lambda_attn_loss +
 						picasa_el.el_attn_c2 * (lambda_attn_loss/pair_alignment) +
 						picasa_el.el_cl_c1 * lambda_latent_loss +

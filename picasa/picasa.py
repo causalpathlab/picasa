@@ -84,13 +84,13 @@ class picasa(object):
 		
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
-				loss_p1_p2 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'])
+				loss_p1_p2 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['rare_ct_mode'],self.nn_params['num_clusters'],self.nn_params['rare_group_threshold'], self.nn_params['rare_group_weight'],self.nn_params['temperature_cl'])
 	
 				logging.info('Training...model-'+p2+'_'+p1)
 	
 				data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
-				loss_p2_p1 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['temperature_cl'])
+				loss_p2_p1 = model.nn_attn.train(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['rare_ct_mode'],self.nn_params['num_clusters'],self.nn_params['rare_group_threshold'], self.nn_params['rare_group_weight'],self.nn_params['temperature_cl'])
 
 				loss_p1_p2 = np.array(loss_p1_p2)
 				loss_p2_p1 = np.array(loss_p2_p1)

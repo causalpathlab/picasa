@@ -127,7 +127,11 @@ def plot_scsp_overlay():
  
 	pd.Series(cluster).value_counts()
 	
+<<<<<<< HEAD
 	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.0,n_neighbors=2,distance='cosine')
+=======
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.8)
+>>>>>>> with_weighted_rare_celltype
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values

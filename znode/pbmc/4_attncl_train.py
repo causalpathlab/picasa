@@ -1,3 +1,4 @@
+
 import sys 
 sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa')
 
@@ -24,7 +25,7 @@ picasa_object = picasa.pic.create_picasa_object(
 
 
 params = {'device' : 'cuda',
-		'batch_size' : 64,
+		'batch_size' : 128,
 		'input_dim' : batch1.X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 25,
@@ -36,6 +37,10 @@ params = {'device' : 'cuda',
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
      	'corruption_rate' : 0.0,
+      	'rare_ct_mode' : True, 
+      	'num_clusters' : 5, 
+        'rare_group_threshold' : 0.1, 
+        'rare_group_weight': 2.0,
 		'epochs': 1,
 		'titration': 50
 		}  
@@ -295,10 +300,10 @@ def get_score():
 	# dfc = dfc.loc[dfc.celltype.isin(sel_ct)]
 	print(calc_score(dfc.celltype.values,dfc.cluster.values))
 
-# train()
-# eval()
+train()
+eval()
 # plot_latent()
-# plot_scsp_overlay()
+plot_scsp_overlay()
 # plot_attention()
-get_score()
+# get_score()
 # (0.8358827278521351, 0.6235707295082915, 0.47349793429028464)

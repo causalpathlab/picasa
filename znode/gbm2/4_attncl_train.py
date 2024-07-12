@@ -14,16 +14,12 @@ import logging
 import glob
 import os
 
-<<<<<<< HEAD
 <<<<<<< HEAD:znode/gbm/4_attncl_train.py
-=======
->>>>>>> with_weighted_rare_celltype
 sample = 'gbm'
 wdir = 'znode/gbm/'
 
 directory = wdir+'/data'
 pattern = 'gbm_*.h5ad'
-<<<<<<< HEAD
 =======
 sample = 'gbm2'
 wdir = 'znode/gbm2/'
@@ -31,8 +27,6 @@ wdir = 'znode/gbm2/'
 directory = wdir+'/data'
 pattern = 'gbm2_*.h5ad'
 >>>>>>> with_weighted_rare_celltype:znode/gbm2/4_attncl_train.py
-=======
->>>>>>> with_weighted_rare_celltype
 
 file_paths = glob.glob(os.path.join(directory, pattern))
 file_names = [os.path.basename(file_path) for file_path in file_paths]
@@ -41,29 +35,21 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-<<<<<<< HEAD
 <<<<<<< HEAD:znode/gbm/4_attncl_train.py
 	batch_map[file_name.replace('.h5ad','').replace('gbm_','')] = an.read_h5ad(wdir+'data/'+file_name)
 =======
 	batch_map[file_name.replace('.h5ad','').replace('gbm2_','')] = an.read_h5ad(wdir+'data/'+file_name)
 >>>>>>> with_weighted_rare_celltype:znode/gbm2/4_attncl_train.py
-=======
-	batch_map[file_name.replace('.h5ad','').replace('gbm_','')] = an.read_h5ad(wdir+'data/'+file_name)
->>>>>>> with_weighted_rare_celltype
 	batch_count += 1
 	if batch_count >25:
 		break
 
 
-<<<<<<< HEAD
 <<<<<<< HEAD:znode/gbm/4_attncl_train.py
 file_name = file_names[0].replace('.h5ad','').replace('gbm_','')
 =======
 file_name = file_names[0].replace('.h5ad','').replace('gbm2_','')
 >>>>>>> with_weighted_rare_celltype:znode/gbm2/4_attncl_train.py
-=======
-file_name = file_names[0].replace('.h5ad','').replace('gbm_','')
->>>>>>> with_weighted_rare_celltype
 
 picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
@@ -73,15 +59,11 @@ picasa_object = picasa.pic.create_picasa_object(
 
 params = {'device' : 'cuda',
 		'batch_size' : 64,
-<<<<<<< HEAD
 <<<<<<< HEAD:znode/gbm/4_attncl_train.py
 		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('gbm_','')].X.shape[1],
 =======
 		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('gbm2_','')].X.shape[1],
 >>>>>>> with_weighted_rare_celltype:znode/gbm2/4_attncl_train.py
-=======
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('gbm_','')].X.shape[1],
->>>>>>> with_weighted_rare_celltype
 		'embedding_dim' : 1000,
 		'attention_dim' : 15,
 		'latent_dim' : 15,
@@ -93,15 +75,11 @@ params = {'device' : 'cuda',
 		'neighbour_method' : 'approx_50',
 	 	'corruption_rate' : 0.0,
 		'epochs': 1,
-<<<<<<< HEAD
 <<<<<<< HEAD:znode/gbm/4_attncl_train.py
 		'titration': 50
 =======
 		'titration': 25
 >>>>>>> with_weighted_rare_celltype:znode/gbm2/4_attncl_train.py
-=======
-		'titration': 50
->>>>>>> with_weighted_rare_celltype
 		}  
 
 picasa_object.estimate_neighbour(params['neighbour_method'])	
@@ -117,24 +95,16 @@ def eval():
 	device = 'cpu'
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-<<<<<<< HEAD
 <<<<<<< HEAD:znode/gbm/4_attncl_train.py
 	eval_batch_size = 1000
 =======
 	eval_batch_size = 500
 >>>>>>> with_weighted_rare_celltype:znode/gbm2/4_attncl_train.py
-=======
-	eval_batch_size = 500
->>>>>>> with_weighted_rare_celltype
 	eval_total_size_per_batch = 10000
 	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
 	picasa_object.save()
 
 
 
-<<<<<<< HEAD
 train()
-=======
-# train()
->>>>>>> with_weighted_rare_celltype
 eval()

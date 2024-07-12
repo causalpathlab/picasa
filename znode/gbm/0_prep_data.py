@@ -4,6 +4,10 @@ sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa')
 
 import scanpy as sc
 import pandas as pd
+<<<<<<< HEAD
+=======
+import numpy as np
+>>>>>>> with_weighted_rare_celltype
 import scipy.io
 from scipy.sparse import csr_matrix
 import anndata as an
@@ -22,8 +26,18 @@ df = pd.DataFrame(matrix.todense())
 df.index =  [x[0].split(' ')[0] for x in barcodes.values]
 df.columns = [x[0] for x in genes.values]
 
+<<<<<<< HEAD
 import picasa
 hvgs = genes.values[picasa.ut.select_hvgenes(df.to_numpy(),gene_var_z=4)]
+=======
+remove_cols = [ x for x in df.columns if  'MT-' in x or x.split('_')[1].startswith('RPL') or x.split('_')[1].startswith('RPS') or x.split('_')[1].startswith('RP1')]
+
+df = df[[ x for x in df.columns if x not in remove_cols]]
+genes = df.columns.values
+
+import picasa
+hvgs = genes[picasa.ut.select_hvgenes(df.to_numpy(),gene_var_z=3)]
+>>>>>>> with_weighted_rare_celltype
 hvgs = hvgs.flatten()
 print(len(hvgs))
 
@@ -168,4 +182,34 @@ df
 # Display the combined DataFrame
 print(df.head())
 
+<<<<<<< HEAD
 df.to_csv('gbm_label.csv.gz',index=False,compression='gzip')
+=======
+df.to_csv('gbm_label.csv.gz',index=False,compression='gzip')
+
+
+
+
+#### gene programs
+
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv('PanglaoDB_markers_27_Mar_2020.tsv.gz',sep='\t')
+
+df['cell type'].value_counts()
+df['species'].value_counts()
+
+df = df[df['species'].isin(['Mm Hs','Hs'])]
+
+df =df[['official gene symbol','cell type']]
+
+df.columns = ['gene','celltype']
+df['value'] = 1.0
+
+dfp = df.pivot(index='gene',columns='celltype',values='value')
+
+dfp.fillna('0.0',inplace=True)
+
+dfp.to_csv('gene_programs.csv.gz',compression='gzip')
+>>>>>>> with_weighted_rare_celltype
