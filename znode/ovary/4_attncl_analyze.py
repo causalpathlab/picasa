@@ -89,22 +89,23 @@ def plot_scsp_overlay():
  
 	pd.Series(cluster).value_counts()
 	
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.5,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
 	df_umap['cluster'] = pd.Categorical(cluster)
 	df_umap[['umap1','umap2']] = umap_2d
-	df_umap['batch'] = [x.split('_')[0] for x in df_umap['cell'].values]
- 
-	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=3.0,ftype='png') 
-	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=3.0,ftype='png') 
+	df_umap['batch'] = [x.split('-')[1].split('_')[0] for x in df_umap['cell'].values]
 
-	
 	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
 	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
+ 
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 	
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=3.0,ftype='png') 
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+
+	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
  
 	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
 

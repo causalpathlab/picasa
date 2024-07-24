@@ -21,12 +21,6 @@ batch5 = an.read_h5ad(wdir+'data/'+sample+'_smartseq2.h5ad')
 batch6 = an.read_h5ad(wdir+'data/'+sample+'_celseq2.h5ad')
 batch7 = an.read_h5ad(wdir+'data/'+sample+'_fluidigmc1.h5ad')
 
-
-adata = an.read_h5ad('/data/sishir/data/batch_correction/pancreas/pancreas_raw.h5ad')
-genes = adata.var._index.values
-
-batch1.var.index = [genes[int(x)] for x in batch1.var.index.values]
-
 picasa_object = picasa.pic.create_picasa_object(
 	{
 	 'indrop1':batch1,
@@ -48,56 +42,35 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,1.0],
+		'lambda_loss' : [0.5,0.1,2.0],
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
      	'corruption_rate' : 0.0,
+      	'rare_ct_mode' : True, 
+      	'num_clusters' : 5, 
+        'rare_group_threshold' : 0.1, 
+        'rare_group_weight': 2.0,
 		'epochs': 1,
-		'titration': 50
-		}  
+		'titration': 10
+		} 
 
-## add prior gene programs
-dfp = pd.read_csv(wdir+'data/gene_programs.csv.gz')
-# find matched genes
-mgenes =  np.intersect1d(dfp['gene'].values,batch1.var.index.values)
-# find unmatched genes
-unmgenes  = np.setdiff1d( batch1.var.index.values,dfp['gene'].values)
-# select matched genes and make it index
-dfp = dfp[dfp['gene'].isin(mgenes)]
-dfp.set_index('gene',inplace=True)
-# new df with unmatched genes
-# append to dfp and change gene order as in batch data
-new_rows = pd.DataFrame(0, index=unmgenes, columns=dfp.columns)
-dfp = pd.concat((dfp,new_rows),axis=0)
-dfp = dfp.loc[batch1.var.index.values]
 
-gp_array = dfp.values
-
+picasa_object.estimate_neighbour(params['neighbour_method'])
+	
 def train():
 	
-	picasa_object.estimate_neighbour(params['neighbour_method'])
-	
-	gp_tensor = torch.tensor(gp_array, dtype=torch.float32,requires_grad=False).to(params['device'])
-	gp_tensor = gp_tensor.unsqueeze(0).expand(params['batch_size'], -1, -1) 
-	params['gene_programs'] = gp_tensor
- 
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
 	picasa_object.plot_loss()
 
 def eval():
 	device = 'cpu'
-	gp_tensor = torch.tensor(gp_array, dtype=torch.float32).to(device)
-	gp_tensor = gp_tensor.unsqueeze(0).expand(params['batch_size'], -1, -1) 
-	params['gene_programs'] = gp_tensor
-
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-	eval_batch_size = params['batch_size']
+	eval_batch_size = 200
 	eval_total_size = 3000
 	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
 	picasa_object.save()
-
 
 def plot_latent():
 	import umap
@@ -323,9 +296,11 @@ def plot_scsp_overlay():
 	dfmain = pd.DataFrame()
 	for batch in batch_keys:
 		df_c = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
+		df_c.index = [batch+'_'+str(x) for x in df_c.index.values]
 		dfmain = pd.concat([dfmain,df_c],axis=0)
   
 	picasa_h5.close()
+
 	###################
 	####################
 
@@ -351,12 +326,12 @@ def plot_scsp_overlay():
 
 	###################
 	####################
-	
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.1)
+ 
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.3)
  
 	pd.Series(cluster).value_counts()
 	
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=1.0,n_neighbors=25)
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=20,distance='cosine')
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
@@ -365,7 +340,7 @@ def plot_scsp_overlay():
  
 	dfl = pd.read_csv(wdir+'data/pancreas_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
-	# dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
+	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
  
 
 	pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
@@ -450,11 +425,6 @@ def plot_context_chord():
 	from sklearn.metrics.pairwise import cosine_similarity
 
 
-	adata = an.read_h5ad('/data/sishir/data/pancreas/pancreas_raw.h5ad')
-	genes = adata.var._index.values
-
-
-
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
 	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
 
@@ -480,9 +450,7 @@ def plot_context_chord():
 		ct_yindxs = np.where(np.isin(p1_ylabel, ct_ylabel))[0]
 		df_context = pd.DataFrame(np.mean(p1_context[ct_yindxs], axis=0),
 							index=adata_p1.var.index.values)
-  
-		df_context.index = [genes[int(x)] for x in df_context.index.values]
-		
+  		
 		df_context.columns = ['context'+str(x) for x in range(df_context.shape[1])]
   
 		df_context = df_context.apply(zscore)
@@ -503,7 +471,7 @@ def plot_context_chord():
 		df_context.to_csv(wdir+'results/sc_context_module_'+ct+'.csv.gz',compression='gzip')
   
 
-train()
+# train()
 eval()
 # plot_latent()
 plot_scsp_overlay()

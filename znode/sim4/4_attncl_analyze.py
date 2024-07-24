@@ -14,8 +14,8 @@ import logging
 import glob
 import os
 
-sample = 'ovary'
-wdir = 'znode/ovary/'
+sample = 'sim4'
+wdir = 'znode/sim4/'
 
 
 def plot_latent():
@@ -89,24 +89,22 @@ def plot_scsp_overlay():
  
 	pd.Series(cluster).value_counts()
 	
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.5,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
 	df_umap['cluster'] = pd.Categorical(cluster)
 	df_umap[['umap1','umap2']] = umap_2d
-	df_umap['batch'] = [x.split('_')[0] for x in df_umap['cell'].values]
- 
-	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=3.0,ftype='png') 
-	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=3.0,ftype='png') 
 
-	
-	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
+	dfl = pd.read_csv(wdir+'data/sim4_label.csv.gz')
+	dfl.rename(columns={'index':'cell'},inplace=True)
 	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
-	
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=3.0,ftype='png') 
  
-	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+
 
 def calc_score(true_labels,cluster_labels):
 

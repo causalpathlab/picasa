@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import sys 
 sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa')
 
@@ -67,7 +67,8 @@ dfl = pd.DataFrame(adata.obs['leiden'])
 dfl.reset_index(inplace=True)
 dfl.columns = ['cell','leiden']
 dfl.to_csv(wdir+'data/gbm_label_leiden.csv.gz',index=False,compression='gzip')
-=======
+
+
 # import sys 
 # sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa')
 
@@ -148,5 +149,3 @@ dfl.to_csv(wdir+'data/gbm_label_leiden.csv.gz',index=False,compression='gzip')
 # sc.tl.umap(adata)
 # sc.pl.umap(adata, color=["leiden","batch"])
 # plt.savefig(wdir+'scanpy_leiden_corr.png')
-
->>>>>>> with_weighted_rare_celltype

@@ -8,9 +8,6 @@ from .loss import pcl_loss,pcl_loss_cluster
 import logging
 logger = logging.getLogger(__name__)
 from torch.distributions.uniform import Uniform
-import pytorch_lightning as pl 
-from pytorch_lightning.plugins import DDPPlugin
-from torch.nn.parallel import DataParallel
 
 
 class PICASAOUT:

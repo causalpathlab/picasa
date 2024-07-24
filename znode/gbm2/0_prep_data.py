@@ -23,8 +23,25 @@ sel_donors = [
     "BT409"
 ]
 
+sel_donors = [
+    'PJ017', 'PJ018', 'PJ025', 'PJ032', 'PJ035', 'PJ048']
+
+
 adata = adata[adata.obs['donor_id'].isin(sel_donors)]
 
+df = adata.to_df()
+df['cell_type'] = adata.obs['cell_type']
+
+def sample_n(group, n):
+    if len(group) < n:
+        return group
+    return group.sample(n=n, random_state=42)
+
+n = 1000
+df_sampled = df.groupby('cell_type', group_keys=False).apply(sample_n, n=n)
+df_sampled['cell_type'].value_counts()
+
+adata = adata[df_sampled.index.values]
 
 adata.obs['donor_id'].value_counts()
 adata.obs['cell_type'].value_counts()
@@ -32,7 +49,8 @@ adata.obs['cell_type'].value_counts()
 genes = adata.var['feature_name'].values
 
 import picasa
-hvgs = genes[picasa.ut.select_hvgenes(adata.X.toarray(),gene_var_z=1.25)]
+import numpy as np
+hvgs = genes[picasa.ut.select_hvgenes(adata.X.toarray(),gene_var_z=1.5)]
 print(len(hvgs))
 
 marker = [

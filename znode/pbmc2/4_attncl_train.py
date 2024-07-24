@@ -11,44 +11,43 @@ import picasa
 import torch
 import logging
 
-sample = 'pbmc'
-wdir = 'znode/pbmc/'
+sample = 'pbmc2'
+wdir = 'znode/pbmc2/'
 
-batch1 = an.read_h5ad(wdir+'data/'+sample+'_pbmc1.h5ad')
-batch2 = an.read_h5ad(wdir+'data/'+sample+'_pbmc2.h5ad')
+batch1 = an.read_h5ad(wdir+'data/'+sample+'_v2.h5ad')
+batch2 = an.read_h5ad(wdir+'data/'+sample+'_v3.h5ad')
 
 picasa_object = picasa.pic.create_picasa_object(
-	{'pbmc1':batch1,
-	 'pbmc2':batch2
+	{'v2':batch1,
+	 'v3':batch2
 	 },
 	wdir)
 
 
-params = {
-    'device': 'cuda', 
-    'batch_size': 128, 
-    'input_dim': 1000, 
-    'embedding_dim': 1000, 
-    'attention_dim': 25, 
-    'latent_dim': 15, 
-    'encoder_layers': [100, 15], 
-    'projection_layers': [15, 15], 
-    'learning_rate': 0.001, 
-    'lambda_loss': [0.5, 0.1, 1.0], 
-    'temperature_cl': 1.0, 
-    'neighbour_method': 'approx_50', 
-    'corruption_rate': 0.0, 
-    'rare_ct_mode': True, 
-    'num_clusters': 5, 
-    'rare_group_threshold': 0.1, 
-    'rare_group_weight': 2.0, 
-    'epochs': 1, 
-    'titration': 50
-    }  
+params = {'device' : 'cuda',
+		'batch_size' : 128,
+		'input_dim' : batch1.X.shape[1],
+		'embedding_dim' : 1000,
+		'attention_dim' : 25,
+		'latent_dim' : 15,
+		'encoder_layers' : [100,15],
+		'projection_layers' : [15,15],
+		'learning_rate' : 0.001,
+		'lambda_loss' : [0.5,0.1,1.0],
+		'temperature_cl' : 1.0,
+		'neighbour_method' : 'approx_50',
+     	'corruption_rate' : 0.0,
+      	'rare_ct_mode' : True, 
+      	'num_clusters' : 5, 
+        'rare_group_threshold' : 0.1, 
+        'rare_group_weight': 2.0,
+		'epochs': 1,
+		'titration': 25
+		}  
 
+picasa_object.estimate_neighbour(params['neighbour_method'])
 def train():
 	
-	picasa_object.estimate_neighbour(params['neighbour_method'])
 	
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
@@ -58,8 +57,9 @@ def eval():
 	device = 'cpu'
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-	eval_batch_size = int(batch1.shape[0]/5)
-	eval_total_size = 3000
+	# eval_batch_size = int(batch1.shape[0]/5)
+	eval_batch_size = 200
+	eval_total_size = 6000
 	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
 	picasa_object.save()
 
@@ -69,7 +69,7 @@ def plot_latent():
 	import random
 	from picasa.util.plots import plot_umap_df
 	
-	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl = pd.read_csv(wdir+'data/pbmc2_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
  
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
@@ -239,7 +239,7 @@ def plot_scsp_overlay():
 	df_umap['cell'] = dfh.index.values
 	df_umap[['umap1','umap2']] = umap_2d
  
-	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl = pd.read_csv(wdir+'data/pbmc2_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
 	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
 	pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
@@ -248,6 +248,38 @@ def plot_scsp_overlay():
 	df_umap['batch'] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')['batch'].values
 	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+
+
+
+	ctmap = {
+    'Naive CD4 T cell':'T cell', 
+    'Naive B cell': 'B cell', 
+    'CD14 monocyte': 'monocyte',
+    'Memory CD4 T cell':'T cell', 
+    'GZMB CD8 T cell': 'T cell', 
+    'Dendritic cell':'Dendritic cell',
+    'CD16 monocyte':'monocyte', 
+    'Treg cell': 'T cell', 
+    'MAIT cell':'MAIT cell', 
+    'GZMK CD8 T cell':'T cell',
+    'Gamma delta T cell': 'T cell', 
+    'CD14/CD16 monocyte': 'monocyte', 
+    'CD16 NK cell': 'NK cell',
+    'Naive CD8 T cell':'T cell', 
+    'Memory B cell':'B cell', 
+    'CD56 NK cell': 'NK cell', 
+    'pDC': 'pDC',
+    'Cycling T/NK cell': 'T cell', 
+    'Megakaryocyte':'Megakaryocyte', 
+    'Plasma cell':'Plasma cell', 
+    'Neutrophil':'Neutrophil',
+    'Red blood cell':'Red blood cell', 
+    'Cycling myeloid cell':'Cycling myeloid cell',
+    'Hematopoietic stem cell':'Hematopoietic stem cell'
+	}
+
+	df_umap['celltype2'] = [ctmap[x] for x in df_umap['celltype']]
+	plot_umap_df(df_umap,'celltype2',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
 def calc_score(true_labels,cluster_labels):
 
@@ -284,7 +316,7 @@ def get_score():
   
 	picasa_h5.close()
  
-	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
+	dfl = pd.read_csv(wdir+'data/pbmc2_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
 	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
 	celltype = pd.merge(dfmain,dfl,right_on='cell',left_index=True,how='left')['celltype'].values

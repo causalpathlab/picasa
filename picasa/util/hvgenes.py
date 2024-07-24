@@ -55,3 +55,11 @@ def select_hvgenes(mtx,gene_var_z):
     select_genes = norm_gene_var>gene_var_z
 
     return select_genes
+
+def select_hvgenes_scanpy(mtx,n_genes=2000):
+    import scanpy as sc
+    adata = sc.AnnData(mtx)
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata,n_top_genes=n_genes)
+    return adata.var['highly_variable'].values
