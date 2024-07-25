@@ -52,9 +52,9 @@ for batch in batch_keys:
     adata_b.var_names = df_c.columns.values
     adata_b.obs_names = df_c.index.values
 
-    adata_b.write(wdir+'sim4_'+str(batch)+'.h5ad',compression='gzip')
+    adata_b.write(wdir+'sim5_'+str(batch)+'.h5ad',compression='gzip')
 
 dfl = adata.obs.reset_index()
-dfl.to_csv(wdir+'sim4_label.csv.gz',compression='gzip')
+dfl.to_csv(wdir+'sim5_label.csv.gz',compression='gzip')
 
 
