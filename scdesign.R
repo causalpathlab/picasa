@@ -1,6 +1,15 @@
 library(scDesign3)
 library(SingleCellExperiment)
 
+
+
+example_sce <- readRDS((url("https://figshare.com/ndownloader/files/40581980")))
+print(example_sce)
+
+
+
+##### spatial + scrna 
+
 MOBSC_sce <- readRDS((url("https://figshare.com/ndownloader/files/40581983")))
 MOBSP_sce <- readRDS((url("https://figshare.com/ndownloader/files/40581986")))
 print(MOBSC_sce)

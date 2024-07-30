@@ -66,7 +66,7 @@ class picasa(object):
 
 		logging.info(self.nn_params)
   
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		logging.info(picasa_model)
   
@@ -102,7 +102,7 @@ class picasa(object):
 		logging.info('Completed training...model saved in results/nn_attncl.model')
   
 	def eval_model(self,eval_batch_size,eval_total_size,device='cpu'):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
   
@@ -114,11 +114,11 @@ class picasa(object):
 		for ad_pair in list(self.nbr_map.keys()):
 			
 	  
-			# p1 = ad_pair.split('_')[0]
-			# p2 = ad_pair.split('_')[1]
+			p1 = ad_pair.split('_')[0]
+			p2 = ad_pair.split('_')[1]
 
-			p1 = ad_pair.split('_')[0]+'_'+ad_pair.split('_')[1]
-			p2 = ad_pair.split('_')[2]+'_'+ad_pair.split('_')[3]
+			# p1 = ad_pair.split('_')[0]+'_'+ad_pair.split('_')[1]
+			# p2 = ad_pair.split('_')[2]+'_'+ad_pair.split('_')[3]
 
 			if p1 not in evaled:
 				logging.info('eval :'+p1+'_'+p2)
@@ -145,7 +145,7 @@ class picasa(object):
    
 	def eval_attention(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size,device='cpu'):
 		
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
 
@@ -181,7 +181,7 @@ class picasa(object):
 
 
 	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size, device='cpu'):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'],self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate']).to(self.nn_params['device'])
+		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_rate'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
 

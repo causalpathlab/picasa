@@ -20,11 +20,11 @@ splatPopSim <- function(vcf.n.samples = 5, vcf.n.snps = 2000,
     				   )
     
     params.est <- setParams(params.est, nGenes = nGenes, group.prob = group.prob, batchCells = batchCells,
-    similarity.scale = 10, ## default 1 
-    eqtl.group.specific = 0.6, ## default 0.2
-    de.prob = 0.5, ## default 0.1
-    de.facLoc = 0.5, ## default 0.1
-    de.facScale = 0.5 ##  default 0.4
+    similarity.scale = 6, ## default 1 
+    # eqtl.group.specific = 0.6, ## default 0.2
+    # de.prob = 0.5, ## default 0.1
+    # de.facLoc = 0.5, ## default 0.1
+    # de.facScale = 0.5 ##  default 0.4
     )
 
     sim.sc.est <- splatPopSimulate(vcf = vcf, params = params.est, seed = seed)

@@ -34,9 +34,10 @@ params = {
     'encoder_layers': [100, 15], 
     'projection_layers': [15, 15], 
     'learning_rate': 0.001, 
-    'lambda_loss': [0.5, 0.1, 1.0], 
+    'lambda_loss': [1.0, 0.1, .5], 
     'temperature_cl': 1.0, 
-    'neighbour_method': 'approx_50', 
+    'neighbour_method': 'approx_50',
+    'pair_importance_weight' : 0.0, 
     'corruption_rate': 0.0, 
     'rare_ct_mode': True, 
     'num_clusters': 5, 
@@ -46,9 +47,10 @@ params = {
     'titration': 50
     }  
 
+picasa_object.estimate_neighbour(params['neighbour_method'])
+
 def train():
 	
-	picasa_object.estimate_neighbour(params['neighbour_method'])
 	
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
@@ -233,7 +235,7 @@ def plot_scsp_overlay():
  
 	pd.Series(cluster).value_counts()
 	
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.3,n_neighbors=20,distance='cosine')
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.5,n_neighbors=30,distance='cosine')
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values

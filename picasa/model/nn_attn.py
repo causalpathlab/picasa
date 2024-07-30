@@ -64,12 +64,14 @@ class GeneEmbedor(nn.Module):
 
 class ScaledDotAttention(nn.Module):
 	
-	def __init__(self, weight_dim,input_dim):
+	def __init__(self, weight_dim,input_dim,pair_importance_weight):
 		super(ScaledDotAttention, self).__init__()
 		self.W_query = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_key = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
 		self.model_dim = weight_dim
+		self.pair_importance = nn.Parameter(torch.zeros(input_dim))
+		self.pair_importance_weight = pair_importance_weight
 		
 	def forward(self, query, key, value):
 
@@ -78,6 +80,10 @@ class ScaledDotAttention(nn.Module):
 		value_proj = torch.matmul(value, self.W_value)
 		
 		scores = torch.matmul(query_proj, key_proj.transpose(-2, -1)) / torch.sqrt(torch.tensor(self.model_dim).float())
+		diag_bias = torch.eye(scores.shape[1], dtype=scores.dtype, device=scores.device)
+		p_importance = (self.pair_importance_weight * torch.clamp(torch.exp(self.pair_importance),max=3))
+		scores += (diag_bias * p_importance)
+  
   
 		attention_weights = torch.softmax(scores, dim=-1)
 		entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
@@ -115,11 +121,11 @@ class MLP(nn.Module):
 		return z
 
 class PICASANET(nn.Module):
-	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_rate):
+	def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_rate,pair_importance_weight):
 		super(PICASANET,self).__init__()
 
 		self.embedding = GeneEmbedor(embedding_dim,attention_dim)
-		self.attention = ScaledDotAttention(attention_dim,input_dim)
+		self.attention = ScaledDotAttention(attention_dim,input_dim,pair_importance_weight)
 		self.pooling = AttentionPooling(attention_dim)
 
 		self.encoder = ENCODER(input_dim,encoder_layers)
@@ -167,7 +173,7 @@ class PICASANET(nn.Module):
 
 		return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
 
-def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_group_threshold, rare_group_weight,temperature,pair_alignment=0.5):
+def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_group_threshold, rare_group_weight,temperature):
 	logger.info('Init training....nn_attn')
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	epoch_losses = []
@@ -188,9 +194,9 @@ def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_
 
 
 			entropy_loss = (picasa_el.el_attn_c1 * lambda_attn_loss +
-						picasa_el.el_attn_c2 * (lambda_attn_loss/pair_alignment) +
+						picasa_el.el_attn_c2 * lambda_attn_loss +
 						picasa_el.el_cl_c1 * lambda_latent_loss +
-						picasa_el.el_cl_c2 * (lambda_latent_loss/pair_alignment))
+						picasa_el.el_cl_c2 * lambda_latent_loss)
 			train_loss = cl_loss + entropy_loss
 			train_loss.backward()
 
