@@ -60,7 +60,7 @@ def eval():
 	device = 'cpu'
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
-	eval_batch_size = int(batch1.shape[0]/5)
+	eval_batch_size = 300
 	eval_total_size = 3000
 	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
 	picasa_object.save()
@@ -303,7 +303,7 @@ def get_score():
 	# dfc = dfc.loc[dfc.celltype.isin(sel_ct)]
 	print(calc_score(dfc.celltype.values,dfc.cluster.values))
 
-train()
+# train()
 eval()
 # plot_latent()
 plot_scsp_overlay()

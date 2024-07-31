@@ -113,12 +113,12 @@ class picasa(object):
   
 		for ad_pair in list(self.nbr_map.keys()):
 			
-	  
-			p1 = ad_pair.split('_')[0]
-			p2 = ad_pair.split('_')[1]
-
-			# p1 = ad_pair.split('_')[0]+'_'+ad_pair.split('_')[1]
-			# p2 = ad_pair.split('_')[2]+'_'+ad_pair.split('_')[3]
+			if len(ad_pair.split('_')) == 2:
+				p1 = ad_pair.split('_')[0]
+				p2 = ad_pair.split('_')[1]
+			else:
+				p1 = ad_pair.split('_')[0]+'_'+ad_pair.split('_')[1]
+				p2 = ad_pair.split('_')[2]+'_'+ad_pair.split('_')[3]
 
 			if p1 not in evaled:
 				logging.info('eval :'+p1+'_'+p2)
