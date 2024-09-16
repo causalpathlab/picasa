@@ -25,7 +25,7 @@ picasa_object = picasa.pic.create_picasa_object(
 
 
 params = {'device' : 'cuda',
-		'batch_size' : 128,
+		'batch_size' : 64,
 		'input_dim' : batch1.X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 25,
@@ -36,6 +36,7 @@ params = {'device' : 'cuda',
 		'lambda_loss' : [0.5,0.1,1.0],
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
+  		'pair_importance_weight':100,
      	'corruption_rate' : 0.0,
       	'rare_ct_mode' : True, 
       	'num_clusters' : 5, 

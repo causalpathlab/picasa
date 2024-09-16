@@ -15,11 +15,11 @@ import glob
 import os
 
 
-sample = 'sim4'
-wdir = 'znode/sim4/'
+sample = 'sim8'
+wdir = 'znode/sim8/'
 
 directory = wdir+'/data'
-pattern = 'sim4_*.h5ad'
+pattern = 'sim8_*.h5ad'
 
 file_paths = glob.glob(os.path.join(directory, pattern))
 file_names = [os.path.basename(file_path) for file_path in file_paths]
@@ -28,13 +28,13 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('sim4_','')] = an.read_h5ad(wdir+'data/'+file_name)
+	batch_map[file_name.replace('.h5ad','').replace('sim8_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
 	if batch_count >10:
 		break
 
 
-file_name = file_names[0].replace('.h5ad','').replace('sim4_','')
+file_name = file_names[0].replace('.h5ad','').replace('sim8_','')
 
 picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
@@ -44,7 +44,7 @@ picasa_object = picasa.pic.create_picasa_object(
 
 params = {'device' : 'cuda',
 		'batch_size' : 64,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('sim4_','')].X.shape[1],
+		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('sim8_','')].X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 15,
 		'latent_dim' : 15,
@@ -54,9 +54,9 @@ params = {'device' : 'cuda',
 		'lambda_loss' : [1.0,0.1,1.0],
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
-        'pair_importance_weight': 0.01,
+		'pair_importance_weight' : 1,
 	 	'corruption_rate' : 0.0,
-        'rare_ct_mode' : False, 
+        'rare_ct_mode' : True, 
       	'num_clusters' : 5, 
         'rare_group_threshold' : 0.1, 
         'rare_group_weight': 2.0,

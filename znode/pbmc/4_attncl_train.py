@@ -24,28 +24,7 @@ picasa_object = picasa.pic.create_picasa_object(
 	wdir)
 
 
-params = {
-    'device': 'cuda', 
-    'batch_size': 128, 
-    'input_dim': 1000, 
-    'embedding_dim': 1000, 
-    'attention_dim': 25, 
-    'latent_dim': 15, 
-    'encoder_layers': [100, 15], 
-    'projection_layers': [15, 15], 
-    'learning_rate': 0.001, 
-    'lambda_loss': [1.0, 0.1, .5], 
-    'temperature_cl': 1.0, 
-    'neighbour_method': 'approx_50',
-    'pair_importance_weight' : 0.0, 
-    'corruption_rate': 0.0, 
-    'rare_ct_mode': True, 
-    'num_clusters': 5, 
-    'rare_group_threshold': 0.1, 
-    'rare_group_weight': 2.0, 
-    'epochs': 1, 
-    'titration': 50
-    }  
+params = {'device': 'cuda', 'batch_size': 128, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 25, 'latent_dim': 15, 'encoder_layers': [100,15], 'projection_layers': [15, 15], 'learning_rate': 0.001, 'lambda_loss': [0.5, 0.1, 1.0], 'temperature_cl': 1.0, 'neighbour_method': 'approx_50', 'pair_importance_weight': -1.0, 'corruption_rate': 0.0, 'rare_ct_mode': True, 'num_clusters': 5, 'rare_group_threshold': 0.1, 'rare_group_weight': 2.0, 'epochs': 1, 'titration': 50}
 
 picasa_object.estimate_neighbour(params['neighbour_method'])
 
@@ -303,7 +282,7 @@ def get_score():
 	# dfc = dfc.loc[dfc.celltype.isin(sel_ct)]
 	print(calc_score(dfc.celltype.values,dfc.cluster.values))
 
-# train()
+train()
 eval()
 # plot_latent()
 plot_scsp_overlay()
