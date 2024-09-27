@@ -170,7 +170,7 @@ class PICASANET(nn.Module):
 
         return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
 
-def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_group_threshold, rare_group_weight,temperature):
+def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_group_threshold, rare_group_weight,temperature,min_batchsize=2):
     logger.info('Init training....nn_attn')
     opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
     epoch_losses = []
@@ -180,6 +180,10 @@ def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_
     for epoch in range(epochs):
         epoch_l, cl, el, el_attn_c1, el_attn_c2, el_cl_c1, el_cl_c2 = (0,) * 7
         for x_c1,y,x_c2 in data:
+            
+            if x_c1.shape[0] < min_batchsize:
+                continue
+            
             opt.zero_grad()
 
             picasa_out,picasa_el = model(x_c1,x_c2)
@@ -232,3 +236,12 @@ def predict_context(model,x_c1,x_c2):
     x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
     
     return x_c1_context
+
+def get_latent(model,x_c1,x_c2):
+    x_c1_emb = model.embedding(x_c1)
+    x_c2_emb = model.embedding(x_c2)
+    x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
+    x_c1_pool_out = model.pooling(x_c1_context)
+    h_c1 = model.encoder(x_c1_pool_out)
+    return h_c1
+    

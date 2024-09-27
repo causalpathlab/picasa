@@ -26,10 +26,6 @@ df = pd.DataFrame(matrix.todense())
 df.index =  [x[0].split(' ')[0] for x in barcodes.values]
 df.columns = [x[0] for x in genes.values]
 
-<<<<<<< HEAD
-import picasa
-hvgs = genes.values[picasa.ut.select_hvgenes(df.to_numpy(),gene_var_z=4)]
-=======
 remove_cols = [ x for x in df.columns if  'MT-' in x or x.split('_')[1].startswith('RPL') or x.split('_')[1].startswith('RPS') or x.split('_')[1].startswith('RP1')]
 
 df = df[[ x for x in df.columns if x not in remove_cols]]
@@ -37,7 +33,6 @@ genes = df.columns.values
 
 import picasa
 hvgs = genes[picasa.ut.select_hvgenes(df.to_numpy(),gene_var_z=3)]
->>>>>>> with_weighted_rare_celltype
 hvgs = hvgs.flatten()
 print(len(hvgs))
 

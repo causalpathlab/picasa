@@ -41,6 +41,8 @@ remove_cols = [ x for x in adata.var.index.values if  'MT-' in x or x.startswith
 keep_cols = [ x for x in adata.var.index.values if x  not in remove_cols]
 adata = adata[:,keep_cols]
 
+# adata = adata[adata.obs['treatment_phase']=='treatment-naive']
+
 
 
 sc.pp.filter_genes(adata, min_cells=3)
@@ -59,7 +61,6 @@ adata.obs['celltype'] = adata.obs['cell_type']
 adata.obs.celltype.value_counts()
 adata.obs.batch.value_counts()
 
-wdir = 'data/'
 
 batch_keys = list(adata.obs['batch'].unique())
 
@@ -72,9 +73,9 @@ for batch in batch_keys:
     adata_b.var_names = df_c.columns.values
     adata_b.obs_names = df_c.index.values
 
-    adata_b.write(wdir+'ovary_'+str(batch)+'.h5ad',compression='gzip')
+    adata_b.write('ovary_'+str(batch)+'.h5ad',compression='gzip')
 
 dfl = adata.obs.reset_index()
-dfl.to_csv(wdir+'ovary_label.csv.gz',compression='gzip')
+dfl.to_csv('ovary_label.csv.gz',compression='gzip')
 
 

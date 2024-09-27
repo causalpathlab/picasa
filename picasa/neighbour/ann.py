@@ -20,10 +20,20 @@ class ApproxNN():
 		return indexes
 
 
-def get_NNmodel(mtx,number_of_trees):
-    model_ann = ApproxNN(mtx)
-    model_ann.build(number_of_trees)
-    return model_ann
+def get_NNmodel(mtx,number_of_trees,use_pca=False):
+	
+	if use_pca:
+		from sklearn.decomposition import PCA
+		pca = PCA(n_components=mtx.shape[1])
+		mtx2 = pca.fit_transform(mtx) 
+		model_ann = ApproxNN(mtx2)
+		model_ann.build(number_of_trees)
+		return model_ann
+	else:
+		model_ann = ApproxNN(mtx)
+		model_ann.build(number_of_trees)
+		return model_ann
+	 
 
 def get_neighbours(mtx,model,nbrsize=1):
 		
@@ -33,15 +43,15 @@ def get_neighbours(mtx,model,nbrsize=1):
 	return nbr_dict
 
 def generate_neighbours(source_adata: AnnData, 
-                        target_adata: AnnData,
-                        tag: str,
-                        number_of_trees:int = 50 
-                        ) -> dict:
-    logging.info('Generating neighbour using approximate method - ANNOY...'+tag)
-    logging.info('number_of_trees...'+str(number_of_trees))
-    ann_model = get_NNmodel(source_adata.X.todense(),number_of_trees)
-    logging.info('Querying neighbour tree.')
-    nbr_dict = get_neighbours(target_adata.X.todense(),ann_model)
-    logging.info('Approximate neighbour estimate complete.')
-    return nbr_dict
+						target_adata: AnnData,
+						tag: str,
+						number_of_trees:int = 50 
+						) -> dict:
+	logging.info('Generating neighbour using approximate method - ANNOY...'+tag)
+	logging.info('number_of_trees...'+str(number_of_trees))
+	ann_model = get_NNmodel(source_adata.X.todense(),number_of_trees)
+	logging.info('Querying neighbour tree.')
+	nbr_dict = get_neighbours(target_adata.X.todense(),ann_model)
+	logging.info('Approximate neighbour estimate complete.')
+	return nbr_dict
 

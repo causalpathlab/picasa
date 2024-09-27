@@ -42,17 +42,10 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [0.5,0.1,2.0],
-		'temperature_cl' : 1.0,
-		'neighbour_method' : 'approx_50',
-     	'corruption_rate' : 0.0,
-      	'rare_ct_mode' : True, 
-      	'num_clusters' : 5, 
-        'rare_group_threshold' : 0.1, 
-        'rare_group_weight': 2.0,
-		'epochs': 1,
-		'titration': 10
-		} 
+		'lambda_loss' : [1.0,0.1,1.0],
+		'temperature_cl': 1.0, 'neighbour_method': 'approx_50', 
+  		'pair_importance_weight': 0.1, 'corruption_rate': 0.0, 'rare_ct_mode': True, 'num_clusters': 5, 'rare_group_threshold': 0.1, 'rare_group_weight': 2.0, 'epochs': 1, 'titration': 15
+}
 
 
 picasa_object.estimate_neighbour(params['neighbour_method'])
@@ -471,7 +464,7 @@ def plot_context_chord():
 		df_context.to_csv(wdir+'results/sc_context_module_'+ct+'.csv.gz',compression='gzip')
   
 
-# train()
+train()
 eval()
 # plot_latent()
 plot_scsp_overlay()

@@ -30,7 +30,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >2:
+	if batch_count >=12:
 		break
 
 
@@ -40,10 +40,8 @@ picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
 	wdir)
 
-
-
 params = {'device' : 'cuda',
-		'batch_size' : 64,
+		'batch_size' : 100,
 		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('ovary_','')].X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 15,
@@ -51,22 +49,22 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,0.5],
+		'lambda_loss' : [1.0,0.1,1.0],
 		'temperature_cl' : 1.0,
 		'neighbour_method' : 'approx_50',
 	 	'corruption_rate' : 0.0,
-        'rare_ct_mode' : True, 
+		'pair_importance_weight' : 0.01,
+        'rare_ct_mode' : False, 
       	'num_clusters' : 5, 
         'rare_group_threshold' : 0.1, 
         'rare_group_weight': 2.0,
 		'epochs': 1,
-		'titration': 25
+		'titration': 12
 		}  
 
 picasa_object.estimate_neighbour(params['neighbour_method'])	
 
-def train():
-	
+def train():	
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
 	picasa_object.plot_loss()

@@ -29,7 +29,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('brca_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count > 2:
+	if batch_count >=10:
 		break
 
 
@@ -38,6 +38,8 @@ file_name = file_names[0].replace('.h5ad','').replace('brca_','')
 picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
 	wdir)
+
+
 
 params = {'device' : 'cuda',
 		'batch_size' : 64,
@@ -48,13 +50,10 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [0.5,0.1,2.0],
-		'temperature_cl' : 1.0,
-		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
-		'epochs': 1,
-		'titration': 3
-		}  
+		'lambda_loss' : [0.5,0.1,1.0],
+		'temperature_cl': 1.0, 'neighbour_method': 'approx_50', 
+  		'pair_importance_weight': 0.01, 'corruption_rate': 0.0, 'rare_ct_mode': True, 'num_clusters': 10, 'rare_group_threshold': 0.1, 'rare_group_weight': 2.0, 'epochs': 1, 'titration': 50
+}
 
 def plot_latent():
 	import umap
@@ -71,7 +70,7 @@ def plot_latent():
 	for batch in batch_keys:
 		df = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
 
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,n_neighbors=20,metric='cosine').fit(df)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.8,n_neighbors=30,metric='cosine').fit(df)
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = df.index.values
 		df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
@@ -123,15 +122,11 @@ def plot_scsp_overlay():
 	###################
 	####################
 	
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.1)
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.2)
  
-	pd.Series(cluster).value_counts()
+	print(pd.Series(cluster).value_counts())
 	
-<<<<<<< HEAD
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.0,n_neighbors=2,distance='cosine')
-=======
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.8)
->>>>>>> with_weighted_rare_celltype
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.8,n_neighbors=30,distance='cosine')
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
@@ -140,80 +135,15 @@ def plot_scsp_overlay():
 
  
 	
-	dfl = pd.read_csv(wdir+'data/metadata.csv.gz') 
-	dfl.rename(columns={'Unnamed: 0':'cell'},inplace=True)
-	dfl = dfl[['cell', 'orig.ident','subtype', 'celltype_subset', 'celltype_minor', 'celltype_major']]
+	dfl = pd.read_csv(wdir+'data/brca_label.csv.gz') 
  
-	for col in dfl.columns[1:]:
+	for col in dfl.columns[2:]:
 		print(col)
 		df_umap[col] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')[col].values
 		df_umap[col] = pd.Categorical(df_umap[col])
 		plot_umap_df(df_umap,col,wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
-def calc_score(true_labels,cluster_labels):
-
-	from sklearn.metrics import normalized_mutual_info_score
-	from sklearn.metrics.cluster import adjusted_rand_score
-	from collections import Counter
-
-	cluster_set = set(cluster_labels)
-	total_correct = sum(max(Counter(true_labels[i] for i, cl in enumerate(cluster_labels) if cl == cluster).values()) 
-						for cluster in cluster_set)
-	purity = total_correct / len(true_labels)
-
-	nmi =  normalized_mutual_info_score(true_labels,cluster_labels)
-	ari = adjusted_rand_score(true_labels,cluster_labels)
-
-	return (purity,nmi,ari)
-
-def kmeans_cluster(df,k):
-		from sklearn.cluster import KMeans
-		kmeans = KMeans(n_clusters=k, init='k-means++',random_state=0).fit(df)
-		return kmeans.labels_
-	
-def get_score():
-	import h5py as hf
-	
-	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
-	
-	dfmain = pd.DataFrame()
-	for batch in batch_keys:
-		df_c = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
-		df_c.index = [batch+'_'+str(x) for x in df_c.index.values]
-		dfmain = pd.concat([dfmain,df_c],axis=0)
-  
-	picasa_h5.close()
-
-
-	## use std norm or quant norm 
-	from sklearn.preprocessing import StandardScaler
-	def standardize_row(row):
-		scaler = StandardScaler()
-		row_reshaped = row.values.reshape(-1, 1)  
-		row_standardized = scaler.fit_transform(row_reshaped)[:, 0]  
-		return pd.Series(row_standardized, index=row.index)
-	dfh = dfmain.apply(standardize_row, axis=1)
-	dfh.index = dfmain.index.values
-	dfmain = dfh
-
-	dfl = pd.read_csv(wdir+'data/'+sample+'_label.csv.gz')
-	dfl.columns = ['index','cell','batch','celltype']
-	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
-	celltype = pd.merge(dfmain,dfl,right_on='cell',left_index=True,how='left')['celltype'].values
-	n_topics = pd.Series(celltype).nunique()
-	n_topics = 8
-	cluster = kmeans_cluster(dfmain.to_numpy(),n_topics)
-
-	dfc = pd.DataFrame()
-	dfc['celltype'] = celltype 
-	dfc['cluster'] = cluster
-	dfc['celltype'].value_counts()
-	sel_ct = dfc.celltype.value_counts()[:5].index.values
-	dfc = dfc.loc[dfc.celltype.isin(sel_ct)]
-	print(calc_score(dfc.celltype.values,dfc.cluster.values))
-
-# plot_latent()
+plot_latent()
 plot_scsp_overlay()
 # get_score()
 

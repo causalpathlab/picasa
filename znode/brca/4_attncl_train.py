@@ -29,7 +29,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('brca_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >10:
+	if batch_count >=10:
 		break
 
 
@@ -50,13 +50,10 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [0.5,0.1,2.0],
-		'temperature_cl' : 1.0,
-		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
-		'epochs': 1,
-		'titration': 40
-		}  
+		'lambda_loss' : [0.5,0.1,1.0],
+		'temperature_cl': 1.0, 'neighbour_method': 'approx_50', 
+  		'pair_importance_weight': 0.01, 'corruption_rate': 0.0, 'rare_ct_mode': True, 'num_clusters': 10, 'rare_group_threshold': 0.1, 'rare_group_weight': 2.0, 'epochs': 1, 'titration': 50
+}
 
 picasa_object.estimate_neighbour(params['neighbour_method'])	
 
@@ -72,7 +69,7 @@ def eval():
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
 	eval_batch_size = 100
-	eval_total_size_per_batch = 3000
+	eval_total_size_per_batch = 100000
 	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
 	picasa_object.save()
 
