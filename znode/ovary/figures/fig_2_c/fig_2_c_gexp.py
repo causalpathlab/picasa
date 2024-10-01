@@ -87,47 +87,47 @@ df_sampled = df_sampled.T
 
 df_sampled.columns = [x.split('@')[0] for x in df_sampled.columns]
 
-sns.clustermap(np.log1p(df_sampled.T))
+
+sns.clustermap(np.log1p(df_sampled.T),cmap="viridis")
 plt.savefig(wdir+cdir+'hmap.png')
 plt.close()
 
-# # Assuming df_sampled is a pandas DataFrame
-# df_sampled = df_sampled.reset_index().melt(id_vars='index')
-# df_sampled['cluster'] = [x.split('@')[0] for x in df_sampled['variable'].values]
+######marker genes 
+
+marker = np.array(['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FCGR3A',
+	'GNLY', 'NKG7', 'CST3', 'CD3E', 'FCER1A', 'CD74', 'LST1', 'CCL5',
+	'HLA-DPA1', 'LDHB', 'CD79A', 'FCER1G', 'GZMB', 'S100A9',
+	'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
+	'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN'])
+
+marker = [ x for x in marker if x in df_main.columns
+          ]
+df_main = df_main.loc[:,marker]
+
+df_main['cluster'] = [x.split('@')[0] for x in df_main.index.values]
+
+sample_num= 100
+df_sampled = df_main.groupby('cluster', group_keys=False).apply(lambda x: x.sample(min(len(x), sample_num)))
+
+df_sampled = df_sampled.loc[:,df_sampled.columns[:-1]]
 
 
-# df_sampled.to_csv(wdir+cdir+'hmap.csv.gz',compression='gzip',index=False)
 
-# # Plot using plotnine
-# from plotnine import *
+df_sampled = df_sampled.T
 
-# p = (ggplot(df_sampled, aes(x='variable', y='index', fill='value')) +
-#      geom_tile() +
-#      facet_wrap('~cluster')+
-#      theme_minimal())
-
-# # Save the plot
-# p.save(wdir + cdir + 'hmap.png')
+df_sampled.columns = [x.split('@')[0] for x in df_sampled.columns]
 
 
-# library(pheatmap)
-# library(RColorBrewer)
-# library(viridis)
-# library(reshape2)
-
-# df = read.csv('hmap.csv.gz')
+sns.clustermap(np.log1p(df_sampled.T),cmap="viridis",col_cluster=False)
+plt.savefig(wdir+cdir+'hmap_marker.png')
+plt.close()
 
 
-# df_matrix <- dcast(df, index ~ variable, value.var = "value")
-# mat_col = data.frame(gsub("@.*", "", colnames(df_matrix)))
-# df_matrix <- df_matrix[ , -1]  
+from picasa.util.plots import plot_marker_genes
 
-# pheatmap(df_matrix, 
-#          scale = "row",
-#          cluster_rows = FALSE,     
-#          cluster_cols = FALSE,     
-#          show_rownames = FALSE,    
-#          show_colnames = FALSE,
-#          annotation_col = mat_col,    
-#          color = colorRampPalette(c("blue", "white", "red"))(50),
-#          filename = "heatmap_output.pdf")  
+umap_coords = df_umap[['umap1','umap2']].values
+mg = ["IL7R", "CD79A", "MS4A1", "CD8A", "CD8B", "LYZ", "CD14",
+    "LGALS3", "S100A8", "GNLY", "NKG7", "KLRB1",
+    "FCGR3A", "MS4A7", "FCER1A", "CST3", "PPBP"]
+
+plot_marker_genes(wdir+cdir,df_main.iloc[:,:-1],umap_coords,mg,nr=4,nc=5)
