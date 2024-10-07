@@ -14,8 +14,8 @@ import logging
 import glob
 import os
 
-sample = 'ovary'
-wdir = 'znode/ovary/'
+sample = 'follym'
+wdir = 'znode/follym/'
 
 
 def plot_latent():
@@ -33,7 +33,7 @@ def plot_latent():
 	for batch in batch_keys:
 		df = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
 
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.8,n_neighbors=30,metric='cosine').fit(df)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.1,n_neighbors=30,metric='cosine').fit(df)
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = df.index.values
 		df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
@@ -84,71 +84,58 @@ def plot_scsp_overlay():
 	
 	sel_c = []
 	for i,c in enumerate(cluster):
-		if c<=8: sel_c.append(i)
+		if c<=7: sel_c.append(i)
 	dfh = dfh.iloc[sel_c,:]
 
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.08)
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.2)
 	pd.Series(cluster).value_counts()
 
+	sel_ci = []
 	sel_c = []
 	for i,c in enumerate(cluster):
-		if c<=9: sel_c.append(i)
-	dfh = dfh.iloc[sel_c,:]
-
-	umap_2d = picasa.ut.analysis.run_umap (dfh.to_numpy(),snn_graph=conn,min_dist=0.3,n_neighbors=30)
+		if c<=15:
+			sel_ci.append(i)
+			sel_c.append(c)
+			
+	dfh = dfh.iloc[sel_ci,:]
+  
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),use_snn=False,min_dist=0.3,n_neighbors=30)
 	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
-	df_umap['cluster'] = pd.Categorical(sel_c)
-
+	df_umap['cluster'] = pd.Categorical(cluster)
 	df_umap[['umap1','umap2']] = umap_2d
-	df_umap['batch'] = [x.split('-')[1].split('_')[0] for x in df_umap['cell'].values]
+	df_umap['batch'] = [x.split('_')[0]+'_'+x.split('_')[1]  for x in df_umap['cell'].values]
+	# df_umap['cell'] = [x.split('_')[2] for x in df_umap['cell'].values]
 
-	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
-	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
 
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	dfl = pd.read_csv(wdir+'data/follym_label.csv.gz') 	 
+	df_umap = pd.merge(df_umap,dfl,left_on='cell',
+                    right_on='index',how='left')
  
 	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
-	
 
-	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	df_umap['celltype2'] = [x.split('_')[0] for x in df_umap['celltype']]	
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'celltype2',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+
+	df_umap.columns
+	plot_umap_df(df_umap,'timepoint',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
+  
+	df_umap['dataset2'] = [x.split('_')[1] for x in df_umap['dataset']]
+   
+	plot_umap_df(df_umap,'dataset',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'dataset2',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
+  
+	plot_umap_df(df_umap,'batch_y',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png')
+  
+	plot_umap_df(df_umap,'patient',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
  
 	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
 
-
-def  cancer_analysis(): 
-
-	import umap
-	import h5py as hf
-	import random
-	from picasa.util.plots import plot_umap_df
-	
-	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
-	
-	dfmain = pd.DataFrame()
-	for batch in batch_keys:
-		df_c = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
-		dfmain = pd.concat([dfmain,df_c],axis=0)
-  
-	picasa_h5.close()
-	###################
-	####################
-
-	# use std norm or quant norm 
-	from sklearn.preprocessing import StandardScaler
-	def standardize_row(row):
-		scaler = StandardScaler()
-		row_reshaped = row.values.reshape(-1, 1)  
-		row_standardized = scaler.fit_transform(row_reshaped)[:, 0]  
-		return pd.Series(row_standardized, index=row.index)
-	dfh = dfmain.apply(standardize_row, axis=1)
-	dfh.index = dfmain.index.values
-	# ######
-	
 	df_umap = pd.read_csv(wdir+'results/df_umap.csv.gz')
 
 	cancer_cells = df_umap[df_umap['celltype']=='EOC']['cell'].values
@@ -156,10 +143,12 @@ def  cancer_analysis():
 
 	dfh2 = dfh.loc[cancer_cells,:]
  
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh2.to_numpy(),0.1)
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh2.to_numpy(),0.2)
 	pd.Series(cluster).value_counts()
 
-	umap_2d = picasa.ut.analysis.run_umap(dfh2.to_numpy(),snn_graph=conn,min_dist=0.3,n_neighbors=30)
+  
+	umap_2d = picasa.ut.analysis.run_umap(dfh2.to_numpy(),use_snn=False,min_dist=0.3,n_neighbors=30)
+	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh2.index.values
@@ -167,7 +156,7 @@ def  cancer_analysis():
 	df_umap[['umap1','umap2']] = umap_2d
 	df_umap['batch'] = [x.split('-')[1].split('_')[0] for x in df_umap['cell'].values]
 
-	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
+	dfl = pd.read_csv(wdir+'data/follym_label.csv.gz') 	 
 	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
  
 	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
@@ -177,4 +166,8 @@ def  cancer_analysis():
 
 	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
 
-	df_umap.to_csv(wdir+'results/df_umap_cancer.csv.gz',index=False, compression='gzip')
+# plot_latent()
+plot_scsp_overlay()
+# get_score()
+
+	

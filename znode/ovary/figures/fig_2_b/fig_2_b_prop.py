@@ -17,8 +17,8 @@ import os
 sample = 'ovary'
 wdir = 'znode/ovary/'
 cdir = 'figures/fig_2_b/'
-
-df_umap = pd.read_csv(wdir+'results/df_umap.csv.gz')
+cancer = 'cancer'
+df_umap = pd.read_csv(wdir+'results/df_umap_'+cancer+'.csv.gz')
 
 
 #### patient proportion for each cluster 
@@ -52,6 +52,6 @@ for col in ['patient_id','treatment_phase','cell_type']:
            axis_title_y=element_text(size=20)
     )
 
-    p.save(filename = wdir+cdir+'prop_'+col+'.pdf', height=10, width=15, units ='in', dpi=600)
+    p.save(filename = wdir+cdir+'prop_'+col+'_'+cancer+'.pdf', height=10, width=15, units ='in', dpi=600)
     
     

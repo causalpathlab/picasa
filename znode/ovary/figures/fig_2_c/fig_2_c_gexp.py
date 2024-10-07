@@ -71,7 +71,7 @@ for col in df_results.columns:
         if gene not in top_genes: 
             top_genes.append(gene)
 
-
+###### top genes 
 df_main = df_main.loc[:,top_genes]
 
 df_main['cluster'] = [x.split('@')[0] for x in df_main.index.values]
@@ -100,6 +100,8 @@ marker = np.array(['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FC
 	'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
 	'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN'])
 
+marker = ['EPCAM','MKI67','CD3D','CD68','MS4A1','JCHAIN','PECAM1','PDGFRB']
+
 marker = [ x for x in marker if x in df_main.columns
           ]
 df_main = df_main.loc[:,marker]
@@ -126,8 +128,8 @@ plt.close()
 from picasa.util.plots import plot_marker_genes
 
 umap_coords = df_umap[['umap1','umap2']].values
-mg = ["IL7R", "CD79A", "MS4A1", "CD8A", "CD8B", "LYZ", "CD14",
+marker = ["IL7R", "CD79A", "MS4A1", "CD8A", "CD8B", "LYZ", "CD14",
     "LGALS3", "S100A8", "GNLY", "NKG7", "KLRB1",
     "FCGR3A", "MS4A7", "FCER1A", "CST3", "PPBP"]
 
-plot_marker_genes(wdir+cdir,df_main.iloc[:,:-1],umap_coords,mg,nr=4,nc=5)
+plot_marker_genes(wdir+cdir,df_main.iloc[:,:-1],umap_coords,marker,nr=4,nc=5)

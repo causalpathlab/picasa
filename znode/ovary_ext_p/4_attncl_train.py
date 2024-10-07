@@ -16,7 +16,7 @@ import os
 
 
 sample = 'ovary'
-wdir = 'znode/ovary/'
+wdir = 'znode/ovary_ext_p/'
 
 directory = wdir+'/data'
 pattern = 'ovary_*.h5ad'
@@ -30,7 +30,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >=2:
+	if batch_count >=12:
 		break
 
 

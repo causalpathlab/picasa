@@ -16,9 +16,9 @@ import os
 
 
 sample = 'ovary'
-wdir = 'znode/ovary/'
+wdir = 'znode/ovary_p/'
 
-directory = wdir+'/data'
+directory = wdir+'/test_data'
 pattern = 'ovary_*.h5ad'
 
 file_paths = glob.glob(os.path.join(directory, pattern))
@@ -28,9 +28,9 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'data/'+file_name)
+	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'test_data/'+file_name)
 	batch_count += 1
-	if batch_count >=2:
+	if batch_count >=12:
 		break
 
 
@@ -64,21 +64,14 @@ params = {'device' : 'cuda',
 
 picasa_object.estimate_neighbour(params['neighbour_method'])	
 
-def train():	
-	picasa_object.set_nn_params(params)
-	picasa_object.train()
-	picasa_object.plot_loss()
+
+device = 'cpu'
+picasa_object.set_nn_params(params)
+picasa_object.nn_params['device'] = device
+eval_batch_size = 100
+eval_total_size_per_batch = 10000
+picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
+picasa_object.save()
 
 
-def eval():
-	device = 'cpu'
-	picasa_object.set_nn_params(params)
-	picasa_object.nn_params['device'] = device
-	eval_batch_size = 100
-	eval_total_size_per_batch = 10000
-	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
-	picasa_object.save()
 
-
-train()
-eval()
