@@ -17,6 +17,8 @@ import os
 
 sample = 'ovary'
 wdir = 'znode/ovary/'
+cdir = 'figures/fig_2_f/'
+
 
 directory = wdir+'/data'
 pattern = 'ovary_*.h5ad'
@@ -69,7 +71,7 @@ import h5py as hf
 from scipy.stats import zscore
 from picasa.util.plots import plot_umap_df
 
-picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
+picasa_h5 = hf.File(wdir+cdir+'results/picasa_out.h5','r')
 batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
 
 # since we have only one pair 
@@ -89,7 +91,7 @@ p1_context,p1_ylabel = picasa_object.eval_context(adata_p1,adata_p2,nbr_map,eval
 
 df_context = pd.DataFrame(np.mean(p1_context, axis=1),index=p1_ylabel)
 
-dfl = pd.read_csv(wdir+'results/df_umap.csv.gz') 	
+dfl = pd.read_csv(wdir+cdir+'results/df_umap.csv.gz') 	
 dfl.drop(columns=['umap1','umap2'],inplace=True) 
 
 
@@ -106,7 +108,7 @@ dfh = df_context.apply(standardize_row, axis=1)
 
 sns.clustermap(dfh, cmap='viridis')
 plt.tight_layout()
-plt.savefig(wdir + 'results/nn__cntx_heatmap.png')
+plt.savefig(wdir + cdir+'results/nn__cntx_heatmap.png')
 plt.close()
 
 
@@ -117,7 +119,7 @@ principal_components = pca.fit_transform(df_context)
 
 df_context = pd.DataFrame(principal_components,index=df_context.index.values)
 
-dfl = pd.read_csv(wdir+'results/df_umap.csv.gz') 	
+dfl = pd.read_csv(wdir+cdir+'results/df_umap.csv.gz') 	
 dfl.drop(columns=['umap1','umap2'],inplace=True) 
 
 
@@ -132,5 +134,5 @@ df_umap['batch'] = [x.split('-')[1].split('_')[0] for x in df_umap['cell'].value
 
 df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
 
-plot_umap_df(df_umap,'cell_type',wdir+'results/nn__cntx_',pt_size=1.0,ftype='png') 
+plot_umap_df(df_umap,'cell_type',wdir+cdir+'results/nn__cntx_',pt_size=1.0,ftype='png') 
 

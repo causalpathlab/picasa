@@ -103,6 +103,8 @@ print(df_umap['cluster'].value_counts())
 
 unique_celltypes = df_umap['cluster'].unique()
 num_celltypes = len(unique_celltypes)
+
+top_genes_dict = {}
 top_genes = []
 top_n = 25
 for idx, ct in enumerate(sel_clust):
@@ -113,6 +115,11 @@ for idx, ct in enumerate(sel_clust):
 	df_attn = df_attn.unstack().reset_index()
 	df_attn = df_attn.sort_values(0,ascending=False)
 	top_genes.append(df_attn['level_0'].unique()[:top_n])
+	top_genes_dict[ct] =df_attn['level_0'].unique()[:top_n]
+
+
+
+pd.DataFrame(top_genes_dict).to_csv(wdir+cdir+'cluster_top_genes_canceronly.csv.gz',compression='gzip',index=False)
 
 tgs = []
 for tg in np.array(top_genes).flatten(): 
@@ -136,16 +143,16 @@ for idx, ct in enumerate(sel_clust):
 	df_attn = pd.DataFrame(np.mean(p1_attention[ct_yindxs], axis=0),
 						index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
 	
-	# df_attn = df_attn.apply(zscore)
+	df_attn = df_attn.apply(zscore)
 	df_attn.fillna(0.0,inplace=True)
-	df_attn[df_attn > 0.05] = 0.05
-	# df_attn[df_attn < -5] = -5
+	df_attn[df_attn > 3] = 3
+	df_attn[df_attn < -3] = -3
 	df_attn = df_attn.loc[:,top_genes]
 	df_attn = df_attn.loc[top_genes,:]
 
 	print(ct, df_attn.shape)
  
-	sns.heatmap(df_attn, cmap='viridis', ax=axes[idx])
+	sns.heatmap(df_attn, cmap='vlag', ax=axes[idx])
 	axes[idx].set_title(f"Clustermap for {ct}")
 
 for j in range(idx + 1, rows * cols):

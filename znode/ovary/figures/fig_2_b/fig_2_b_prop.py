@@ -17,8 +17,8 @@ import os
 sample = 'ovary'
 wdir = 'znode/ovary/'
 cdir = 'figures/fig_2_b/'
-cancer = 'cancer'
-df_umap = pd.read_csv(wdir+'results/df_umap_'+cancer+'.csv.gz')
+cancer = '_cancer'
+df_umap = pd.read_csv(wdir+'results/df_umap'+cancer+'.csv.gz')
 
 
 #### patient proportion for each cluster 
@@ -38,6 +38,11 @@ for col in ['patient_id','treatment_phase','cell_type']:
     custom_palette = get_colors(28) 
     legend_size = 7
 
+    cluster_order = ['c_0', 'c_1', 'c_2', 'c_3', 'c_4', 'c_5', 'c_6', 'c_7', 'c_8', 'c_9', 'c_10', 'c_11','c_12','c_13','c_14']
+
+    # Convert 'cluster' to a categorical type with the specified order
+    dfg['cluster'] = pd.Categorical(dfg['cluster'], categories=cluster_order, ordered=True)
+
     p = (ggplot(data=dfg, mapping=aes(x='cluster', fill=col,weight='ncount')) +
     geom_bar(position='stack') +
     scale_color_manual(values=custom_palette)  +
@@ -47,7 +52,7 @@ for col in ['patient_id','treatment_phase','cell_type']:
     p = p + theme(
         plot_background=element_rect(fill='white'),
         panel_background = element_rect(fill='white'),
-        axis_text_x=element_text(rotation=45, hjust=1),
+        axis_text_x=element_text(rotation=45, hjust=1,size=20),
            axis_title_x=element_text(size=20),
            axis_title_y=element_text(size=20)
     )

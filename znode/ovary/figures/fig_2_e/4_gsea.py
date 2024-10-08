@@ -99,10 +99,12 @@ df_umap = pd.read_csv(wdir+'results/df_umap.csv.gz')
 df_umap['cluster'] = ['c_'+str(x) for x in df_umap['cluster'].values] 	 
 
 sel_clust =[
-'c_6','c_7','c_11',	
- 'c_0','c_3','c_1',
+'c_6','c_7','c_11','c_14',	
+ 'c_0','c_10','c_8','c_5',	
+ 'c_2','c_1','c_3','c_9',	
  'c_12','c_13','c_4'
 ]
+
 df_umap = df_umap.loc[df_umap['cluster'].isin(sel_clust)]
 
 print(df_umap['cluster'].value_counts())
@@ -129,139 +131,100 @@ for idx, ct in enumerate(sel_clust):
 
 
 available_libraries = gp.get_library_name(organism="Human")
-print(available_libraries)
-gene_set_library = gp.get_library(name="PanglaoDB_Augmented_2021", organism="Human")
 
-
-top_n_pathways = 5
-top_pathways = []
-for factor in sel_clust:
-	gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-						gene_sets=gene_set_library,
-						min_size=15,  
-						max_size=100,  
-						permutation_num=1000,
-						outdir=None)  
-	
-	top_pathways.append(gsea_res.res2d.sort_values(by='NES', ascending=False).head(top_n_pathways)['Term'].values)
-
-
-tps = []
-for tp in np.concatenate(top_pathways): 
-	if tp not in tps: 
-		tps.append(tp)
-top_pathways = np.array(tps)
-
-
-
-results = {}
-results['pathways'] = top_pathways
-
-for factor in sel_clust:
-	gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-						gene_sets=gene_set_library,
-						min_size=15,  
-						max_size=100,  
-						permutation_num=1000,
-						outdir=None)  
-	
-	df_gsea = pd.DataFrame(gsea_res.res2d)
-	
-	no_pathways =  np.setdiff1d(df_gsea['Term'].values, results['pathways']).tolist() + np.setdiff1d(results['pathways'], df_gsea['Term'].values).tolist()
+dbs = [
+'Azimuth_2023',
+'Azimuth_Cell_Types_2021',
+'BioPlanet_2019',
+'CellMarker_Augmented_2021',
+'GO_Biological_Process_2023',
+'GO_Cellular_Component_2023',
+'GO_Molecular_Function_2023',
+'GTEx_Tissues_V8_2023',
+'GWAS_Catalog_2023',
+'KEGG_2021_Human',
+'MSigDB_Hallmark_2020',
+'PanglaoDB_Augmented_2021',
+'Reactome_2022',
+'WikiPathways_2024_Human'
  
-	df_gsea.set_index('Term',inplace=True)
+]
 
-	df_gsea = df_gsea[['NES']]
- 
-	for pathway in no_pathways:
-		df_gsea.loc[pathway] = 0.0
- 
-	results[factor] = df_gsea.loc[results['pathways']]['NES'].values
-
-df_result = pd.DataFrame(results)
-df_result.set_index('pathways',inplace=True)
-df_result = df_result.astype(float)
+for db in dbs:
+	try:
+		print(db)
+		gene_set_library = gp.get_library(name=db, organism="Human")
 
 
-from matplotlib.colors import LinearSegmentedColormap
-# colors = ['darkblue', 'lightblue', 'white', 'lightcoral', 'darkred']
-plt.rcParams.update({'font.size': 10})
-plt.figure(figsize=(25, 15))
-custom_cmap = LinearSegmentedColormap.from_list('custom_vlag', colors)
-
-sns.heatmap(df_result, annot=False, cmap='vlag', cbar_kws={'label': 'NES (Normalized Enrichment Score)'})
-plt.title("Heatmap of Enrichment Scores (NES) for Clusters and Pathways")
-plt.ylabel("Pathways")
-plt.xlabel("Clusters")
-plt.xticks(rotation=90)
-plt.savefig(wdir+cdir+'gsea.png')
-plt.close()
+		top_n_pathways = 5
+		top_pathways = []
+		for factor in sel_clust:
+			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
+								gene_sets=gene_set_library,
+								min_size=10,  
+								max_size=100,  
+								permutation_num=1000,
+								outdir=None)  
+			
+			top_pathways.append(gsea_res.res2d.sort_values(by='NES', ascending=False).head(top_n_pathways)['Term'].values)
 
 
-
-gene_set_library = gp.get_library(name="MSigDB_Oncogenic_Signatures", organism="Human")
-
-
-top_n_pathways = 5
-top_pathways = []
-for factor in sel_clust:
-	gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-						gene_sets=gene_set_library,
-						min_size=15,  
-						max_size=100,  
-						permutation_num=1000,
-						outdir=None)  
-	
-	top_pathways.append(gsea_res.res2d.sort_values(by='NES', ascending=False).head(top_n_pathways)['Term'].values)
-
-
-tps = []
-for tp in np.concatenate(top_pathways): 
-	if tp not in tps: 
-		tps.append(tp)
-top_pathways = np.array(tps)
+		tps = []
+		for tp in np.concatenate(top_pathways): 
+			if tp not in tps: 
+				tps.append(tp)
+		top_pathways = np.array(tps)
 
 
 
-results = {}
-results['pathways'] = top_pathways
+		results = {}
+		results['pathways'] = top_pathways
 
-for factor in sel_clust:
-	gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-						gene_sets=gene_set_library,
-						min_size=15,  
-						max_size=100,  
-						permutation_num=1000,
-						outdir=None)  
-	
-	df_gsea = pd.DataFrame(gsea_res.res2d)
-	
-	no_pathways =  np.setdiff1d(df_gsea['Term'].values, results['pathways']).tolist() + np.setdiff1d(results['pathways'], df_gsea['Term'].values).tolist()
- 
-	df_gsea.set_index('Term',inplace=True)
+		for factor in sel_clust:
+			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
+								gene_sets=gene_set_library,
+								min_size=15,  
+								max_size=100,  
+								permutation_num=1000,
+								outdir=None)  
+			
+			df_gsea = pd.DataFrame(gsea_res.res2d)
+			
+			no_pathways =  np.setdiff1d(df_gsea['Term'].values, results['pathways']).tolist() + np.setdiff1d(results['pathways'], df_gsea['Term'].values).tolist()
+		
+			df_gsea.set_index('Term',inplace=True)
 
-	df_gsea = df_gsea[['NES']]
- 
-	for pathway in no_pathways:
-		df_gsea.loc[pathway] = 0.0
- 
-	results[factor] = df_gsea.loc[results['pathways']]['NES'].values
+			df_gsea = df_gsea[['NES']]
+		
+			for pathway in no_pathways:
+				df_gsea.loc[pathway] = 0.0
+		
+			results[factor] = df_gsea.loc[results['pathways']]['NES'].values
 
-df_result = pd.DataFrame(results)
-df_result.set_index('pathways',inplace=True)
-df_result = df_result.astype(float)
+		df_result = pd.DataFrame(results)
+		df_result.set_index('pathways',inplace=True)
+		df_result = df_result.astype(float)
 
 
-from matplotlib.colors import LinearSegmentedColormap
-# colors = ['darkblue', 'lightblue', 'white', 'lightcoral', 'darkred']
-plt.rcParams.update({'font.size': 10})
-plt.figure(figsize=(25, 15))
-custom_cmap = LinearSegmentedColormap.from_list('custom_vlag', colors)
+		from matplotlib.colors import LinearSegmentedColormap
+		colors = ['darkblue', 'lightblue', 'white', 'lightcoral', 'darkred']
+		plt.rcParams.update({'font.size': 10})
+		plt.figure(figsize=(25, 15))
+		custom_cmap = LinearSegmentedColormap.from_list('custom_vlag', colors)
 
-sns.heatmap(df_result, annot=False, cmap='viridis', cbar_kws={'label': 'NES (Normalized Enrichment Score)'})
-plt.title("Heatmap of Enrichment Scores (NES) for Clusters and Pathways")
-plt.ylabel("Pathways")
-plt.xlabel("Clusters")
-plt.xticks(rotation=90)
-plt.savefig(wdir+cdir+'gsea_cancer.png')
-plt.close()
+		if (df_result < 0).any().any():
+			col_p = sns.color_palette("vlag", as_cmap=True)
+		else:
+			col_p= sns.color_palette("Blues", as_cmap=True)
+		
+		sns.heatmap(df_result, annot=False, cmap=col_p, cbar_kws={'label': 'NES (Normalized Enrichment Score)'})
+		plt.title("Heatmap of Enrichment Scores (NES) for Clusters and Pathways")
+		plt.ylabel("Pathways")
+		plt.xlabel("Clusters")
+		plt.xticks(rotation=90)
+		plt.savefig(wdir+cdir+'gsea_'+db+'.png')
+		plt.close()
+
+	except Exception as e:  
+		print(f"An unexpected error occurred: {e}")
+		print('Failed.....'+db)

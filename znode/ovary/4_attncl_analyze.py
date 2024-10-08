@@ -108,15 +108,13 @@ def plot_scsp_overlay():
 	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
 	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
 
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
- 
-	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
-	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
-	
+	df_umap['cluster'] = pd.Categorical(df_umap['cluster'])
 
-	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
- 
-	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
+	plot_umap_df(df_umap,'celltype_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'treatment_phase_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
+
 
 
 def  cancer_analysis(): 
@@ -169,12 +167,12 @@ def  cancer_analysis():
 
 	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
 	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
- 
-	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
-	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
 	
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
+	
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
 
-	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
 
 	df_umap.to_csv(wdir+'results/df_umap_cancer.csv.gz',index=False, compression='gzip')
