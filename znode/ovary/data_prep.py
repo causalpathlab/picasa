@@ -46,7 +46,6 @@ adata = adata[:,keep_cols]
 
 
 sc.pp.filter_genes(adata, min_cells=3)
-
 sc.pp.normalize_total(adata, target_sum=1e4)
 sc.pp.log1p(adata)
 sc.pp.highly_variable_genes(adata,n_top_genes=2000)

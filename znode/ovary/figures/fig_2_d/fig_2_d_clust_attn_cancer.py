@@ -128,7 +128,7 @@ for tg in np.array(top_genes).flatten():
 
 top_genes = np.array(tgs)
     
-
+cn = 0.1
 cols = 3  
 rows = int(np.ceil(num_celltypes / cols))
 
@@ -142,17 +142,13 @@ for idx, ct in enumerate(sel_clust):
 	ct_yindxs = np.where(np.isin(p1_ylabel, ct_cells))[0]
 	df_attn = pd.DataFrame(np.mean(p1_attention[ct_yindxs], axis=0),
 						index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
-	
-	df_attn = df_attn.apply(zscore)
-	df_attn.fillna(0.0,inplace=True)
-	df_attn[df_attn > 3] = 3
-	df_attn[df_attn < -3] = -3
+	df_attn[df_attn > cn] = cn	
 	df_attn = df_attn.loc[:,top_genes]
 	df_attn = df_attn.loc[top_genes,:]
 
 	print(ct, df_attn.shape)
  
-	sns.heatmap(df_attn, cmap='vlag', ax=axes[idx])
+	sns.heatmap(df_attn, cmap='Greens', ax=axes[idx])
 	axes[idx].set_title(f"Clustermap for {ct}")
 
 for j in range(idx + 1, rows * cols):

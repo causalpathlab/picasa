@@ -75,28 +75,15 @@ def plot_scsp_overlay():
 	
 	sel_c = []
 	for i,c in enumerate(cluster):
-		if c<=9: sel_c.append(i)
+		if c<=13: sel_c.append(i)
 	dfh = dfh.iloc[sel_c,:]
-
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.2)
-	pd.Series(cluster).value_counts()
-
-
-	sel_ci = []
-	sel_c = []
-	for i,c in enumerate(cluster):
-		if c<=10:
-			sel_ci.append(i)
-			sel_c.append(c)
-			
-	dfh = dfh.iloc[sel_ci,:]
   
 	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),use_snn=False,min_dist=0.6,n_neighbors=30)
 	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
-	df_umap['cluster'] = pd.Categorical(cluster)
+	df_umap['cluster'] = pd.Categorical(sel_c)
 	df_umap[['umap1','umap2']] = umap_2d
 	df_umap['batch'] = [x.split('@')[0] if '@' in x else x.split('-')[1].split('_')[0] for x in df_umap['cell'].values]
 

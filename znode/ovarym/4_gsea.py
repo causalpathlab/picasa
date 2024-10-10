@@ -16,13 +16,13 @@ import glob
 import os
 
 
-sample = 'ovary'
-wdir = 'znode/ovary/'
-cdir = 'figures/fig_2_e/'
+sample = 'ovarym'
+wdir = 'znode/ovarym/'
+cdir = ''
 
 
 directory = wdir+'/data'
-pattern = 'ovary_*.h5ad'
+pattern = 'ovarym_*.h5ad'
 
 file_paths = glob.glob(os.path.join(directory, pattern))
 file_names = [os.path.basename(file_path) for file_path in file_paths]
@@ -31,13 +31,13 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'data/'+file_name)
+	batch_map[file_name.replace('.h5ad','').replace('ovarym_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
 	if batch_count >=12:
 		break
 
 
-file_name = file_names[0].replace('.h5ad','').replace('ovary_','')
+file_name = file_names[0].replace('.h5ad','').replace('ovarym_','')
 
 picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
@@ -47,7 +47,7 @@ picasa_object = picasa.pic.create_picasa_object(
 
 params = {'device' : 'cuda',
 		'batch_size' : 64,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('ovary_','')].X.shape[1],
+		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('ovarym_','')].X.shape[1],
 		'embedding_dim' : 1000,
 		'attention_dim' : 15,
 		'latent_dim' : 15,
@@ -98,12 +98,7 @@ picasa_h5.close()
 df_umap = pd.read_csv(wdir+'results/df_umap.csv.gz')
 df_umap['cluster'] = ['c_'+str(x) for x in df_umap['cluster'].values] 	 
 
-sel_clust =[
-'c_6','c_7','c_11','c_14',	
- 'c_0','c_10','c_8','c_5',	
- 'c_2','c_1','c_3','c_9',	
- 'c_12','c_13','c_4'
-]
+sel_clust =df_umap['cluster'].unique()
 
 df_umap = df_umap.loc[df_umap['cluster'].isin(sel_clust)]
 
@@ -144,11 +139,13 @@ dbs = [
 'GWAS_Catalog_2023',
 'KEGG_2021_Human',
 'MSigDB_Hallmark_2020',
+'MSigDB_Oncogenic_Signatures',
 'PanglaoDB_Augmented_2021',
 'Reactome_2022',
 'WikiPathways_2024_Human'
  
 ]
+
 
 for db in dbs:
 	try:
@@ -209,7 +206,7 @@ for db in dbs:
 		from matplotlib.colors import LinearSegmentedColormap
 		colors = ['darkblue', 'lightblue', 'white', 'lightcoral', 'darkred']
 		plt.rcParams.update({'font.size': 10})
-		plt.figure(figsize=(35, 15))
+		plt.figure(figsize=(25, 15))
 		custom_cmap = LinearSegmentedColormap.from_list('custom_vlag', colors)
 
 		if (df_result < 0).any().any():

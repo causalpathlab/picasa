@@ -22,12 +22,23 @@ df.columns = [x[0] for x in genes.values]
 remove_cols = [ x for x in df.columns if  'MT-' in x or x.split('-')[0].startswith('RPL') or x.split('-')[0].startswith('RPS') or x.split('-')[0].startswith('RP1')]
 
 df = df[[ x for x in df.columns if x not in remove_cols]]
+
 genes = df.columns.values
 
-hvgs = genes[select_hvgenes(df.to_numpy(),gene_var_z=2.8)]
-hvgs = hvgs.flatten()
-print(len(hvgs))
 
+import scipy.sparse as sp
+import anndata
+df_sparse = sp.csr_matrix(df.values)
+
+adata = anndata.AnnData(X=df_sparse, obs=pd.DataFrame(df.index.values), var=pd.DataFrame(df.columns.values))
+
+
+sc.pp.filter_genes(adata, min_cells=3)
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+sc.pp.highly_variable_genes(adata,n_top_genes=2000)
+hvgs = adata.var[0].values[adata.var['highly_variable'].values]
+print(len(hvgs))
 
 
 marker = ['EPCAM','MKI67','CD3D','CD68','MS4A1','JCHAIN','PECAM1','PDGFRB',
@@ -38,6 +49,7 @@ marker = ['EPCAM','MKI67','CD3D','CD68','MS4A1','JCHAIN','PECAM1','PDGFRB',
 'IL1B','S100A9','FCGR3A',
 'COL1A1','PDGFRA','MCAM' ]
 
+import numpy as np 
 hvgs = np.concatenate((hvgs,np.array(marker)))
 print(len(hvgs))
 
@@ -45,11 +57,11 @@ hvgs = np.unique(hvgs)
 len(hvgs)
 
 
-df = df.loc[:,hvgs]
+adata = adata[:,adata.var[0].isin(hvgs)]
 
 
-adata = an.AnnData(X=df.values, obs=df.index.to_frame(index=False), var=pd.DataFrame(index=df.columns))
-adata.obs.index = adata.obs[0]
+adata.obs.index = adata.obs[0].values
+adata.var.index = adata.var[0].values
 
 
 dfl = pd.read_csv('metadata.csv.gz')
@@ -64,12 +76,18 @@ adata.obs['celltypel2'] = dfl['celltype_minor'].values
 adata.obs['celltypel3'] = dfl['celltype_subset'].values
 
 adata.obs.celltype.value_counts()
+adata.obs.batch.value_counts()
+
+
 dftemp = adata.obs.batch.value_counts()
 
 ### select top 8 patients with > 5k cells
 sel_patients = dftemp.index.values[:8]
 
 adata = adata[adata.obs['batch'].isin(sel_patients)]
+
+
+adata.obs.batch.value_counts()
 
 batch_keys = list(adata.obs['batch'].unique())
 

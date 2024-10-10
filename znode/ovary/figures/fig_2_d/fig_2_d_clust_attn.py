@@ -111,7 +111,7 @@ num_celltypes = len(unique_celltypes)
 
 top_genes_dict = {}
 top_genes = []
-top_n = 25
+top_n = 10
 for idx, ct in enumerate(sel_clust):
 	ct_cells = df_umap[df_umap['cluster'] == ct]['cell'].values
 	ct_yindxs = np.where(np.isin(p1_ylabel, ct_cells))[0]
@@ -122,7 +122,7 @@ for idx, ct in enumerate(sel_clust):
 	top_genes.append(df_attn['level_0'].unique()[:top_n])
 	top_genes_dict[ct] =df_attn['level_0'].unique()[:top_n]
 
-pd.DataFrame(top_genes_dict).to_csv(wdir+cdir+'cluster_top_genes.csv.gz',compression='gzip',index=False)
+# pd.DataFrame(top_genes_dict).to_csv(wdir+cdir+'cluster_top_genes.csv.gz',compression='gzip',index=False)
 
 tgs = []
 for tg in np.array(top_genes).flatten(): 
@@ -130,8 +130,12 @@ for tg in np.array(top_genes).flatten():
         tgs.append(tg)
 
 top_genes = np.array(tgs)
-    
 
+
+    
+from matplotlib.colors import LinearSegmentedColormap
+cmap = LinearSegmentedColormap.from_list("white_to_grey", ["white", "darkgrey"])
+cn = 0.01
 cols = 4  
 rows = int(np.ceil(num_celltypes / cols))
 
@@ -146,16 +150,27 @@ for idx, ct in enumerate(sel_clust):
 	df_attn = pd.DataFrame(np.mean(p1_attention[ct_yindxs], axis=0),
 						index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
 	
-	df_attn = df_attn.apply(zscore)
-	df_attn.fillna(0.0,inplace=True)
-	df_attn[df_attn > 5] = 5
-	df_attn[df_attn < -5] = -5
+	# df_attn = df_attn.applymap(np.exp).div(df_attn.applymap(np.exp).sum(axis=1), axis=0)
+	
+ 	# df_attn = df_attn.apply(zscore)
+	# df_attn.fillna(0.0,inplace=True)
+	
+	df_attn[df_attn > cn] = cn
+	# df_attn[df_attn < -cn] = -cn
 	df_attn = df_attn.loc[:,top_genes]
 	df_attn = df_attn.loc[top_genes,:]
 
 	print(ct, df_attn.shape)
  
-	sns.heatmap(df_attn, cmap='vlag', ax=axes[idx])
+	sns.heatmap(df_attn, cmap=cmap, ax=axes[idx],cbar=False)
+ 
+	for _, spine in axes[idx].spines.items():
+		spine.set_visible(True)
+		spine.set_color('black')
+		spine.set_linewidth(2)
+
+	axes[idx].set_xticks([])
+	axes[idx].set_yticks([])
 	axes[idx].set_title(f"Clustermap for {ct}")
 
 for j in range(idx + 1, rows * cols):
@@ -181,16 +196,13 @@ ct_yindxs = np.where(np.isin(p1_ylabel, ct_cells))[0]
 df_attn = pd.DataFrame(np.mean(p1_attention[ct_yindxs], axis=0),
 					index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
 
-df_attn = df_attn.apply(zscore)
-df_attn.fillna(0.0,inplace=True)
-df_attn[df_attn > 5] = 5
-df_attn[df_attn < -5] = -5
+df_attn[df_attn > cn] = cn
 df_attn = df_attn.loc[:,top_genes]
 df_attn = df_attn.loc[top_genes,:]
 
 print(ct, df_attn.shape)
 
-sns.heatmap(df_attn, cmap='viridis')
+sns.heatmap(df_attn, cmap=cmap)
 plt.tight_layout()
 plt.savefig(wdir +cdir+ 'sc_attention_allct_one.png')
 plt.close()
