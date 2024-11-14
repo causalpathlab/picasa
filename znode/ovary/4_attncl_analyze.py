@@ -83,19 +83,27 @@ def plot_scsp_overlay():
 	pd.Series(cluster).value_counts()
 	
 	sel_c = []
+	sel_ci = []
 	for i,c in enumerate(cluster):
-		if c<=8: sel_c.append(i)
-	dfh = dfh.iloc[sel_c,:]
+		if c<=9: 
+			sel_c.append(c)
+			sel_ci.append(i)
+   
+	dfh = dfh.iloc[sel_ci,:]
 
 	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.08)
 	pd.Series(cluster).value_counts()
 
 	sel_c = []
+	sel_ci = []
 	for i,c in enumerate(cluster):
-		if c<=9: sel_c.append(i)
-	dfh = dfh.iloc[sel_c,:]
+		if c<=9: 
+			sel_c.append(c)
+			sel_ci.append(i)
+   
+	dfh = dfh.iloc[sel_ci,:]
 
-	umap_2d = picasa.ut.analysis.run_umap (dfh.to_numpy(),snn_graph=conn,min_dist=0.3,n_neighbors=30)
+	umap_2d = picasa.ut.analysis.run_umap (dfh.to_numpy(),use_snn=False,min_dist=0.1,n_neighbors=10)
 	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
@@ -110,10 +118,10 @@ def plot_scsp_overlay():
 
 	df_umap['cluster'] = pd.Categorical(df_umap['cluster'])
 
-	plot_umap_df(df_umap,'celltype_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
-	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
-	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
-	plot_umap_df(df_umap,'treatment_phase_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
 
 
@@ -168,11 +176,14 @@ def  cancer_analysis():
 	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz') 	 
 	df_umap = pd.merge(df_umap,dfl,on='cell',how='left')
 	
-	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
-	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'cluster',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
 	
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
 
-	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='pdf') 
+	plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_scsp_cancer',pt_size=1.0,ftype='png') 
 
 	df_umap.to_csv(wdir+'results/df_umap_cancer.csv.gz',index=False, compression='gzip')
+
+plot_latent()
+plot_scsp_overlay()

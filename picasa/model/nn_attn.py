@@ -1,13 +1,22 @@
 import torch
-torch.manual_seed(0)
+
 import os
 import torch.nn as nn
 import torch.nn.functional as F
 import pandas as pd
-from .loss import pcl_loss,pcl_loss_cluster
+import random 
+from .loss import pcl_loss,pcl_loss_with_rare_cluster,pcl_loss_with_weighted_cluster,latent_alignment_loss
 import logging
 logger = logging.getLogger(__name__)
 from torch.distributions.uniform import Uniform
+import numpy as np
+
+
+import torch.nn.init as init
+torch.manual_seed(0)
+np.random.seed(0)
+random.seed(0)
+
 
 
 class PICASAOUT:
@@ -86,8 +95,8 @@ class ScaledDotAttention(nn.Module):
         entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
 
         output = torch.matmul(attention_weights, value_proj)
-        
-        return output, attention_weights,entropy_loss_attn
+
+        return output, attention_weights, entropy_loss_attn
 
 class AttentionPooling(nn.Module):
     def __init__(self, model_dim):
@@ -119,7 +128,7 @@ class MLP(nn.Module):
         return z
 
 class PICASANET(nn.Module):
-    def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_rate,pair_importance_weight):
+    def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_tol,pair_importance_weight):
         super(PICASANET,self).__init__()
 
         self.embedding = GeneEmbedor(embedding_dim,attention_dim)
@@ -129,26 +138,38 @@ class PICASANET(nn.Module):
         self.encoder = ENCODER(input_dim,encoder_layers)
         self.projector = MLP(latent_dim, projection_layers)
         
-        self.corruption_rate = corruption_rate
-
-    def forward(self,x_c1,x_c2):
+        self.corruption_tol = corruption_tol
         
-        if self.corruption_rate != 0.0:
-            corruption_mask = torch.rand(x_c2.shape,device=x_c2.device) < self.corruption_rate
-            marginals = Uniform(float(x_c2.min()),float(x_c2.max()))
-            x_random = marginals.sample(torch.Size(x_c2.size())).to(x_c2.device)
-            x_c2_corrupted = torch.where(corruption_mask, x_random.int(), x_c2)
-            x_c2_emb = self.embedding(x_c2_corrupted)
+        self.apply(self._init_weights)
 
-            corruption_mask = torch.rand(x_c1.shape,device=x_c1.device) < self.corruption_rate
-            marginals = Uniform(float(x_c1.min()),float(x_c1.max()))
-            x_random = marginals.sample(torch.Size(x_c1.size())).to(x_c1.device)
-            x_c1_corrupted = torch.where(corruption_mask, x_random.int(), x_c1)
-            x_c1_emb = self.embedding(x_c1_corrupted)
-   
-        else:
-            x_c1_emb = self.embedding(x_c1)
-            x_c2_emb = self.embedding(x_c2)
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            init.xavier_uniform_(module.weight)
+        elif isinstance(module, nn.Parameter):
+            init.xavier_uniform_(module)
+            
+    def forward(self,x_c1,x_c2,nbr_weight=None):
+        
+        if nbr_weight != None:
+            mean_val = torch.mean(nbr_weight)
+            std_val = torch.std(nbr_weight)
+            threshold = self.corruption_tol * std_val
+            outliers = torch.where(torch.abs(nbr_weight - mean_val) > threshold)
+            outlier_indices = outliers[0]
+            
+            all_indices = torch.arange(nbr_weight.size(0))
+            non_outlier_indices = torch.tensor([i for i in all_indices if i not in outlier_indices])
+            sampled_indices = random.sample(non_outlier_indices.tolist(), len(outlier_indices))
+
+            x_c1[outlier_indices] = x_c1[sampled_indices]
+            x_c2[outlier_indices] = x_c2[sampled_indices]
+
+        x_c1_emb = self.embedding(x_c1)
+        x_c2_emb = self.embedding(x_c2)
   
         x_c1_att_out, x_c1_att_w,el_attn_c1 = self.attention(x_c1_emb,x_c2_emb,x_c2_emb)
         x_c1_pool_out = self.pooling(x_c1_att_out)
@@ -161,7 +182,7 @@ class PICASANET(nn.Module):
 
         z_c1 = self.projector(h_c1)
         z_c2 = self.projector(h_c2)
-        
+                
         pred_c1 = torch.softmax(h_c1, dim=1)
         el_cl_c1 = -torch.mean(torch.sum(pred_c1 * torch.log(pred_c1 + 1e-10), dim=1))
 
@@ -170,26 +191,29 @@ class PICASANET(nn.Module):
 
         return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
 
-def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_group_threshold, rare_group_weight,temperature,min_batchsize=2):
+def train(model,data,epochs,lambda_loss,l_rate,cl_loss_mode, loss_clusters, loss_threshold, loss_weight,temperature,min_batchsize):
     logger.info('Init training....nn_attn')
     opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
     epoch_losses = []
     lambda_attn_loss = float(lambda_loss[0])
     lambda_latent_loss = float(lambda_loss[1])
-    lambda_cl_loss = float(lambda_loss[2])
+    lambda_latalign_loss = float(lambda_loss[2])
+    lambda_cl_loss = float(lambda_loss[3])
     for epoch in range(epochs):
         epoch_l, cl, el, el_attn_c1, el_attn_c2, el_cl_c1, el_cl_c2 = (0,) * 7
-        for x_c1,y,x_c2 in data:
-            
+        for x_c1,y,x_c2,nbr_weight in data:
+                        
             if x_c1.shape[0] < min_batchsize:
                 continue
             
             opt.zero_grad()
 
-            picasa_out,picasa_el = model(x_c1,x_c2)
+            picasa_out,picasa_el = model(x_c1,x_c2,nbr_weight)
 
-            if rare_ct_mode:
-                cl_loss = lambda_cl_loss * pcl_loss_cluster(picasa_out.z_c1, picasa_out.z_c2,num_clusters, rare_group_threshold, rare_group_weight,temperature)
+            if cl_loss_mode == 'rare':
+                cl_loss = lambda_cl_loss * pcl_loss_with_rare_cluster(picasa_out.z_c1, picasa_out.z_c2,loss_clusters, loss_threshold, loss_weight,temperature)
+            elif cl_loss_mode == 'weighted':
+                cl_loss = lambda_cl_loss * pcl_loss_with_weighted_cluster(picasa_out.z_c1, picasa_out.z_c2,loss_clusters,loss_weight,temperature)
             else:
                 cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
 
@@ -198,12 +222,16 @@ def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_
                         picasa_el.el_attn_c2 * lambda_attn_loss +
                         picasa_el.el_cl_c1 * lambda_latent_loss +
                         picasa_el.el_cl_c2 * lambda_latent_loss)
-            train_loss = cl_loss + entropy_loss
+            
+            alignment_loss = latent_alignment_loss(picasa_out.z_c1, picasa_out.z_c2) * lambda_latalign_loss
+
+            train_loss = cl_loss + entropy_loss + alignment_loss
+            
             train_loss.backward()
 
             opt.step()
             epoch_l += train_loss.item()
-            cl += cl_loss.item()
+            cl += cl_loss.item() + alignment_loss.item()
             el += entropy_loss.item()
             el_attn_c1 += picasa_el.el_attn_c1.item()
             el_attn_c2 += picasa_el.el_attn_c2.item()
@@ -217,7 +245,7 @@ def train(model,data,epochs,lambda_loss,l_rate,rare_ct_mode, num_clusters, rare_
 
         return epoch_losses
  
-def predict_batch(model,x_c1,y, x_c2 ):
+def predict_batch(model,x_c1,y,x_c2 ):
     return model(x_c1,x_c2),y
 
 

@@ -30,7 +30,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >=2:
+	if batch_count >=12:
 		break
 
 
@@ -49,20 +49,20 @@ params = {'device' : 'cuda',
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,1.0],
+		'lambda_loss' : [1.0,0.1,0.0,1.0],
 		'temperature_cl' : 1.0,
-		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
+		'pair_search_method' : 'approx_50',
+	 	'corruption_tol' : 3,
 		'pair_importance_weight' : 0.01,
-        'rare_ct_mode' : False, 
-      	'num_clusters' : 5, 
-        'rare_group_threshold' : 0.1, 
-        'rare_group_weight': 2.0,
-		'epochs': 1,
+		'cl_loss_mode': 'weighted', 
+		'loss_clusters': 5, 
+		'loss_threshold': 0.1, 
+		'loss_weight': 2.0, 
+		'epochs': 1, 
 		'titration': 12
-		}  
+		} 
 
-picasa_object.estimate_neighbour(params['neighbour_method'])	
+picasa_object.estimate_neighbour(params['pair_search_method'])	
 
 def train():	
 	picasa_object.set_nn_params(params)

@@ -30,7 +30,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace('aml_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >=10:
+	if batch_count >=12:
 		break
 
 
@@ -38,31 +38,35 @@ file_name = file_names[0].replace('.h5ad','').replace('aml_','')
 
 picasa_object = picasa.pic.create_picasa_object(
 	batch_map,
+	'unq',
 	wdir)
 
-params = {'device' : 'cuda',
-		'batch_size' : 100,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('aml_','')].X.shape[1],
-		'embedding_dim' : 1000,
-		'attention_dim' : 15,
-		'latent_dim' : 15,
-		'encoder_layers' : [100,15],
-		'projection_layers' : [15,15],
-		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,1.0],
-		'temperature_cl' : 1.0,
-		'neighbour_method' : 'approx_50',
-	 	'corruption_rate' : 0.0,
-		'pair_importance_weight' : 0.01,
-        'rare_ct_mode' : True, 
-      	'num_clusters' : 5, 
-        'rare_group_threshold' : 0.1, 
-        'rare_group_weight': 2.0,
-		'epochs': 1,
-		'titration': 12
-		}  
+params = {
+'device': 'cuda', 
+'batch_size': 100, 
+'input_dim': 2000, 
+'embedding_dim': 3000, 
+'attention_dim': 15, 
+'latent_dim': 15, 
+'encoder_layers': [100, 15], 
+'projection_layers': [15, 15], 
+'learning_rate': 0.001, 
+'lambda_loss': [1.0, 0.1, 0.0, 1.0], 
+'temperature_cl': 1.0, 
+'pair_search_method': 
+'approx_50', 
+'pair_importance_weight': 0.01, 
+'corruption_tol': 5, 
+'cl_loss_mode': 'weighted', 
+'loss_clusters': 2, 
+'loss_threshold': 0.1, 
+'loss_weight': 0.5, 
+'epochs': 1, 
+'titration': 12
+}
 
-picasa_object.estimate_neighbour(params['neighbour_method'])	
+
+picasa_object.estimate_neighbour(params['pair_search_method'])	
 
 def train():	
 	picasa_object.set_nn_params(params)

@@ -17,6 +17,10 @@ import os
 sample = 'aml'
 wdir = 'znode/aml/'
 
+logging.basicConfig(filename=wdir+'results/4_attncl_train.log',
+format='%(asctime)s %(levelname)-8s %(message)s',
+level=logging.INFO,
+datefmt='%Y-%m-%d %H:%M:%S')
 
 def plot_latent():
 	import umap
@@ -45,6 +49,8 @@ def plot_latent():
 	picasa_h5.close()
 
 def plot_scsp_overlay():
+    
+    
 	import umap
 	import h5py as hf
 	import random
@@ -79,45 +85,72 @@ def plot_scsp_overlay():
 	###################
 	####################
 	
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.1)
+	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.3)
 	pd.Series(cluster).value_counts()
 	
 	sel_c = []
 	sel_ci = []
 	for i,c in enumerate(cluster):
-		if c<=4: 
+		if c<=12: 
 			sel_c.append(c)
 			sel_ci.append(i)
    
 	dfh = dfh.iloc[sel_ci,:]
 
-	# conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.08)
+	# conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.1)
 	# pd.Series(cluster).value_counts()
 
 	# sel_c = []
 	# for i,c in enumerate(cluster):
-	# 	if c<=9: sel_c.append(i)
+	# 	if c<=4: sel_c.append(i)
 	# dfh = dfh.iloc[sel_c,:]
 
-	umap_2d = picasa.ut.analysis.run_umap (dfh.to_numpy(),use_snn=False,min_dist=0.3,n_neighbors=30)
+	md = 0.8
+	nn = 30
+	dist = 'euclidean'
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),use_snn=False,min_dist=md,n_neighbors=nn,distance=dist)
 	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
-
+	
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
-	df_umap['cluster'] = pd.Categorical(sel_c)
+	# df_umap['cluster'] = pd.Categorical(sel_c)
 
 	df_umap[['umap1','umap2']] = umap_2d
  
  
 	dfl = pd.read_csv(wdir+'data/AML_GSE116256_CellMetainfo_table.tsv',sep='\t')
 
+	cell_types = {
+		'B': 'B',
+		'CD4Tconv': 'T',
+		'CD8T': 'T',
+		'EryPro': 'EryPro',
+		'GMP': 'GMP',
+		'HSC': 'HSC',
+		'Malignant': 'Malignant',
+		'Mono/Macro': 'Mono/Macro',
+		'NK': 'T',
+		'Plasma': 'Plasma',
+		'Progenitor': 'Progenitor',
+		'Promonocyte': 'Mono/Macro',
+		'Tprolif': 'T'
+	}
 
-	for col in dfl.columns[3:]:
+	dfl['cell_type'] = [ cell_types[x] for x in dfl['Celltype (major-lineage)']]
+
+	# sel_cols = ['cell_type','Celltype (major-lineage)','Patient','cluster','Celltype (malignancy)']
+	sel_cols = ['cell_type','Celltype (major-lineage)','Patient','Celltype (malignancy)']
+ 
+	for col in sel_cols:
 		try:
 			df_umap[col.replace(' ','')] = pd.merge(df_umap,dfl,left_on='cell',right_on='Cell',how='left')[col].values
 	
 			plot_umap_df(df_umap,col.replace(' ',''),wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 		except:
 			print('failed..'+col)
+
    
 	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
+
+
+plot_scsp_overlay()

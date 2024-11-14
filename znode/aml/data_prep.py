@@ -2,7 +2,6 @@
 import anndata as an
 import pandas as pd
 import numpy as np
-# import sailr
 
 from scipy.sparse import csr_matrix 
 import scanpy as sc
@@ -42,7 +41,8 @@ print(sum(hvgs))
 adata = adata[:,hvgs]
 
 dfl = pd.read_csv('AML_GSE116256_CellMetainfo_table.tsv',sep='\t')
-sel_patient = ['AML328', 'AML556', 'AML707B', 'AML921A', 'AML420B']
+sel_patient = ['AML328', 'AML556', 'AML707B', 'AML921A',
+       'AML420B', 'AML329', 'AML419A', 'AML1012', 'AML371', 'AML916']
 dfl = dfl[dfl['Patient'].isin(sel_patient)]
 
 adata = adata[dfl['Cell'].values,:]

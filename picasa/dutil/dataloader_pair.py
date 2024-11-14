@@ -2,8 +2,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
 import torch
-import pytorch_lightning as pl
-from scipy import sparse
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -45,13 +43,15 @@ class SparseDataset(Dataset):
 		sc_ind1,sc_ind2 = self.sc_indptr[idx],self.sc_indptr[idx+1]
 		sc_cell[self.sc_indices[sc_ind1:sc_ind2].long()] = self.sc_vals[sc_ind1:sc_ind2]
 
-		sp_pos_idx = self.scsp_map[idx]
+		sp_pos_idx_value = self.scsp_map[idx]
+		sp_pos_idx = sp_pos_idx_value[0]
+		sp_pos_value = sp_pos_idx_value[1]
   
 		sp_pos_cell = torch.zeros((self.sp_shape[1],), dtype=torch.int32, device=self.device)
 		sp_pos_ind1,sp_pos_ind2 = self.sp_indptr[sp_pos_idx],self.sp_indptr[sp_pos_idx+1]
 		sp_pos_cell[self.sp_indices[sp_pos_ind1:sp_pos_ind2].long()] = self.sp_vals[sp_pos_ind1:sp_pos_ind2]
 
-		return sc_cell, self.sc_label[idx], sp_pos_cell
+		return sc_cell, self.sc_label[idx], sp_pos_cell, sp_pos_value
 
 def nn_load_data(adata_sc,adata_sp,scsp_map,device,bath_size):
 
@@ -64,46 +64,11 @@ def nn_load_data(adata_sc,adata_sp,scsp_map,device,bath_size):
 	sc_shape = tuple(adata_sc.X.shape)
 	sc_label = adata_sc.obs.index.values
 
-	# if isinstance(adata_sp.X,np.ndarray):
-	spmat = sparse.csr_matrix(adata_sp.X)
-
-	sp_indptr = torch.tensor(spmat.indptr.astype(np.int32), dtype=torch.int32, device=device)
-	sp_indices = torch.tensor(spmat.indices.astype(np.int32), dtype=torch.int32, device=device)
-	sp_vals = torch.tensor(spmat.data.astype(np.int32), dtype=torch.int32, device=device)
+	sp_indptr = torch.tensor(adata_sp.X.indptr.astype(np.int32), dtype=torch.int32, device=device)
+	sp_indices = torch.tensor(adata_sp.X.indices.astype(np.int32), dtype=torch.int32, device=device)
+	sp_vals = torch.tensor(adata_sp.X.data.astype(np.int32), dtype=torch.int32, device=device)
 	sp_shape = tuple(adata_sp.X.shape)
  
 	spdata = SparseData(sc_indptr,sc_indices,sc_vals,sc_shape,sc_label,sp_indptr,sp_indices,sp_vals,sp_shape,scsp_map)
 
 	return DataLoader(SparseDataset(spdata,device), batch_size=bath_size, shuffle=True)
-
-class nn_load_data_mgpu(pl.LightningDataModule):
-	
-	def __init__(self,adata_sc,adata_sp,distdf,device,batch_size):
-		super().__init__()
-		self.adata_sc = adata_sc
-		self.adata_sp = adata_sp
-		self.distdf = distdf
-		self.device = device
-		self.batch_size = batch_size
-
-	def train_dataloader(self):
-		device = torch.device(self.device)
-	
-		sc_indptr = torch.tensor(self.adata_sc.X.indptr.astype(np.int32), dtype=torch.int32, device=device)
-		sc_indices = torch.tensor(self.adata_sc.X.indices.astype(np.int32), dtype=torch.int32, device=device)
-		sc_vals = torch.tensor(self.adata_sc.X.data.astype(np.int32), dtype=torch.int32, device=device)
-		sc_shape = tuple(self.adata_sc.X.shape)
-		sc_label = self.adata_sc.obs.index.values
-
-
-		sp_indptr = torch.tensor(self.adata_sp.X.indptr.astype(np.int32), dtype=torch.int32, device=device)
-		sp_indices = torch.tensor(self.adata_sp.X.indices.astype(np.int32), dtype=torch.int32, device=device)
-		sp_vals = torch.tensor(self.adata_sp.X.data.astype(np.int32), dtype=torch.int32, device=device)
-		sp_shape = tuple(self.adata_sp.X.shape)
-
-		scsp_map ={x:y[0] for x,y in scsp_map}
-	
-		spdata = SparseData(sc_indptr,sc_indices,sc_vals,sc_shape,sc_label,sp_indptr,sp_indices,sp_vals,sp_shape,scsp_map)
-
-		return DataLoader(SparseDataset(spdata,device), batch_size=self.batch_size, shuffle=True)
-

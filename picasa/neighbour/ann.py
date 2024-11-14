@@ -16,8 +16,8 @@ class ApproxNN():
 		self.index.build(number_of_trees)
 
 	def query(self, vector, k):
-		indexes = self.index.get_nns_by_vector(vector.tolist()[0],k)
-		return indexes
+		indexes, distances = self.index.get_nns_by_vector(vector.tolist()[0], k, include_distances=True)
+		return list(zip(indexes, distances))
 
 
 def get_NNmodel(mtx,number_of_trees,use_pca=False):
@@ -47,11 +47,7 @@ def generate_neighbours(source_adata: AnnData,
 						tag: str,
 						number_of_trees:int = 50 
 						) -> dict:
-	logging.info('Generating neighbour using approximate method - ANNOY...'+tag)
-	logging.info('number_of_trees...'+str(number_of_trees))
 	ann_model = get_NNmodel(source_adata.X.todense(),number_of_trees)
-	logging.info('Querying neighbour tree.')
 	nbr_dict = get_neighbours(target_adata.X.todense(),ann_model)
-	logging.info('Approximate neighbour estimate complete.')
 	return nbr_dict
 
