@@ -64,24 +64,18 @@ params = {'device' : 'cuda',
 		'titration': 15
 		}  
 
-
 picasa_object.estimate_neighbour(params['pair_search_method'])	
-
-def train():
+picasa_object.set_nn_params(params)
 	
-	picasa_object.set_nn_params(params)
-	picasa_object.train()
-	picasa_object.plot_loss(tag='common')
+unq_layers = [15,15,15]
+picasa_object.train_unique(unq_layers,l_rate=0.001,epochs=200,batch_size=128,device='cuda')
+picasa_object.plot_loss(tag='unq')
 
+eval_batch_size = 10
+eval_total_size = 10000
 
-def eval():
-	device = 'cpu'
-	picasa_object.set_nn_params(params)
-	picasa_object.nn_params['device'] = device
-	eval_batch_size = 100
-	eval_total_size_per_batch = 10000
-	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
-	picasa_object.save()
+df_c, df_u,df_batch_id = picasa_object.eval_unique(unq_layers,eval_batch_size, eval_total_size,device='cuda')
+df_c.to_csv(wdir+'results/df_c.csv.gz',compression='gzip')
+df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')
+df_batch_id.to_csv(wdir+'results/df_batch_id.csv.gz',compression='gzip')
 
-train()
-eval()

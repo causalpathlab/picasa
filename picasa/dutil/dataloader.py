@@ -65,7 +65,7 @@ class MemDataset(torch.utils.data.Dataset):
         return len(self.x)
 
     def __getitem__(self, idx):
-        return self.x[idx].to(self.device), self.y[idx], self.x_paired[idx].to(self.device), self.batch_id[idx]
+        return self.x[idx].to(self.device), self.y[idx], self.x_paired[idx].to(self.device), self.batch_id[idx].to(self.device)
 
 def get_dataloader_mem(x,y,x_paired,batch_id,batch_size,device):
 

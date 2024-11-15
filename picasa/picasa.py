@@ -21,7 +21,8 @@ class picasa(object):
 		datefmt='%Y-%m-%d %H:%M:%S')
   
 		self.adata_keys = list(self.data.adata_list.keys())
-
+		self.batch_mapping = {label: idx for idx, label in enumerate(self.adata_keys)}
+  
 		if pair_mode == 'unq':
 			indices = range(len(self.data.adata_list))
 			adata_pairs = [(indices[i], indices[i+1]) for i in range(0, len(indices)-1, 1)]
@@ -228,7 +229,8 @@ class picasa(object):
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(self.nn_params['device'])))
 		picasa_model.eval()
 
-		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['latent_dim'],self.nn_params['input_dim'],unq_layers).to(self.nn_params['device'])
+		num_batches = len(self.adata_keys)
+		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['latent_dim'],self.nn_params['input_dim'],unq_layers,num_batches).to(self.nn_params['device'])
 	
 		logging.info(picasa_unq_model)
   
@@ -250,22 +252,20 @@ class picasa(object):
 				x_c1_batches.append(x_c1)
 				y_batches.append(np.array(y))
 				x_c2_batches.append(x_c2)
-				b_ids_batches.append(np.array([p1+'+'+p2 for x in range(x_c1.shape[0])]))
+				b_ids_batches.append(torch.tensor([ self.batch_mapping[p1] for _ in range(x_c1.shape[0])]))
 	
 		all_x_c1 = torch.cat(x_c1_batches, dim=0)  
 		all_y = np.concatenate(y_batches)        
 		all_x_c2 = torch.cat(x_c2_batches, dim=0)  
-		all_b_ids = np.concatenate(b_ids_batches)  
+		all_b_ids = torch.cat(b_ids_batches,dim=0)  
 
 		train_data =dutil.get_dataloader_mem(all_x_c1,all_y,all_x_c2,all_b_ids,batch_size,device)
 
 		logging.info('Training...unique space model-'+p1+'_'+p2)
-		loss = []
-		loss_p1_p2 = model.nn_unq.train(picasa_unq_model,train_data,l_rate,epochs)
-		loss.append(np.mean(loss_p1_p2, axis=0))
+		loss = model.nn_unq.train(picasa_unq_model,train_data,l_rate,epochs)
 
 		torch.save(picasa_unq_model.state_dict(),self.wdir+'results/nn_unq.model')
-		pd.DataFrame(loss,columns=['ep_l']).to_csv(self.wdir+'results/4_unq_train_loss.txt.gz',index=False,compression='gzip',header=True)
+		pd.DataFrame(loss,columns=['ep_l','el_z','el_recon','el_batch']).to_csv(self.wdir+'results/4_unq_train_loss.txt.gz',index=False,compression='gzip',header=True)
 		logging.info('Completed training...model saved in results/nn_unq.model')
   
   
@@ -278,46 +278,60 @@ class picasa(object):
   
 		picasa_model.eval()
 	
-	
-		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['latent_dim'],self.nn_params['input_dim'],unq_layers).to(self.nn_params['device'])
+		num_batches = len(self.adata_keys)
+		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['latent_dim'],self.nn_params['input_dim'],unq_layers,num_batches).to(self.nn_params['device'])
 
 		picasa_unq_model.load_state_dict(torch.load(self.wdir+'results/nn_unq.model', map_location=torch.device(device)))
 
 		picasa_unq_model.eval()
   
-		c_latent = {}
-		u_latent = {}
+		x_c1_batches = []
+		y_batches = []
+		x_c2_batches = []
+		b_ids_batches = []
+  
+		logging.info("Creating dataloader for training unique space.")
   
 		for ad_pair in self.adata_pairs:
+      
 			p1 = self.adata_keys[ad_pair[0]]
 			p2 = self.adata_keys[ad_pair[1]]
-
-			logging.info('Training...model-'+p1+'_'+p2)
+			
+			data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],'cpu',eval_batch_size)
 	
-			data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
+			for x_c1,y,x_c2,nbr_weight in data:		
+				x_c1_batches.append(x_c1)
+				y_batches.append(np.array(y))
+				x_c2_batches.append(x_c2)
+				b_ids_batches.append(torch.tensor([ self.batch_mapping[p1] for _ in range(x_c1.shape[0])]))	
+    
+		all_x_c1 = torch.cat(x_c1_batches, dim=0)  
+		all_y = np.concatenate(y_batches)        
+		all_x_c2 = torch.cat(x_c2_batches, dim=0)  
+		all_b_ids = torch.cat(b_ids_batches,dim=0)  
 
+		train_data =dutil.get_dataloader_mem(all_x_c1,all_y,all_x_c2,all_b_ids,eval_batch_size,device)
+			
+		df_c_latent = pd.DataFrame()
+		df_u_latent = pd.DataFrame()
+		df_b_id = pd.DataFrame()
   
-			
-			df_c_latent = pd.DataFrame()
-			df_u_latent = pd.DataFrame()
+		for x_c1,y,x_c2,b_id in train_data:
+			z,ylabel,b_id = model.nn_unq.predict_batch(picasa_unq_model,x_c1,y,x_c2,b_id)
+			z_c = z[0]
+			z_u = z[1]
+			df_c_latent = pd.concat([df_c_latent,pd.DataFrame(z_c.cpu().detach().numpy(),index=ylabel)],axis=0)
+			df_u_latent = pd.concat([df_u_latent,pd.DataFrame(z_u.cpu().detach().numpy(),index=ylabel)],axis=0)
+			df_b_id = pd.concat([df_b_id,pd.DataFrame(b_id.cpu().detach().numpy(),columns=['batch_id'])])
 
-			for x_c1,y,x_c2,nbr_weight in data:
-				z,ylabel = model.nn_unq.predict_batch(picasa_unq_model,x_c1,y,x_c2)
-				z_c = z[0]
-				z_u = z[1]
-				df_c_latent = pd.concat([df_c_latent,pd.DataFrame(z_c.cpu().detach().numpy(),index=ylabel)],axis=0)
-				df_u_latent = pd.concat([df_u_latent,pd.DataFrame(z_u.cpu().detach().numpy(),index=ylabel)],axis=0)
+			del z_c, z_u, ylabel,b_id
+			gc.collect()
 
-				del z_c, z_u, ylabel
-				gc.collect()
-
-				if df_c_latent.shape[0]>eval_total_size:
-					break
-			
-			c_latent[p1+'_common'] = df_c_latent			
-			u_latent[p1+'_unique'] = df_u_latent			
-		
-		return c_latent,u_latent
+			if df_c_latent.shape[0]>eval_total_size:
+				break
+		inverse_batch_mapping = {v: k for k, v in self.batch_mapping.items()}			
+		df_b_id['batch'] = [inverse_batch_mapping[x] for x in df_b_id['batch_id'].values] 		
+		return df_c_latent,df_u_latent,df_b_id
    
 
 
@@ -334,7 +348,7 @@ class picasa(object):
 				f.create_dataset(k+'_ylabel', data=self.ylabel[k])
 
 			for attr_name, attr_value in vars(self).items():
-				if isinstance(attr_value, dict) and '_map' in attr_name:
+				if isinstance(attr_value, dict) and attr_name == 'nbr_map':
 					for k in attr_value.keys():
 							df = pd.DataFrame(attr_value[k].items())
 							df = df[['target', 'weight']] = pd.DataFrame(df[1].tolist(), index=df.index.values)
@@ -342,6 +356,7 @@ class picasa(object):
 							df.reset_index(inplace=True)
 							df.columns = ['source','target','weight']
 							f.create_dataset(k, data=df)
+
 
 	def plot_loss(self,tag):
 		from picasa.util.plots import plot_loss

@@ -17,10 +17,8 @@ def multi_dir_log_likelihood(x,alpha):
 	b = torch.lgamma(x + alpha).sum(1) - torch.lgamma( (x + alpha).sum(1))
 	return a + b 
 
-
 def kl_loss(mean,lnvar):
 	return  -0.5 * torch.sum(1. + lnvar - torch.pow(mean,2) - torch.exp(lnvar), dim=-1)
-
 
 def get_zinb_reconstruction_loss(x, px_s, px_r, px_d):
 	'''https://github.com/scverse/scvi-tools/blob/master/scvi/module/_vae.py'''

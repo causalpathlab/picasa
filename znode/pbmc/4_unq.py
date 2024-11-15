@@ -33,17 +33,16 @@ picasa_object.set_nn_params(params)
 	
 	
 unq_layers = [15,15,15]
-picasa_object.train_unique(unq_layers,l_rate=0.001,epochs=500,batch_size=128,device='cuda')
+picasa_object.train_unique(unq_layers,l_rate=0.001,epochs=2000,batch_size=128,device='cuda')
 picasa_object.plot_loss(tag='unq')
 
 eval_batch_size = 10
 eval_total_size = 10000
 
-c_dict, u_dict = picasa_object.eval_unique(unq_layers,eval_batch_size, eval_total_size,device='cuda')
-df_c = pd.concat([c_dict[picasa_object.adata_keys[0]+'_common'],c_dict[picasa_object.adata_keys[1]+'_common']])
-df_u = pd.concat([u_dict[picasa_object.adata_keys[0]+'_unique'],u_dict[picasa_object.adata_keys[1]+'_unique']])
+df_c, df_u,df_batch_id = picasa_object.eval_unique(unq_layers,eval_batch_size, eval_total_size,device='cuda')
 df_c.to_csv(wdir+'results/df_c.csv.gz',compression='gzip')
 df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')
+df_batch_id.to_csv(wdir+'results/df_batch_id.csv.gz',compression='gzip')
 
 
 
