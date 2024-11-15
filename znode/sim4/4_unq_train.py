@@ -67,15 +67,59 @@ params = {'device' : 'cuda',
 picasa_object.estimate_neighbour(params['pair_search_method'])	
 picasa_object.set_nn_params(params)
 	
-unq_layers = [15,15,15]
-picasa_object.train_unique(unq_layers,l_rate=0.001,epochs=200,batch_size=128,device='cuda')
+
+enc_layers = [128,15]
+unique_latent_dim = 15
+dec_layers = [128,128]
+
+picasa_object.train_unique(enc_layers,unique_latent_dim,dec_layers,l_rate=0.001,epochs=500,batch_size=128,device='cuda')
 picasa_object.plot_loss(tag='unq')
 
 eval_batch_size = 10
 eval_total_size = 10000
 
-df_c, df_u,df_batch_id = picasa_object.eval_unique(unq_layers,eval_batch_size, eval_total_size,device='cuda')
+df_c, df_u,df_batch_id = picasa_object.eval_unique(enc_layers,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
 df_c.to_csv(wdir+'results/df_c.csv.gz',compression='gzip')
 df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')
 df_batch_id.to_csv(wdir+'results/df_batch_id.csv.gz',compression='gzip')
+
+
+
+
+import umap 
+from picasa.util.plots import plot_umap_df
+
+sample = 'sim4'
+wdir = 'znode/sim4/'
+ 
+df_c = pd.read_csv(wdir+'results/df_c.csv.gz',index_col=0)
+df_u = pd.read_csv(wdir+'results/df_u.csv.gz',index_col=0)
+
+dfl = pd.read_csv(wdir+'data/sim4_label.csv.gz')
+dfl = dfl[['index','Cell','Batch','Group']]
+dfl.columns = ['index','cell','batch','celltype']
+
+umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df_c)
+df_umap= pd.DataFrame()
+df_umap['cell'] = df_c.index.values
+df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
+df_umap['celltype'] = pd.merge(df_umap,dfl,on='cell',how='left')['celltype'].values
+plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_c',pt_size=1.0,ftype='png')
+df_umap['batch'] = pd.merge(df_umap,dfl,on='cell',how='left')['batch'].values
+plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_lat_c_batch',pt_size=1.0,ftype='png')
+
+
+
+umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df_u)
+df_umap= pd.DataFrame()
+df_umap['cell'] = df_u.index.values
+df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
+
+
+df_umap['celltype'] = pd.merge(df_umap,dfl,on='cell',how='left')['celltype'].values
+plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_unq',pt_size=1.0,ftype='png')
+
+df_umap['batch'] = pd.merge(df_umap,dfl,on='cell',how='left')['batch'].values
+plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_lat_unq_batch',pt_size=1.0,ftype='png')
+
 

@@ -223,14 +223,14 @@ class picasa(object):
 		return context_list,ylabel_list
   
 
-	def train_unique(self,unq_layers,l_rate,epochs,batch_size,device):
+	def train_unique(self,enc_layers,unique_latent_dim,dec_layers,l_rate,epochs,batch_size,device):
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(self.nn_params['device'])))
 		picasa_model.eval()
 
 		num_batches = len(self.adata_keys)
-		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['latent_dim'],self.nn_params['input_dim'],unq_layers,num_batches).to(self.nn_params['device'])
+		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['input_dim'],self.nn_params['latent_dim'],unique_latent_dim,enc_layers,dec_layers,num_batches).to(self.nn_params['device'])
 	
 		logging.info(picasa_unq_model)
   
@@ -270,7 +270,7 @@ class picasa(object):
   
   
 
-	def eval_unique(self,unq_layers,eval_batch_size, eval_total_size,device):
+	def eval_unique(self,enc_layers,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device):
 	 
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
@@ -279,7 +279,7 @@ class picasa(object):
 		picasa_model.eval()
 	
 		num_batches = len(self.adata_keys)
-		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['latent_dim'],self.nn_params['input_dim'],unq_layers,num_batches).to(self.nn_params['device'])
+		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['input_dim'],self.nn_params['latent_dim'],unique_latent_dim,enc_layers,dec_layers,num_batches).to(self.nn_params['device'])
 
 		picasa_unq_model.load_state_dict(torch.load(self.wdir+'results/nn_unq.model', map_location=torch.device(device)))
 

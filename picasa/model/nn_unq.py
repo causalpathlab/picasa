@@ -31,17 +31,20 @@ class Stacklayers(nn.Module):
 		return nn.ReLU()
 
 class PICASAUNET(nn.Module):
-	def __init__(self,picasa_model,latent_dim,input_dim,layers,num_batches):
+	def __init__(self,picasa_model,input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches):
 		super(PICASAUNET,self).__init__()
 		self.p_model = picasa_model
-		self.u_encoder = Stacklayers(latent_dim,layers)
+		self.u_encoder = Stacklayers(input_dim,enc_layers)
 
-		concat_dim = 2 * latent_dim + num_batches 
-		self.zinb_scale = nn.Linear(concat_dim, input_dim)  
-		self.zinb_dropout = nn.Linear(concat_dim, input_dim)
+		concat_dim = common_latent_dim + unique_latent_dim + num_batches 
+		self.u_decoder = Stacklayers(concat_dim,dec_layers)
+  
+		decoder_in_dim = dec_layers[len(dec_layers)-1]
+		self.zinb_scale = nn.Linear(decoder_in_dim, input_dim) 
+		self.zinb_dropout = nn.Linear(decoder_in_dim, input_dim)
 		self.zinb_dispersion = nn.Parameter(torch.randn(input_dim), requires_grad=True)
 		
-		self.batch_discriminator = nn.Linear(latent_dim, num_batches)
+		self.batch_discriminator = nn.Linear(unique_latent_dim, num_batches)
 
 		for param in self.p_model.parameters():
 			param.requires_grad = False
@@ -54,13 +57,19 @@ class PICASAUNET(nn.Module):
 		x_c1_pool_out = self.p_model.pooling(x_c1_context)
 		z_common = self.p_model.encoder(x_c1_pool_out)
 	
-		z_unique = self.u_encoder(z_common)
+ 
+		row_sums = x_c1.sum(dim=1, keepdim=True)
+		x_norm = torch.div(x_c1, row_sums) * 1e4
+  
+		z_unique = self.u_encoder(x_norm.float())
 		
 		batch_one_hot = F.one_hot(batch,num_classes=self.batch_discriminator.out_features).float()
 		z_combined = torch.cat((z_common, z_unique, batch_one_hot), dim=1)
 
-		px_scale = torch.exp(self.zinb_scale(z_combined))  
-		px_dropout = self.zinb_dropout(z_combined)  
+		z_decoded = self.u_decoder(z_combined)
+  
+		px_scale = torch.exp(self.zinb_scale(z_decoded))  
+		px_dropout = self.zinb_dropout(z_decoded)  
 		px_rate = self.zinb_dispersion.exp()
   
 		batch_pred = self.batch_discriminator(z_unique)
