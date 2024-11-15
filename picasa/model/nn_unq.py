@@ -36,7 +36,7 @@ class PICASAUNET(nn.Module):
 		self.p_model = picasa_model
 		self.u_encoder = Stacklayers(input_dim,enc_layers)
 
-		concat_dim = common_latent_dim + unique_latent_dim + num_batches 
+		concat_dim = common_latent_dim + unique_latent_dim 
 		self.u_decoder = Stacklayers(concat_dim,dec_layers)
   
 		decoder_in_dim = dec_layers[len(dec_layers)-1]
@@ -63,8 +63,7 @@ class PICASAUNET(nn.Module):
   
 		z_unique = self.u_encoder(x_norm.float())
 		
-		batch_one_hot = F.one_hot(batch,num_classes=self.batch_discriminator.out_features).float()
-		z_combined = torch.cat((z_common, z_unique, batch_one_hot), dim=1)
+		z_combined = torch.cat((z_common, z_unique), dim=1)
 
 		z_decoded = self.u_decoder(z_combined)
   
