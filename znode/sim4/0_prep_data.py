@@ -5,7 +5,7 @@ import h5py as hf
 import anndata as an
 
 
-wdir = "simulation/"
+wdir = "simulation_nested/"
 
 df = pd.DataFrame()
 dfl = pd.DataFrame()
@@ -20,6 +20,7 @@ for i in [1]:
 
 
 print(dfl.groupby(['Batch','Group']).count().reset_index())
+print(dfl.groupby(['Batch','Group','Condition']).count().reset_index())
 
 
 smat = csr_matrix(df.to_numpy())
@@ -35,9 +36,11 @@ adata.obs.index = df.index.values
 
 adata.obs['batch'] = adata.obs['Batch'].values
 adata.obs['celltype'] = adata.obs['Group'].values
+adata.obs['condition'] = adata.obs['Condition'].values
 
 print(adata.obs.celltype.value_counts())
 print(adata.obs.batch.value_counts())
+print(adata.obs.condition.value_counts())
 
 wdir = ''
 

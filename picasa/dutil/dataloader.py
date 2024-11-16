@@ -54,10 +54,10 @@ def nn_load_data(adata,device,bath_size):
 
 
 class MemDataset(torch.utils.data.Dataset):
-    def __init__(self, x, y, x_paired, batch_id,device):
+    def __init__(self, x, y, x_zcommon, batch_id,device):
         self.x = x
         self.y = y
-        self.x_paired = x_paired
+        self.x_zcommon = x_zcommon
         self.batch_id = batch_id
         self.device = device
 
@@ -65,14 +65,14 @@ class MemDataset(torch.utils.data.Dataset):
         return len(self.x)
 
     def __getitem__(self, idx):
-        return self.x[idx].to(self.device), self.y[idx], self.x_paired[idx].to(self.device), self.batch_id[idx].to(self.device)
+        return self.x[idx].to(self.device), self.y[idx], self.x_zcommon[idx].to(self.device), self.batch_id[idx].to(self.device)
 
-def get_dataloader_mem(x,y,x_paired,batch_id,batch_size,device):
+def get_dataloader_mem(x,y,x_zcommon,batch_id,batch_size,device):
 
     dataset = MemDataset(
 			x,
 			y,
-			x_paired,
+			x_zcommon,
 			batch_id,
 			device
 		)

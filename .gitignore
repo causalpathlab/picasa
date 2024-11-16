@@ -10,7 +10,7 @@ Makefile
 .snakemake/
 
 /znode/*/data
-/znode/*/results
+/znode/*/results*
 /example
 /figures
 
@@ -27,6 +27,8 @@ __pycache__/
 
 *.csv
 *.csv.gz
+*.txt
+*.txt.gz
 *.h5*
 *.png
 *.log

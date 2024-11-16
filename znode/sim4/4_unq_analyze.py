@@ -21,8 +21,10 @@ df_c = pd.read_csv(wdir+'results/df_c.csv.gz',index_col=0)
 df_u = pd.read_csv(wdir+'results/df_u.csv.gz',index_col=0)
 
 dfl = pd.read_csv(wdir+'data/sim4_label.csv.gz')
-dfl = dfl[['index','Cell','Batch','Group']]
-dfl.columns = ['index','cell','batch','celltype']
+dfl = dfl[['index','Cell','Batch','Group','Condition']]
+dfl.columns = ['index','cell','batch','celltype','condition']
+
+
 
 umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df_c)
 df_umap= pd.DataFrame()
@@ -32,6 +34,8 @@ df_umap['celltype'] = pd.merge(df_umap,dfl,on='cell',how='left')['celltype'].val
 plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_c',pt_size=1.0,ftype='png')
 df_umap['batch'] = pd.merge(df_umap,dfl,on='cell',how='left')['batch'].values
 plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_lat_c_batch',pt_size=1.0,ftype='png')
+df_umap['condition'] = pd.merge(df_umap,dfl,on='cell',how='left')['condition'].values
+plot_umap_df(df_umap,'condition',wdir+'results/nn_attncl_lat_c_batch',pt_size=1.0,ftype='png')
 
 
 
@@ -46,3 +50,7 @@ plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_unq',pt_size=1.0,fty
 
 df_umap['batch'] = pd.merge(df_umap,dfl,on='cell',how='left')['batch'].values
 plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_lat_unq_batch',pt_size=1.0,ftype='png')
+df_umap['condition'] = pd.merge(df_umap,dfl,on='cell',how='left')['condition'].values
+plot_umap_df(df_umap,'condition',wdir+'results/nn_attncl_lat_unq_batch',pt_size=1.0,ftype='png')
+
+

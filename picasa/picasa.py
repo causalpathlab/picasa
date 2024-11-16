@@ -21,8 +21,7 @@ class picasa(object):
 		datefmt='%Y-%m-%d %H:%M:%S')
   
 		self.adata_keys = list(self.data.adata_list.keys())
-		self.batch_mapping = {label: idx for idx, label in enumerate(self.adata_keys)}
-  
+		 
 		if pair_mode == 'unq':
 			indices = range(len(self.data.adata_list))
 			adata_pairs = [(indices[i], indices[i+1]) for i in range(0, len(indices)-1, 1)]
@@ -69,6 +68,12 @@ class picasa(object):
 	def set_nn_params(self,params: dict):
 		self.nn_params = params
 	
+	def set_picasa_common(self,picasa_common):
+		self.picasa_common = picasa_common
+
+	def set_batch_mapping(self,batch_mapping:dict):
+		self.batch_mapping = batch_mapping
+  
 	def train(self):
 
 		logging.info('Starting training...')
@@ -118,8 +123,7 @@ class picasa(object):
 		picasa_model.eval()
 	
 		self.latent = {}
-		self.ylabel = {}
-
+  
 		evaled = []
   
 		for ad_pair in list(self.nbr_map.keys()):
@@ -147,10 +151,8 @@ class picasa(object):
 
 					if df_latent.shape[0]>eval_total_size:
 						break
-
-		
+  		
 				self.latent[p1] = df_latent
-				self.ylabel[p1] = df_latent.index.values
 				evaled.append(p1)
 
    
@@ -223,45 +225,40 @@ class picasa(object):
 		return context_list,ylabel_list
   
 
-	def train_unique(self,enc_layers,unique_latent_dim,dec_layers,l_rate,epochs,batch_size,device):
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
-  
-		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(self.nn_params['device'])))
-		picasa_model.eval()
+	def train_unique(self,input_dim,enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate,epochs,batch_size,device):
 
 		num_batches = len(self.adata_keys)
-		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['input_dim'],self.nn_params['latent_dim'],unique_latent_dim,enc_layers,dec_layers,num_batches).to(self.nn_params['device'])
+		picasa_unq_model = model.nn_unq.PICASAUNET(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
 	
 		logging.info(picasa_unq_model)
   
 		x_c1_batches = []
 		y_batches = []
-		x_c2_batches = []
+		x_zc_batches = []
 		b_ids_batches = []
   
 		logging.info("Creating dataloader for training unique space.")
   
-		for ad_pair in self.adata_pairs:
-      
-			p1 = self.adata_keys[ad_pair[0]]
-			p2 = self.adata_keys[ad_pair[1]]
-			
-			data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],'cpu',batch_size)
+		for batch in self.adata_keys:
+			adata_x = self.data.adata_list[batch]
+			adata_zcommon = self.picasa_common[self.picasa_common.obs['batch']==batch]
+
+			data = dutil.nn_load_data_with_latent(adata_x,adata_zcommon,batch,'cpu',batch_size)
 	
-			for x_c1,y,x_c2,nbr_weight in data:		
+			for x_c1,y,x_zc in data:		
 				x_c1_batches.append(x_c1)
 				y_batches.append(np.array(y))
-				x_c2_batches.append(x_c2)
-				b_ids_batches.append(torch.tensor([ self.batch_mapping[p1] for _ in range(x_c1.shape[0])]))
+				x_zc_batches.append(x_zc)
+				b_ids_batches.append(torch.tensor([ self.batch_mapping[y_id] for y_id in y]))
 	
 		all_x_c1 = torch.cat(x_c1_batches, dim=0)  
 		all_y = np.concatenate(y_batches)        
-		all_x_c2 = torch.cat(x_c2_batches, dim=0)  
+		all_x_zc = torch.cat(x_zc_batches, dim=0)  
 		all_b_ids = torch.cat(b_ids_batches,dim=0)  
 
-		train_data =dutil.get_dataloader_mem(all_x_c1,all_y,all_x_c2,all_b_ids,batch_size,device)
+		train_data =dutil.get_dataloader_mem(all_x_c1,all_y,all_x_zc,all_b_ids,batch_size,device)
 
-		logging.info('Training...unique space model-'+p1+'_'+p2)
+		logging.info('Training...unique space model.')
 		loss = model.nn_unq.train(picasa_unq_model,train_data,l_rate,epochs)
 
 		torch.save(picasa_unq_model.state_dict(),self.wdir+'results/nn_unq.model')
@@ -270,93 +267,82 @@ class picasa(object):
   
   
 
-	def eval_unique(self,enc_layers,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device):
+	def eval_unique(self,input_dim,enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device):
 	 
-		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
-  
-		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
-  
-		picasa_model.eval()
 	
 		num_batches = len(self.adata_keys)
-		picasa_unq_model = model.nn_unq.PICASAUNET(picasa_model,self.nn_params['input_dim'],self.nn_params['latent_dim'],unique_latent_dim,enc_layers,dec_layers,num_batches).to(self.nn_params['device'])
-
+		picasa_unq_model = model.nn_unq.PICASAUNET(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
+	
 		picasa_unq_model.load_state_dict(torch.load(self.wdir+'results/nn_unq.model', map_location=torch.device(device)))
 
 		picasa_unq_model.eval()
   
 		x_c1_batches = []
 		y_batches = []
-		x_c2_batches = []
+		x_zc_batches = []
 		b_ids_batches = []
   
 		logging.info("Creating dataloader for training unique space.")
   
-		for ad_pair in self.adata_pairs:
-      
-			p1 = self.adata_keys[ad_pair[0]]
-			p2 = self.adata_keys[ad_pair[1]]
-			
-			data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],'cpu',eval_batch_size)
+		for batch in self.adata_keys:
+			adata_x = self.data.adata_list[batch]
+			adata_zcommon = self.picasa_common[self.picasa_common.obs['batch']==batch]
+
+			data = dutil.nn_load_data_with_latent(adata_x,adata_zcommon,batch,'cpu',eval_batch_size)
 	
-			for x_c1,y,x_c2,nbr_weight in data:		
+			for x_c1,y,x_zc in data:		
 				x_c1_batches.append(x_c1)
 				y_batches.append(np.array(y))
-				x_c2_batches.append(x_c2)
-				b_ids_batches.append(torch.tensor([ self.batch_mapping[p1] for _ in range(x_c1.shape[0])]))	
-    
+				x_zc_batches.append(x_zc)
+				b_ids_batches.append(torch.tensor([ self.batch_mapping[y_id] for y_id in y]))
+	
 		all_x_c1 = torch.cat(x_c1_batches, dim=0)  
 		all_y = np.concatenate(y_batches)        
-		all_x_c2 = torch.cat(x_c2_batches, dim=0)  
+		all_x_zc = torch.cat(x_zc_batches, dim=0)  
 		all_b_ids = torch.cat(b_ids_batches,dim=0)  
 
-		train_data =dutil.get_dataloader_mem(all_x_c1,all_y,all_x_c2,all_b_ids,eval_batch_size,device)
+		train_data =dutil.get_dataloader_mem(all_x_c1,all_y,all_x_zc,all_b_ids,eval_batch_size,device)
 			
-		df_c_latent = pd.DataFrame()
 		df_u_latent = pd.DataFrame()
-		df_b_id = pd.DataFrame()
   
-		for x_c1,y,x_c2,b_id in train_data:
-			z,ylabel,b_id = model.nn_unq.predict_batch(picasa_unq_model,x_c1,y,x_c2,b_id)
-			z_c = z[0]
-			z_u = z[1]
-			df_c_latent = pd.concat([df_c_latent,pd.DataFrame(z_c.cpu().detach().numpy(),index=ylabel)],axis=0)
+		for x_c1,y,x_zc,b_id in train_data:
+			z,ylabel = model.nn_unq.predict_batch(picasa_unq_model,x_c1,y,x_zc)
+			z_u = z[0]
 			df_u_latent = pd.concat([df_u_latent,pd.DataFrame(z_u.cpu().detach().numpy(),index=ylabel)],axis=0)
-			df_b_id = pd.concat([df_b_id,pd.DataFrame(b_id.cpu().detach().numpy(),columns=['batch_id'])])
 
-			del z_c, z_u, ylabel,b_id
-			gc.collect()
-
-			if df_c_latent.shape[0]>eval_total_size:
+			if df_u_latent.shape[0]>eval_total_size:
 				break
-		inverse_batch_mapping = {v: k for k, v in self.batch_mapping.items()}			
-		df_b_id['batch'] = [inverse_batch_mapping[x] for x in df_b_id['batch_id'].values] 		
-		return df_c_latent,df_u_latent,df_b_id
+		return df_u_latent
    
 
 
-	def save(self):
-		import h5py
-		with h5py.File(self.wdir+'results/picasa_out.h5', 'w') as f:
-			adata_keys = []
-			for attr_name, attr_value in vars(self).items():
-				if isinstance(attr_value, list) and '_keys' in attr_name:
-					adata_keys = attr_value
-			f.create_dataset('batch_keys', data=adata_keys,dtype=h5py.string_dtype(encoding='utf-8'))
-			for k in adata_keys:
-				f.create_dataset(k+'_latent', data=self.latent[k])
-				f.create_dataset(k+'_ylabel', data=self.ylabel[k])
+	def save_common(self):
+		import anndata as an
+  
+		batches = self.latent.keys()
+		df = pd.DataFrame()
 
-			for attr_name, attr_value in vars(self).items():
-				if isinstance(attr_value, dict) and attr_name == 'nbr_map':
-					for k in attr_value.keys():
-							df = pd.DataFrame(attr_value[k].items())
-							df = df[['target', 'weight']] = pd.DataFrame(df[1].tolist(), index=df.index.values)
-							df = df.drop(columns=[0,1])
-							df.reset_index(inplace=True)
-							df.columns = ['source','target','weight']
-							f.create_dataset(k, data=df)
+		for b in batches:
+			c_df = self.latent[b]
+			c_df.index = [x+'@'+b for x in c_df.index.values]
 
+			df = pd.concat([df,c_df])
+
+		df.columns = ['common_'+str(x) for x in df.columns]
+		adata = an.AnnData(X=df)
+		adata.obs['batch'] = [x.split('@')[1] for x in df.index.values]
+
+		adata.uns['adata_keys'] = self.adata_keys
+		adata.uns['adata_pairs'] = self.adata_pairs
+		
+		nbr_map_df = pd.DataFrame([
+			{'batch_pair': l1_item, 'key': k, 'neighbor': v[0], 'score': v[1]}
+			for l1_item, inner_map in self.nbr_map.items()
+			for k, v in inner_map.items()
+		])
+		adata.uns['nbr_map'] = nbr_map_df
+		adata.write(self.wdir+'results/picasa.h5ad')
+  
 
 	def plot_loss(self,tag):
 		from picasa.util.plots import plot_loss

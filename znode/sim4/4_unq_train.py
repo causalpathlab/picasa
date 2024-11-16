@@ -40,48 +40,32 @@ picasa_object = picasa.pic.create_picasa_object(
 	batch_map,'unq',
 	wdir)
 
+picasa_common = an.read(wdir+'results/picasa.h5ad')
+
+## assign batch
+batch_ids = {label: idx for idx, label in enumerate(picasa_common.obs['batch'].unique())}
+picasa_common.obs['batch_id'] = [batch_ids[x] for x in picasa_common.obs['batch']]
+batch_mapping = { idx:label for idx, label in zip(picasa_common.obs.index.values,picasa_common.obs['batch_id'])}
+picasa_object.set_batch_mapping(batch_mapping)
+
+picasa_object.set_picasa_common(picasa_common)
 
 
-params = {'device' : 'cuda',
-		'batch_size' : 64,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('sim4_','')].X.shape[1],
-		'embedding_dim' : 1000,
-		'attention_dim' : 15,
-		'latent_dim' : 15,
-		'encoder_layers' : [100,15],
-		'projection_layers' : [15,15],
-		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,0.0,1.0],
-		'temperature_cl' : 1.0,
-		'pair_search_method' : 'approx_50',
-        'pair_importance_weight': 0.01,
-	 	'corruption_tol' : 10.0,
-        'cl_loss_mode' : 'none', 
-      	'loss_clusters' : 5, 
-        'loss_threshold' : 0.1, 
-        'loss_weight': 2.0,
-		'epochs': 1,
-		'titration': 15
-		}  
 
-picasa_object.estimate_neighbour(params['pair_search_method'])	
-picasa_object.set_nn_params(params)
-	
-
+input_dim = picasa_object.data.adata_list['Batch1'].X.shape[1]
 enc_layers = [128,15]
 unique_latent_dim = 15
+common_latent_dim = picasa_common.X.shape[1]
 dec_layers = [128,128]
 
-picasa_object.train_unique(enc_layers,unique_latent_dim,dec_layers,l_rate=0.001,epochs=500,batch_size=128,device='cuda')
+picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=250,batch_size=128,device='cuda')
 picasa_object.plot_loss(tag='unq')
 
 eval_batch_size = 10
 eval_total_size = 10000
 
-df_c, df_u,df_batch_id = picasa_object.eval_unique(enc_layers,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
-df_c.to_csv(wdir+'results/df_c.csv.gz',compression='gzip')
+df_u = picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
 df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')
-df_batch_id.to_csv(wdir+'results/df_batch_id.csv.gz',compression='gzip')
 
 
 
@@ -91,13 +75,15 @@ from picasa.util.plots import plot_umap_df
 
 sample = 'sim4'
 wdir = 'znode/sim4/'
- 
-df_c = pd.read_csv(wdir+'results/df_c.csv.gz',index_col=0)
+
+picasa_common = an.read(wdir+'results/picasa.h5ad')
+df_c = picasa_common.to_df()
 df_u = pd.read_csv(wdir+'results/df_u.csv.gz',index_col=0)
 
 dfl = pd.read_csv(wdir+'data/sim4_label.csv.gz')
 dfl = dfl[['index','Cell','Batch','Group']]
 dfl.columns = ['index','cell','batch','celltype']
+dfl.cell = [x+'@'+y for x,y in zip(dfl['index'],dfl['batch'])]
 
 umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df_c)
 df_umap= pd.DataFrame()

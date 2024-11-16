@@ -104,6 +104,7 @@ def plot_scsp_overlay():
 	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 	
 	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'condition',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
 
 
 def calc_score(true_labels,cluster_labels):
