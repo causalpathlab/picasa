@@ -37,8 +37,14 @@ class PICASAel:
         
            
 class Stacklayers(nn.Module):
-    def __init__(self,input_size,layers,dropout=0.1):
+    
+    def __init__(self,
+        input_size:int,
+        layers:list,
+        dropout:float=0.1
+        ):
         super(Stacklayers, self).__init__()
+        
         self.layers = nn.ModuleList()
         self.input_size = input_size
         for next_l in layers:
@@ -48,7 +54,8 @@ class Stacklayers(nn.Module):
             self.layers.append(nn.Dropout(dropout))
             self.input_size = next_l
 
-    def forward(self, input_data):
+    def forward(self, 
+        input_data:torch.tensor):
         for layer in self.layers:
             input_data = layer(input_data)
         return input_data
@@ -57,13 +64,19 @@ class Stacklayers(nn.Module):
         return nn.ReLU()
 
 class GeneEmbedor(nn.Module):
-    def __init__(self,emb_dim,out_dim):
+    
+    def __init__(self,
+        emb_dim:int,
+        out_dim:int,
+        ):
         super(GeneEmbedor, self).__init__()
+        
         self.embedding = nn.Embedding(emb_dim,out_dim)
         self.emb_norm = nn.LayerNorm(out_dim)
         self.emb_dim = emb_dim
 
-    def forward(self, x):
+    def forward(self,
+        x:torch.tensor):
         
         row_sums = x.sum(dim=1, keepdim=True)
         x_norm = torch.div(x, row_sums) * (self.emb_dim -1)
@@ -71,15 +84,24 @@ class GeneEmbedor(nn.Module):
 
 class ScaledDotAttention(nn.Module):
     
-    def __init__(self, weight_dim,input_dim,pair_importance_weight):
+    def __init__(self,
+        weight_dim:int,
+        input_dim:int,
+        pair_importance_weight:float
+        ):
         super(ScaledDotAttention, self).__init__()
+        
         self.W_query = nn.Parameter(torch.randn(weight_dim, weight_dim))
         self.W_key = nn.Parameter(torch.randn(weight_dim, weight_dim))
         self.W_value = nn.Parameter(torch.randn(weight_dim, weight_dim))
         self.model_dim = weight_dim
         self.pair_importance_weight = pair_importance_weight
         
-    def forward(self, query, key, value):
+    def forward(self,
+        query:torch.tensor, 
+        key:torch.tensor, 
+        value:torch.tensor
+        ):
 
         query_proj = torch.matmul(query, self.W_query)
         key_proj = torch.matmul(key, self.W_key)
@@ -99,11 +121,18 @@ class ScaledDotAttention(nn.Module):
         return output, attention_weights, entropy_loss_attn
 
 class AttentionPooling(nn.Module):
-    def __init__(self, model_dim):
+
+    def __init__(self, 
+        model_dim:int
+        ):
         super(AttentionPooling, self).__init__()
+        
         self.weights = nn.Parameter(torch.randn(model_dim))  
     
-    def forward(self, attention_output):
+    def forward(self, 
+        attention_output:torch.tensor
+        ):
+        
         weights_softmax = torch.softmax(self.weights, dim=0)
         weighted_output = attention_output * weights_softmax.unsqueeze(0)
         pooled_output = torch.sum(weighted_output, dim=-1, keepdim=True)
@@ -111,24 +140,40 @@ class AttentionPooling(nn.Module):
 
 
 class ENCODER(nn.Module):
-    def __init__(self,input_dims,layers):
+    def __init__(self,
+        input_dims:int,
+        layers:list
+        ):
         super(ENCODER, self).__init__()
         self.fc = Stacklayers(input_dims,layers)
   
-    def forward(self, x):
+    def forward(self, x:torch.tensor):
         return self.fc(x)
 
 class MLP(nn.Module):
-    def __init__(self,input_dims,layers):
+    def __init__(self,
+        input_dims:int,
+        layers:list
+        ):
         super(MLP, self).__init__()
+        
         self.fc = Stacklayers(input_dims,layers)
 
-    def forward(self, x):
+    def forward(self, x:torch.tensor):
         z = self.fc(x)
         return z
 
 class PICASANET(nn.Module):
-    def __init__(self,input_dim, embedding_dim, attention_dim, latent_dim,encoder_layers,projection_layers,corruption_tol,pair_importance_weight):
+    def __init__(self,
+        input_dim:int, 
+        embedding_dim:int, 
+        attention_dim:int, 
+        latent_dim:int,
+        encoder_layers:list,
+        projection_layers:list,
+        corruption_tol:float,
+        pair_importance_weight:float
+        ):
         super(PICASANET,self).__init__()
 
         self.embedding = GeneEmbedor(embedding_dim,attention_dim)
@@ -191,7 +236,18 @@ class PICASANET(nn.Module):
 
         return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
 
-def train(model,data,epochs,lambda_loss,l_rate,cl_loss_mode, loss_clusters, loss_threshold, loss_weight,temperature,min_batchsize):
+def train(model,data,
+    epochs:int,
+    lambda_loss:float,
+    l_rate:float,
+    cl_loss_mode:str, 
+    loss_clusters:float, 
+    loss_threshold:float, 
+    loss_weight:float,
+    temperature:float,
+    min_batchsize:int
+    ):
+    
     logger.info('Init training....nn_attn')
     opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
     epoch_losses = []
@@ -249,7 +305,11 @@ def predict_batch(model,x_c1,y,x_c2 ):
     return model(x_c1,x_c2),y
 
 
-def predict_attention(model,x_c1,x_c2):
+def predict_attention(model,
+    x_c1:torch.tensor,
+    x_c2:torch.tensor
+    ):
+    
     x_c1_emb = model.embedding(x_c1)
     x_c2_emb = model.embedding(x_c2)
 
@@ -257,7 +317,11 @@ def predict_attention(model,x_c1,x_c2):
     
     return x_c1_attention
 
-def predict_context(model,x_c1,x_c2):
+def predict_context(model,
+    x_c1:torch.tensor,
+    x_c2:torch.tensor                
+    ):
+    
     x_c1_emb = model.embedding(x_c1)
     x_c2_emb = model.embedding(x_c2)
 
@@ -265,7 +329,11 @@ def predict_context(model,x_c1,x_c2):
     
     return x_c1_context
 
-def get_latent(model,x_c1,x_c2):
+def get_latent(model,
+    x_c1:torch.tensor,
+    x_c2:torch.tensor
+    ):
+    
     x_c1_emb = model.embedding(x_c1)
     x_c2_emb = model.embedding(x_c2)
     x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)

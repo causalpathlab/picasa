@@ -40,59 +40,43 @@ picasa_object = picasa.pic.create_picasa_object(
 	batch_map,'unq',
 	wdir)
 
+for batch_name in picasa_object.data.adata_list.keys():
+    picasa_object.data.adata_list[batch_name].obs.index = [x+'@'+batch_name for x in picasa_object.data.adata_list[batch_name].obs.index.values]
 
+picasa_common = an.read(wdir+'results/picasa.h5ad')
 
-params = {'device' : 'cuda',
-		'batch_size' : 64,
-		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('ovary_','')].X.shape[1],
-		'embedding_dim' : 1000,
-		'attention_dim' : 15,
-		'latent_dim' : 15,
-		'encoder_layers' : [100,15],
-		'projection_layers' : [15,15],
-		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,0.0,1.0],
-		'temperature_cl' : 1.0,
-		'pair_search_method' : 'approx_50',
-        'pair_importance_weight': 0.01,
-	 	'corruption_tol' : 10.0,
-        'cl_loss_mode' : 'none', 
-      	'loss_clusters' : 5, 
-        'loss_threshold' : 0.1, 
-        'loss_weight': 2.0,
-		'epochs': 1,
-		'titration': 15
-		}  
-
-picasa_object.estimate_neighbour(params['pair_search_method'])	
-picasa_object.set_nn_params(params)
-	
 dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz')
-dfl = dfl[['index','cell','patient_id','cell_type']]
-dfl.columns = ['index','cell','batch','celltype']
+dfl = dfl[['index','cell','patient_id','cell_type','treatment_phase']]
+dfl.columns = ['index','cell','batch','celltype','treatment_phase']
+dfl.cell = [x+'@'+y for x,y in zip(dfl['cell'],dfl['batch'])]
 
 ## assign batch
-model_batch = {label: idx for idx, label in enumerate(dfl['batch'].unique())}
-dfl['model_batch'] = [model_batch[x] for x in dfl['batch']]
-batch_mapping = { idx:label for idx, label in zip(dfl['index'],dfl['model_batch'])}
+unique_batch = 'batch'
+batch_ids = {label: idx for idx, label in enumerate(picasa_common.obs[unique_batch].unique())}
+picasa_common.obs[unique_batch+'_id'] = [batch_ids[x] for x in picasa_common.obs[unique_batch]]
+batch_mapping = { idx:label for idx, label in zip(picasa_common.obs.index.values,picasa_common.obs[unique_batch+'_id'])}
+
 picasa_object.set_batch_mapping(batch_mapping)
 
+picasa_object.set_picasa_common(picasa_common)
 
+sample = list(picasa_object.data.adata_list.keys())[0]
+input_dim = picasa_object.data.adata_list[sample].X.shape[1]
 enc_layers = [128,15]
 unique_latent_dim = 15
+common_latent_dim = picasa_common.X.shape[1]
 dec_layers = [128,128]
 
-picasa_object.train_unique(enc_layers,unique_latent_dim,dec_layers,l_rate=0.001,epochs=1000,batch_size=128,device='cuda')
+picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=250,batch_size=128,device='cuda')
+
+
 picasa_object.plot_loss(tag='unq')
 
 eval_batch_size = 10
 eval_total_size = 10000
 
-df_c, df_u = picasa_object.eval_unique(enc_layers,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
-df_c.to_csv(wdir+'results/df_c.csv.gz',compression='gzip')
+df_u = picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
 df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')
-
-
 
 
 import umap 
@@ -101,12 +85,15 @@ from picasa.util.plots import plot_umap_df
 sample = 'ovary'
 wdir = 'znode/ovary/'
  
-df_c = pd.read_csv(wdir+'results/df_c.csv.gz',index_col=0)
+picasa_common = an.read(wdir+'results/picasa.h5ad')
+df_c = picasa_common.to_df()
+
 df_u = pd.read_csv(wdir+'results/df_u.csv.gz',index_col=0)
 
 dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz')
 dfl = dfl[['index','cell','patient_id','cell_type','treatment_phase']]
 dfl.columns = ['index','cell','batch','celltype','treatment_phase']
+dfl.cell = [x+'@'+y for x,y in zip(dfl['cell'],dfl['batch'])]
 
 umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df_c)
 df_umap= pd.DataFrame()

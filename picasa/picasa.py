@@ -12,7 +12,12 @@ import itertools
 
 
 class picasa(object):
-	def __init__(self, data: dutil.data.Dataset, pair_mode:str,wdir: str):
+	def __init__(self, 
+        data: dutil.data.Dataset, 
+        pair_mode:str,
+        wdir: str
+        ):
+     
 		self.data = data
 		self.wdir = wdir
 		logging.basicConfig(filename=self.wdir+'results/4_attncl_train.log',
@@ -31,7 +36,9 @@ class picasa(object):
 			indices = list(range(len(self.data.adata_list)))
 			self.adata_pairs = list(itertools.combinations(indices, 2))
 	
-	def estimate_neighbour(self,method='approx_50'):
+	def estimate_neighbour(self,
+        method:str ='approx_50'
+        ):
 	 
 		logging.info('Assign neighbour - '+ method)
 		self.nbr_map = {}
@@ -65,13 +72,19 @@ class picasa(object):
 			logging.info('Exact neighbour estimate complete.')
 
 				
-	def set_nn_params(self,params: dict):
+	def set_nn_params(self,
+        params: dict
+        ):
 		self.nn_params = params
 	
-	def set_picasa_common(self,picasa_common):
+	def set_picasa_common(self,
+    	picasa_common:Adata
+     	):
 		self.picasa_common = picasa_common
 
-	def set_batch_mapping(self,batch_mapping:dict):
+	def set_batch_mapping(self,
+        batch_mapping:dict
+        ):
 		self.batch_mapping = batch_mapping
   
 	def train(self):
@@ -115,7 +128,11 @@ class picasa(object):
 		pd.DataFrame(loss,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(self.wdir+'results/4_attncl_train_loss.txt.gz',index=False,compression='gzip',header=True)
 		logging.info('Completed training...model saved in results/nn_attncl.model')
   
-	def eval_model(self,eval_batch_size,eval_total_size,device='cpu'):
+	def eval_model(self,
+        eval_batch_size:int,
+        eval_total_size:int,device='cpu'
+        ):
+     
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
@@ -156,7 +173,14 @@ class picasa(object):
 				evaled.append(p1)
 
    
-	def eval_attention(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size,device='cpu'):
+	def eval_attention(self,
+        adata_p1:Adata, 
+        adata_p2:Adata,
+        adata_nbr_map:dict,
+        eval_batch_size:int,
+        eval_total_size:int,
+        device:str='cpu'
+        ):
 		
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
@@ -194,7 +218,15 @@ class picasa(object):
 		# pd.DataFrame(ylabel_list).index.to_series().to_csv(index_file_p1, compression='gzip')
 
 
-	def eval_context(self,adata_p1, adata_p2,adata_nbr_map,eval_batch_size,eval_total_size, device='cpu'):
+	def eval_context(self,
+		adata_p1:Adata, 
+        adata_p2:Adata,
+        adata_nbr_map:dict,
+        eval_batch_size:int,
+        eval_total_size:int,
+        device:str='cpu'
+        ):
+
 		picasa_model = model.nn_attn.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
 		picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
@@ -222,10 +254,19 @@ class picasa(object):
 		context_list = np.concatenate(context_list, axis=0)
 		ylabel_list = np.concatenate(ylabel_list, axis=0)
 
-		return context_list,ylabel_list
-  
+		return context_list,ylabel_list  
 
-	def train_unique(self,input_dim,enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate,epochs,batch_size,device):
+	def train_unique(self,
+        input_dim:int,
+        enc_layers:list,
+        common_latent_dim:int,
+        unique_latent_dim:int,
+        dec_layers:list,
+        l_rate:float,
+        epochs:int,
+        batch_size:int,
+        device:str
+        ):
 
 		num_batches = len(self.adata_keys)
 		picasa_unq_model = model.nn_unq.PICASAUNET(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
@@ -265,11 +306,17 @@ class picasa(object):
 		pd.DataFrame(loss,columns=['ep_l','el_z','el_recon','el_batch']).to_csv(self.wdir+'results/4_unq_train_loss.txt.gz',index=False,compression='gzip',header=True)
 		logging.info('Completed training...model saved in results/nn_unq.model')
   
-  
+	def eval_unique(self,	 
+	    input_dim:int,
+        enc_layers:list,
+        common_latent_dim:int,
+        unique_latent_dim:int,
+        dec_layers:list,
+		eval_batch_size:int, 
+		eval_total_size:int,
+        device:str
+        ):
 
-	def eval_unique(self,input_dim,enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device):
-	 
-	
 		num_batches = len(self.adata_keys)
 		picasa_unq_model = model.nn_unq.PICASAUNET(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
 	
@@ -314,8 +361,6 @@ class picasa(object):
 				break
 		return df_u_latent
    
-
-
 	def save_common(self):
 		import anndata as an
   
@@ -343,13 +388,18 @@ class picasa(object):
 		adata.uns['nbr_map'] = nbr_map_df
 		adata.write(self.wdir+'results/picasa.h5ad')
   
-
-	def plot_loss(self,tag):
+	def plot_loss(self,
+        tag:str
+        ):
 		from picasa.util.plots import plot_loss
 		if tag=='common':
 			plot_loss(self.wdir+'results/4_attncl_train_loss.txt.gz',self.wdir+'results/4_attncl_train_loss.png')
 		elif tag=='unq':
 			plot_loss(self.wdir+'results/4_unq_train_loss.txt.gz',self.wdir+'results/4_unq_attncl_train_loss.png')
 
-def create_picasa_object(adata_list: Adata, pair_mode: str,wdir: str):
+def create_picasa_object(
+    adata_list:Adata, 
+    pair_mode:str,
+    wdir:str
+    ):
 	return picasa(dutil.data.Dataset(adata_list),pair_mode,wdir)

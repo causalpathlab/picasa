@@ -35,16 +35,16 @@ def train():
 	
 	picasa_object.set_nn_params(params)
 	picasa_object.train()
-	picasa_object.plot_loss()
+	picasa_object.plot_loss(tag='common')
 
 def eval():
 	device = 'cpu'
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
 	eval_batch_size = 300
-	eval_total_size = 3000
+	eval_total_size = 5000
 	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
-	picasa_object.save()
+	picasa_object.save_common()
 
 def plot_latent():
 	import umap
@@ -175,16 +175,8 @@ def plot_scsp_overlay():
 	import random
 	from picasa.util.plots import plot_umap_df
 	
-	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
-	
-	dfmain = pd.DataFrame()
-	for batch in batch_keys:
-		df_c = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
-		df_c.index = [batch+'_'+str(x) for x in df_c.index.values]
-		dfmain = pd.concat([dfmain,df_c],axis=0)
-  
-	picasa_h5.close()
+	picasa_common = an.read_h5ad(wdir+'results/picasa.h5ad','r')
+	dfmain = picasa_common.to_df()
 
 	###################
 	####################
@@ -217,7 +209,7 @@ def plot_scsp_overlay():
 	# print(pd.Series(cluster).value_counts())
 	
 	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=1.0,n_neighbors=20,distance='cosine')
-	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),use_snn=False,min_dist=1.0,n_neighbors=20,distance='cosine')
+	umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),use_snn=False,min_dist=0.3,n_neighbors=20,distance='cosine')
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
@@ -225,13 +217,13 @@ def plot_scsp_overlay():
  
 	dfl = pd.read_csv(wdir+'data/pbmc_label.csv.gz')
 	dfl.columns = ['index','cell','batch','celltype']
-	dfl['cell'] = [x +'_'+y for x,y in zip(dfl['batch'],dfl['cell'])]
+	dfl['cell'] = [y +'@'+x for x,y in zip(dfl['batch'],dfl['cell'])]
 	pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
  
 	df_umap['celltype'] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')['celltype'].values
 	df_umap['batch'] = pd.merge(df_umap['cell'],dfl,on='cell',how='left')['batch'].values
-	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
-	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_scsp_',pt_size=2.0,ftype='png') 
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=2.0,ftype='png') 
 
 def calc_score(true_labels,cluster_labels):
 
@@ -288,7 +280,7 @@ def get_score():
 train()
 eval()
 # plot_latent()
-plot_scsp_overlay()
+# plot_scsp_overlay()
 # plot_attention()
 # get_score()
 # (0.8358827278521351, 0.6235707295082915, 0.47349793429028464)

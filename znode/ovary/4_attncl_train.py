@@ -37,7 +37,7 @@ for file_name in file_names:
 file_name = file_names[0].replace('.h5ad','').replace('ovary_','')
 
 picasa_object = picasa.pic.create_picasa_object(
-	batch_map,
+	batch_map,'unq',
 	wdir)
 
 params = {'device' : 'cuda',
@@ -77,7 +77,7 @@ def eval():
 	eval_batch_size = 100
 	eval_total_size_per_batch = 10000
 	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
-	picasa_object.save()
+	picasa_object.save_common()
 
 
 train()
