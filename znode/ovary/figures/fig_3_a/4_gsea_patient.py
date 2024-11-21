@@ -10,17 +10,19 @@ import picasa
 import torch
 import logging
 
+import gseapy as gp
 
 import glob
 import os
 
 
-sample = 'aml'
-wdir = 'znode/aml/'
-cdir='results/figures/fig_2_e/'
+
+sample = 'ovary'
+wdir = 'znode/ovary/'
+cdir = 'figures/fig_3_a/'
 
 directory = wdir+'/data'
-pattern = 'aml_*.h5ad'
+pattern = 'ovary_*.h5ad'
 
 file_paths = glob.glob(os.path.join(directory, pattern))
 file_names = [os.path.basename(file_path) for file_path in file_paths]
@@ -29,55 +31,54 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('aml_','')] = an.read_h5ad(wdir+'data/'+file_name)
+	batch_map[file_name.replace('.h5ad','').replace('ovary_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
-	if batch_count >=10:
+	if batch_count >=12:
 		break
 
 
-file_name = file_names[0].replace('.h5ad','').replace('aml_','')
+file_name = file_names[0].replace('.h5ad','').replace('ovary_','')
 
 picasa_object = picasa.pic.create_picasa_object(
-	batch_map,
-	'unq',
+	batch_map,'unq',
 	wdir)
 
-params = params = {'device': 'cuda', 
-                'batch_size': 100, 
-                'input_dim': 2000, 
-                'embedding_dim': 3000, 
-                'attention_dim': 15, 
-                'latent_dim': 15, 
-                'encoder_layers': [100,15], 
-                'projection_layers': [15, 15], 
-                'learning_rate': 0.001, 
-                'lambda_loss': [1.0, 0.1, 0.0, 1.0], 
-                'temperature_cl': 1.0, 
-                'pair_search_method': 'approx_50', 
-                'pair_importance_weight': 0.01, 
-                'corruption_tol':5, 
-                'cl_loss_mode': 'weighted', 
-                'loss_clusters': 2, 
-                'loss_threshold': 0.1, 
-                'loss_weight': 0.5, 
-                'epochs': 1, 
-                'titration': 20
-                }
+params = {'device' : 'cuda',
+		'batch_size' : 100,
+		'input_dim' : batch_map[file_name.replace('.h5ad','').replace('ovary_','')].X.shape[1],
+		'embedding_dim' : 1000,
+		'attention_dim' : 15,
+		'latent_dim' : 15,
+		'encoder_layers' : [100,15],
+		'projection_layers' : [15,15],
+		'learning_rate' : 0.001,
+		'lambda_loss' : [1.0,0.1,0.0,1.0],
+		'temperature_cl' : 1.0,
+		'pair_search_method' : 'approx_50',
+	 	'corruption_tol' : 3,
+		'pair_importance_weight' : 0.01,
+		'cl_loss_mode': 'weighted', 
+		'loss_clusters': 5, 
+		'loss_threshold': 0.1, 
+		'loss_weight': 2.0, 
+		'epochs': 1, 
+		'titration': 12
+		} 
 
+picasa_common = an.read(wdir+'results/picasa.h5ad')
 
-import h5py as hf
-from scipy.stats import zscore
-import gseapy as gp
+batch_keys = picasa_common.uns['adata_keys']
 
-picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
-
-# since we have only one pair 
-p1,p2 = batch_keys[0],batch_keys[1]
+p1 = 'EOC1005'
+p2 = 'EOC136'
 
 adata_p1 = picasa_object.data.adata_list[p1]
 adata_p2 = picasa_object.data.adata_list[p2]
-nbr_map = {int(x):(int(y),float(z)) for x,y,z in list(picasa_h5[p1+'_'+p2])}
+
+df_nbr_map =picasa_common.uns['nbr_map']
+df_nbr_map = df_nbr_map[df_nbr_map['batch_pair']==p1+'_'+p2]
+
+nbr_map = {x:(y,z) for x,y,z in zip(df_nbr_map['key'],df_nbr_map['neighbor'],df_nbr_map['score'])}
 
 device = 'cpu'
 picasa_object.set_nn_params(params)
@@ -86,27 +87,16 @@ eval_batch_size = 10
 eval_total_size = 1000
 p1_attention,p1_ylabel = picasa_object.eval_attention(adata_p1,adata_p2,nbr_map,eval_batch_size,eval_total_size,device)
 
-
-picasa_h5.close()
-
 	
-df_umap = pd.read_csv(wdir+'results/df_umap.csv.gz')
-# df_umap['cluster'] = ['c_'+str(x) for x in df_umap['cluster'].values] 	 
-df_umap['cluster'] = [x for x in df_umap['cell_type'].values] 	 
+df_umap = pd.read_csv(wdir+'results/df_umap_'+p1+'.csv.gz')
 
-# sel_clust =[
-# 'c_6','c_7','c_11','c_14',	
-#  'c_0','c_10','c_8','c_5',	
-#  'c_2','c_1','c_3','c_9',	
-#  'c_12','c_13','c_4'
-# ]
-# df_umap = df_umap.loc[df_umap['cluster'].isin(sel_clust)]
+sel_clust =[
+ 'c_4','c_5'
+]
 
-sel_clust = df_umap['cluster'].unique()
-
+df_umap = df_umap.loc[df_umap['cluster'].isin(sel_clust)]
 
 print(df_umap['cluster'].value_counts())
-
 
 ranked_gene_list = {}
 top_n = 500
@@ -130,6 +120,7 @@ for idx, ct in enumerate(sel_clust):
 
 
 available_libraries = gp.get_library_name(organism="Human")
+print(available_libraries)
 
 dbs = [
 'Azimuth_2023',
@@ -149,6 +140,7 @@ dbs = [
  
 ]
 
+
 for db in dbs:
 	try:
 		print(db)
@@ -160,7 +152,7 @@ for db in dbs:
 		for factor in sel_clust:
 			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
 								gene_sets=gene_set_library,
-								min_size=10,  
+								min_size=5,  
 								max_size=100,  
 								permutation_num=1000,
 								outdir=None)  
@@ -182,7 +174,7 @@ for db in dbs:
 		for factor in sel_clust:
 			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
 								gene_sets=gene_set_library,
-								min_size=15,  
+								min_size=5,  
 								max_size=100,  
 								permutation_num=1000,
 								outdir=None)  

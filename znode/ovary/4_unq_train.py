@@ -73,7 +73,7 @@ picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent
 picasa_object.plot_loss(tag='unq')
 
 eval_batch_size = 10
-eval_total_size = 10000
+eval_total_size = 60000
 
 df_u = picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
 df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')
@@ -108,7 +108,7 @@ plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_lat_c_batch',pt_s
 
 
 
-umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.3,n_neighbors=20,metric='cosine').fit(df_u)
+umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.0,n_neighbors=20,metric='cosine').fit(df_u)
 df_umap= pd.DataFrame()
 df_umap['cell'] = df_u.index.values
 df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
@@ -123,4 +123,24 @@ plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_lat_unq_batch',pt_size=1.0,
 df_umap['treatment_phase'] = pd.merge(df_umap,dfl,on='cell',how='left')['treatment_phase'].values
 plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_lat_unq_batch',pt_size=1.0,ftype='png')
 
+
+sel_p = [
+'EOC136',
+'EOC153',
+'EOC443',
+'EOC1005',
+]
+sel_p_cells = dfl[dfl['batch'].isin(sel_p)]['cell'].values
+df_umap = df_umap[df_umap['cell'].isin(sel_p_cells)]
+
+
+
+df_umap['celltype'] = pd.merge(df_umap,dfl,on='cell',how='left')['celltype'].values
+plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_unq_sel',pt_size=1.0,ftype='png')
+
+df_umap['batch'] = pd.merge(df_umap,dfl,on='cell',how='left')['batch'].values
+plot_umap_df(df_umap,'batch',wdir+'results/nn_attncl_lat_unq_batch_sel',pt_size=1.0,ftype='png')
+
+df_umap['treatment_phase'] = pd.merge(df_umap,dfl,on='cell',how='left')['treatment_phase'].values
+plot_umap_df(df_umap,'treatment_phase',wdir+'results/nn_attncl_lat_unq_batch_sel',pt_size=1.0,ftype='png')
 

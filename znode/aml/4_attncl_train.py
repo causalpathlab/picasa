@@ -79,9 +79,9 @@ def eval():
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
 	eval_batch_size = 100
-	eval_total_size_per_batch = 10000
+	eval_total_size_per_batch = 100000
 	picasa_object.eval_model(eval_batch_size,eval_total_size_per_batch,device)
-	picasa_object.save()
+	picasa_object.save_common()
 
 
 train()

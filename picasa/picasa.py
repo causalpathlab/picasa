@@ -375,7 +375,8 @@ class picasa(object):
 
 		df.columns = ['common_'+str(x) for x in df.columns]
 		adata = an.AnnData(X=df)
-		adata.obs['batch'] = [x.split('@')[1] for x in df.index.values]
+		batch_loc = len(df.index.values[0].split('@'))-1
+		adata.obs['batch'] = [x.split('@')[batch_loc] for x in df.index.values]
 
 		adata.uns['adata_keys'] = self.adata_keys
 		adata.uns['adata_pairs'] = self.adata_pairs
