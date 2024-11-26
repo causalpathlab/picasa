@@ -80,7 +80,7 @@ picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent
 picasa_object.plot_loss(tag='unq')
 
 eval_batch_size = 10
-eval_total_size = 10000
+eval_total_size = 100000
 
 df_u = picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size, eval_total_size,device='cuda')
 df_u.to_csv(wdir+'results/df_u.csv.gz',compression='gzip')

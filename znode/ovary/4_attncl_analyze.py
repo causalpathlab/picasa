@@ -20,29 +20,32 @@ wdir = 'znode/ovary/'
 
 def plot_latent():
 	import umap
-	import h5py as hf
-	import random
 	from picasa.util.plots import plot_umap_df
 	
-	dfl = pd.read_csv(wdir+'data/'+sample+'_label.csv.gz')
-	# dfl = dfl[['cell','batch','celltype']]
+	dfl = pd.read_csv(wdir+'data/ovary_label.csv.gz')
+	dfl = dfl[['index','cell','patient_id','cell_type','treatment_phase']]
+	dfl.columns = ['index','cell','batch','celltype','treatment_phase']
+	dfl.cell = [x+'@'+y for x,y in zip(dfl['cell'],dfl['batch'])]
  
-	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
+	picasa_common = an.read(wdir+'results/picasa.h5ad')
+	df_c = picasa_common.to_df()
 	
+	batch_keys = picasa_common.uns['adata_keys']
 	for batch in batch_keys:
-		df = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
+		batch_cells = dfl[dfl['batch']==batch]['cell'].values
+		df = df_c.loc[batch_cells]
 
-		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.8,n_neighbors=30,metric='cosine').fit(df)
+		umap_2d = umap.UMAP(n_components=2, init='random', random_state=0,min_dist=0.5,n_neighbors=30,metric='cosine').fit(df)
 		df_umap= pd.DataFrame()
 		df_umap['cell'] = df.index.values
 		df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
 
-		df_umap['celltype'] = pd.merge(df_umap,dfl.loc[dfl['batch']==batch],on='cell',how='left')['celltype'].values
-		plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_'+batch,pt_size=1.0,ftype='png')
+		df_umap = pd.merge(df_umap,dfl.loc[dfl['batch']==batch],on='cell',how='left')
+  
+		for col in df_umap.columns[4:]:
+			plot_umap_df(df_umap,col,wdir+'results/nn_attncl_lat_'+batch+'_'+col,pt_size=1.0,ftype='png')
 
-	picasa_h5.close()
 
 def plot_scsp_overlay():
 	import umap

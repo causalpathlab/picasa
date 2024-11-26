@@ -14,8 +14,8 @@ import logging
 import glob
 import os
 
-sample = 'renal'
-wdir = 'znode/renal/'
+sample = 'haber'
+wdir = 'znode/haber/'
 
 
 def plot_latent():
@@ -24,7 +24,7 @@ def plot_latent():
 	import random
 	from picasa.util.plots import plot_umap_df
 	
-	dfl = pd.read_csv(wdir+'data/KIRC_GSE159115_CellMetainfo_table.tsv.gz',sep='\t')
+	dfl = pd.read_csv(wdir+'data/'+sample+'_label.csv.gz')
 	# dfl = dfl[['cell','batch','celltype']]
  
 	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
@@ -38,8 +38,8 @@ def plot_latent():
 		df_umap['cell'] = df.index.values
 		df_umap[['umap1','umap2']] = umap_2d.embedding_[:,[0,1]]
 
-	
-		df_umap['celltype'] = pd.merge(df_umap,dfl.loc[dfl['Patient']==batch],left_on='cell',right_on='Cell',how='left')['Celltype (major-lineage)'].values
+
+		df_umap['celltype'] = pd.merge(df_umap,dfl.loc[dfl['batch']==batch],on='cell',how='left')['celltype'].values
 		plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_lat_'+batch,pt_size=1.0,ftype='png')
 
 	picasa_h5.close()
@@ -49,18 +49,10 @@ def plot_scsp_overlay():
 	import h5py as hf
 	import random
 	from picasa.util.plots import plot_umap_df
+
+	picasa_common = an.read_h5ad(wdir+'results/picasa.h5ad','r')
+	dfmain = picasa_common.to_df()
 	
-	picasa_h5 = hf.File(wdir+'results/picasa_out.h5','r')
-	batch_keys = [x.decode('utf-8') for x in picasa_h5['batch_keys']]
-	
-	dfmain = pd.DataFrame()
-	for batch in batch_keys:
-		df_c = pd.DataFrame(picasa_h5[batch+'_latent'][:],index=[x.decode('utf-8') for x in picasa_h5[batch+'_ylabel']])
-		dfmain = pd.concat([dfmain,df_c],axis=0)
-  
-	picasa_h5.close()
-	###################
-	####################
 
 	# use std norm or quant norm 
 	from sklearn.preprocessing import StandardScaler
@@ -79,40 +71,23 @@ def plot_scsp_overlay():
 	###################
 	####################
 	
-	conn,cluster = picasa.ut.clust.leiden_cluster(dfh.to_numpy(),0.1)
-	print(pd.Series(cluster).value_counts())
-	
-	sel_c = []
-	sel_ci = []
-	for i,c in enumerate(cluster):
-		if c<=12: 
-			sel_c.append(c)
-			sel_ci.append(i)
-   
-	dfh = dfh.iloc[sel_ci,:]
-
-	umap_2d = picasa.ut.analysis.run_umap (dfh.to_numpy(),use_snn=False,min_dist=0.3,n_neighbors=30)
-	# umap_2d = picasa.ut.analysis.run_umap(dfh.to_numpy(),snn_graph=conn,min_dist=0.1,n_neighbors=30)
+	umap_2d = picasa.ut.analysis.run_umap (dfh.to_numpy(),use_snn=False,min_dist=0.5,n_neighbors=30)
 
 	df_umap= pd.DataFrame()
 	df_umap['cell'] = dfh.index.values
-	df_umap['cluster'] = pd.Categorical(sel_c)
 
 	df_umap[['umap1','umap2']] = umap_2d
- 
- 
-	dfl = pd.read_csv(wdir+'data/KIRC_GSE159115_CellMetainfo_table.tsv.gz',sep='\t')
+	df_umap['batch'] = [x.split('@')[1] for x in df_umap['cell'].values]
 
-	sel_cols = ['Celltype (malignancy)',
-       'Celltype (major-lineage)',  'Patient','cluster']
-	for col in sel_cols:
-		try:
-			df_umap[col.replace(' ','')] = pd.merge(df_umap,dfl,left_on='cell',right_on='Cell',how='left')[col].values
-	
-			plot_umap_df(df_umap,col.replace(' ',''),wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
-		except:
-			print('failed..'+col)
-   
-	df_umap.to_csv(wdir+'results/df_umap.csv.gz',index=False, compression='gzip')
+	dfl = pd.read_csv(wdir+'data/haber_label.csv.gz') 	 
+	dfl.index = [x+'@'+y for x,y in zip(dfl['barcode'],dfl['batch'])]
+	df_umap = pd.merge(df_umap,dfl,left_on='cell',right_index=True,how='left')
 
+
+	plot_umap_df(df_umap,'celltype',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+	plot_umap_df(df_umap,'batch_x',wdir+'results/nn_attncl_scsp_',pt_size=1.0,ftype='png') 
+
+
+
+# plot_latent()
 plot_scsp_overlay()

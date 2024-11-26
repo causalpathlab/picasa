@@ -15,11 +15,11 @@ import logging
 import glob
 import os
 
-sample = 'renal'
-wdir = 'znode/renal/'
+sample = 'haber'
+wdir = 'znode/haber/'
 
 directory = wdir+'/data'
-pattern = 'renal_*.h5ad'
+pattern = 'haber_*.h5ad'
 
 file_paths = glob.glob(os.path.join(directory, pattern))
 file_names = [os.path.basename(file_path) for file_path in file_paths]
@@ -28,13 +28,14 @@ batch_map = {}
 batch_count = 0
 for file_name in file_names:
 	print(file_name)
-	batch_map[file_name.replace('.h5ad','').replace('renal_','')] = an.read_h5ad(wdir+'data/'+file_name)
+	batch_map[file_name.replace('.h5ad','').replace('haber_','')] = an.read_h5ad(wdir+'data/'+file_name)
 	batch_count += 1
 	if batch_count >25:
 		break
 
 
 for batch_name, adata in batch_map.items():
+    adata.obs.index = [x+'@'+batch_name for x in adata.obs.index.values]
     n_obs = adata.shape[0]
 
 # Concatenate all AnnData objects
@@ -61,62 +62,63 @@ sc.tl.leiden(adata)
 sc.tl.umap(adata)
 
 
-dfl = pd.read_csv(wdir+'data/KIRC_GSE159115_CellMetainfo_table.tsv.gz',sep='\t')
-# dfl.rename(columns={'index':'cell'},inplace=True)
-adata.obs = pd.merge(adata.obs,dfl,left_index=True,right_on='Cell',how='left')
+dfl = pd.read_csv(wdir+'data/haber_label.csv.gz') 	 
+dfl.index = [x+'_'+y+'@'+z for x,y,z in zip(dfl['cell_group'],dfl['barcode'],dfl['batch'])]
+
+adata.obs = pd.merge(adata.obs,dfl,left_index=True,right_index=True,how='right')
 
 plt.figure(figsize=(20, 15))
-sc.pl.umap(adata, color=["Celltype (major-lineage)","Patient"])
+sc.pl.umap(adata, color=["batch","celltype"])
 plt.savefig(wdir+'results/scanpy_umap.png')
 
 
 import bbknn
 adata_bbknn = adata.copy()
 sc.pp.pca(adata_bbknn)
-bbknn.bbknn(adata_bbknn, batch_key='Patient')
+bbknn.bbknn(adata_bbknn, batch_key='batch')
 sc.tl.leiden(adata_bbknn,resolution=1.0)
 sc.tl.umap(adata_bbknn)
-sc.pl.umap(adata_bbknn, color=["Celltype (major-lineage)","Patient"])
+sc.pl.umap(adata_bbknn, color=["batch","celltype"])
 plt.savefig(wdir+'results/scanpy_umap_bbknn.png')
 
 
 adata_combat = adata.copy()
-sc.pp.combat(adata_combat, key='Patient')
+sc.pp.combat(adata_combat, key='batch')
 sc.pp.scale(adata_combat)
 sc.pp.pca(adata_combat, use_highly_variable=False)
 sc.pp.neighbors(adata_combat)
 sc.tl.umap(adata_combat)
-sc.pl.umap(adata_combat, color=["Celltype (major-lineage)","Patient"])
+sc.pl.umap(adata_combat, color=["batch","celltype"])
 plt.savefig(wdir+'results/scanpy_umap_combat.png')
 
 
 adata_mnn = adata.copy()
-adata_mnn_corrected = sc.external.pp.mnn_correct(adata_mnn, batch_key='Patient')[0][0]
+adata_mnn_corrected = sc.external.pp.mnn_correct(adata_mnn, batch_key='batch')[0][0]
 sc.pp.scale(adata_mnn_corrected)
 sc.pp.pca(adata_mnn_corrected)
 sc.pp.neighbors(adata_mnn_corrected)  
 sc.tl.leiden(adata_mnn_corrected,resolution=1.0)
 sc.tl.umap(adata_mnn_corrected)
-sc.pl.umap(adata_mnn_corrected, color=[ "Celltype (major-lineage)","Patient"])
+sc.pl.umap(adata_mnn_corrected, color=[ "batch","celltype"])
 plt.savefig(wdir+'results/scanpy_umap_mnn.png')
 
 
 adata_harmony = adata.copy()
 sc.pp.pca(adata_harmony, use_highly_variable=False)
-sc.external.pp.harmony_integrate(adata_harmony, 'Patient')
+sc.external.pp.harmony_integrate(adata_harmony, 'batch')
 sc.pp.neighbors(adata_harmony, use_rep='X_pca_harmony')
 sc.tl.leiden(adata_harmony,resolution=1.0)
 sc.tl.umap(adata_harmony)
-sc.pl.umap(adata_harmony, color=["Celltype (major-lineage)","Patient"])
+sc.pl.umap(adata_harmony, color=["batch", "celltype"])
 plt.savefig(wdir + 'results/scanpy_umap_harmony.png')
 
 
 adata_scanorama = adata.copy()
-sc.external.pp.scanorama_integrate(adata_scanorama, 'Patient')
+sc.external.pp.scanorama_integrate(adata_scanorama, 'batch')
 sc.pp.neighbors(adata_scanorama,use_rep='X_scanorama')
 sc.tl.leiden(adata_scanorama,resolution=1.0)
 sc.tl.umap(adata_scanorama)
-sc.pl.umap(adata_scanorama, color=["Celltype (major-lineage)","Patient"])
+sc.pl.umap(adata_scanorama, color=["batch", "celltype"])
 plt.savefig(wdir + 'results/scanpy_umap_scanorama.png')
 
 
@@ -125,7 +127,7 @@ plt.savefig(wdir + 'results/scanpy_umap_scanorama.png')
 # import scvi
 
 # adata_scvi = adata.copy()
-# scvi.model.SCVI.setup_anndata(adata_scvi, batch_key="patient_id")
+# scvi.model.SCVI.setup_anndata(adata_scvi, batch_key="batch")
 # model_scvi = scvi.model.SCVI(adata_scvi)
 # model_scvi.view_anndata_setup()
 # model_scvi.train()
@@ -134,5 +136,5 @@ plt.savefig(wdir + 'results/scanpy_umap_scanorama.png')
 # sc.pp.neighbors(adata_scvi,use_rep='X_scVI')
 # sc.tl.leiden(adata_scvi,resolution=1.0)
 # sc.tl.umap(adata_scvi)
-# sc.pl.umap(adata_scvi, color=["patient_id", "cell_type", "treatment_phase"])
+# sc.pl.umap(adata_scvi, color=["batch", "cell_type", "treatment_phase"])
 # plt.savefig(wdir + 'results/scanpy_umap_scvi.png')
