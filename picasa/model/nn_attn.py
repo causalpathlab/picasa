@@ -1,14 +1,11 @@
 import torch
-
-import os
+torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
-import pandas as pd
 import random 
 from .loss import pcl_loss,pcl_loss_with_rare_cluster,pcl_loss_with_weighted_cluster,latent_alignment_loss
 import logging
 logger = logging.getLogger(__name__)
-from torch.distributions.uniform import Uniform
 import numpy as np
 
 
@@ -16,8 +13,6 @@ import torch.nn.init as init
 torch.manual_seed(0)
 np.random.seed(0)
 random.seed(0)
-
-
 
 class PICASAOUT:
     def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1=None, attn_c2=None):
@@ -34,8 +29,7 @@ class PICASAel:
         self.el_attn_c2 = el_attn_c2
         self.el_cl_c1 = el_cl_c1
         self.el_cl_c2 = el_cl_c2
-        
-           
+                   
 class Stacklayers(nn.Module):
     
     def __init__(self,
@@ -137,7 +131,6 @@ class AttentionPooling(nn.Module):
         weighted_output = attention_output * weights_softmax.unsqueeze(0)
         pooled_output = torch.sum(weighted_output, dim=-1, keepdim=True)
         return pooled_output.squeeze(-1)
-
 
 class ENCODER(nn.Module):
     def __init__(self,
@@ -303,7 +296,6 @@ def train(model,data,
  
 def predict_batch(model,x_c1,y,x_c2 ):
     return model(x_c1,x_c2),y
-
 
 def predict_attention(model,
     x_c1:torch.tensor,

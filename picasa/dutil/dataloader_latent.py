@@ -39,8 +39,7 @@ class SparseDataset(Dataset):
 
 		return x_cell, self.x_label[idx], z_cell
 
-def nn_load_data_with_latent(adata_x,adata_z,batch_name,device,bath_size):
-
+def nn_load_data_with_latent(adata_x,adata_z,batch_name,device,batch_size):
 
 	device = torch.device(device)
    
@@ -54,4 +53,4 @@ def nn_load_data_with_latent(adata_x,adata_z,batch_name,device,bath_size):
 
 	spdata = SparseData(x_indptr,x_indices,x_vals,x_shape,x_label,z_common)
 
-	return DataLoader(SparseDataset(spdata,device), batch_size=bath_size, shuffle=True)
+	return DataLoader(SparseDataset(spdata,device), batch_size=batch_size, shuffle=True)

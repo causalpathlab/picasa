@@ -1,9 +1,12 @@
 import torch
 torch.manual_seed(0)
+import os
 import torch.nn as nn
 import torch.nn.functional as F
+import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
+from torch.distributions.uniform import Uniform
 from .loss import get_zinb_reconstruction_loss, minimal_overlap_loss
 
 		  
@@ -32,12 +35,10 @@ class PICASAUNET(nn.Module):
 		super(PICASAUNET,self).__init__()
 		self.u_encoder = Stacklayers(input_dim,enc_layers)
 
-		concat_dim = common_latent_dim + unique_latent_dim 
-		# self.u_decoder = Stacklayers(concat_dim,dec_layers)
+		concat_dim = unique_latent_dim 
+		self.u_decoder = Stacklayers(concat_dim,dec_layers)
   
-		# decoder_in_dim = dec_layers[len(dec_layers)-1]
-		decoder_in_dim = concat_dim
-  
+		decoder_in_dim = dec_layers[len(dec_layers)-1]
 		self.zinb_scale = nn.Linear(decoder_in_dim, input_dim) 
 		self.zinb_dropout = nn.Linear(decoder_in_dim, input_dim)
 		self.zinb_dispersion = nn.Parameter(torch.randn(input_dim), requires_grad=True)
@@ -51,11 +52,9 @@ class PICASAUNET(nn.Module):
 		x_norm = torch.div(x_c1, row_sums) * 1e4
   
 		z_unique = self.u_encoder(x_norm.float())
-		
-		z_combined = torch.cat((x_zcommon, z_unique), dim=1)
+		z_combined = z_unique
 
-		# h = self.u_decoder(z_combined)
-		h = z_combined
+		h = self.u_decoder(z_combined)
   
 		px_scale = torch.exp(self.zinb_scale(h))  
 		px_dropout = self.zinb_dropout(h)  
@@ -64,6 +63,7 @@ class PICASAUNET(nn.Module):
 		batch_pred = self.batch_discriminator(z_unique)
 		
 		return z_unique,px_scale,px_rate,px_dropout,batch_pred
+	
 
 def train(model,data,l_rate,epochs=100):
 	logger.info('Init training....nn_unq')
@@ -93,6 +93,7 @@ def train(model,data,l_rate,epochs=100):
 			logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
 
 	return epoch_losses
+
  
 def predict_batch(model,x_c1,y,x_zc):
 	return model(x_c1,x_zc),y

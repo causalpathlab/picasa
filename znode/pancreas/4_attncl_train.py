@@ -30,7 +30,7 @@ picasa_object = picasa.pic.create_picasa_object(
      'smartseq2':batch5,
 	 'celseq2':batch6,
 	 'fluidigmc1':batch7
-	 },
+	 },'unq',
 	wdir)
 
 params = {'device' : 'cuda',
@@ -44,14 +44,15 @@ params = {'device' : 'cuda',
 		'learning_rate' : 0.001,
 		'lambda_loss' : [1.0,0.1,1.0],
 		'temperature_cl': 1.0, 
-  		'neighbour_method': 'approx_50', 
+  		'pair_search_method': 'approx_50', 
   		'pair_importance_weight': 0.1, 
     	'corruption_tol': 5, 
-     	'rare_ct_mode': True, 'num_clusters': 10, 'rare_group_threshold': 0.1, 'rare_group_weight': 2.0, 'epochs': 1, 'titration': 10
+     	'cl_loss_mode': 'weighted', 'loss_clusters': 10, 'loss_threshold': 0.1, 
+        'loss_weight': 2.0, 'epochs': 1, 'titration': 10
 }
 
 
-picasa_object.estimate_neighbour(params['neighbour_method'])
+picasa_object.estimate_neighbour(params['pair_search_method'])
 	
 def train():
 	
@@ -64,9 +65,9 @@ def eval():
 	picasa_object.set_nn_params(params)
 	picasa_object.nn_params['device'] = device
 	eval_batch_size = 200
-	eval_total_size = 3000
+	eval_total_size = 100000
 	picasa_object.eval_model(eval_batch_size,eval_total_size,device)
-	picasa_object.save()
+	picasa_object.save_common()
 
 def plot_latent():
 	import umap

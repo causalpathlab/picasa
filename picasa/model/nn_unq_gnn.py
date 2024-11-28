@@ -2,6 +2,12 @@ import torch
 torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
+
+from torch_geometric.loader import RandomNodeLoader
+from torch_geometric.nn import SAGEConv
+
+
+
 import logging
 logger = logging.getLogger(__name__)
 from .loss import get_zinb_reconstruction_loss, minimal_overlap_loss
@@ -32,12 +38,11 @@ class PICASAUNET(nn.Module):
 		super(PICASAUNET,self).__init__()
 		self.u_encoder = Stacklayers(input_dim,enc_layers)
 
-		concat_dim = common_latent_dim + unique_latent_dim 
-		# self.u_decoder = Stacklayers(concat_dim,dec_layers)
+		self.u_gnn = SAGEConv(unique_latent_dim , unique_latent_dim )
   
-		# decoder_in_dim = dec_layers[len(dec_layers)-1]
-		decoder_in_dim = concat_dim
+		self.w_common = nn.Linear(common_latent_dim, unique_latent_dim, bias=False)
   
+		decoder_in_dim = common_latent_dim + unique_latent_dim 
 		self.zinb_scale = nn.Linear(decoder_in_dim, input_dim) 
 		self.zinb_dropout = nn.Linear(decoder_in_dim, input_dim)
 		self.zinb_dispersion = nn.Parameter(torch.randn(input_dim), requires_grad=True)
@@ -45,17 +50,19 @@ class PICASAUNET(nn.Module):
 		self.batch_discriminator = nn.Linear(unique_latent_dim, num_batches)
 
 	
-	def forward(self,x_c1,x_zcommon):	
+	def forward(self,x_c1,x_zcommon,edge_index):	
  
 		row_sums = x_c1.sum(dim=1, keepdim=True)
 		x_norm = torch.div(x_c1, row_sums) * 1e4
   
 		z_unique = self.u_encoder(x_norm.float())
-		
-		z_combined = torch.cat((x_zcommon, z_unique), dim=1)
 
-		# h = self.u_decoder(z_combined)
-		h = z_combined
+		z_unique = self.u_gnn(z_unique, edge_index)
+		
+		z_common_proj = self.w_common(x_zcommon)
+		z_unique = F.relu(z_unique - z_common_proj)
+  
+		h = torch.cat((x_zcommon, z_unique), dim=1)
   
 		px_scale = torch.exp(self.zinb_scale(h))  
 		px_dropout = self.zinb_dropout(h)  
@@ -65,19 +72,32 @@ class PICASAUNET(nn.Module):
 		
 		return z_unique,px_scale,px_rate,px_dropout,batch_pred
 
-def train(model,data,l_rate,epochs=100):
-	logger.info('Init training....nn_unq')
+def train(model,data,l_rate,epochs,device):
+
+	logger.info('Init training....nn_unq_graph')
+	model.train()
 	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
 	epoch_losses = []
 	criterion = nn.CrossEntropyLoss() 
+	
+	x_graph = data.x_data  
+	x_data_loader = RandomNodeLoader(x_graph, num_parts=25, shuffle=True)
+	
+	epoch_losses = []
 	for epoch in range(epochs):
-		epoch_l,el_z,el_recon,el_batch = (0,)*4
-		for x_c1,y,x_zc,batch in data:
+		epoch_l, el_z, el_recon, el_batch = 0, 0, 0, 0
+		for batch in x_data_loader:
 			opt.zero_grad()
-			z_u,px_s,px_r,px_d,batch_pred = model(x_c1,x_zc)
+   
+			x_zc = data.x_zc.x[batch.y].to(device)
+			x_c1 = batch.x.to(device)
+			edge_index = batch.edge_index.to(device)
+			batch_labels = data.batch_labels.x[batch.y].to(device)
+  
+			z_u, px_s, px_r, px_d, batch_pred = model(x_c1, x_zc, edge_index)
 			train_loss_z = minimal_overlap_loss(x_zc,z_u)
 			train_loss_recon = get_zinb_reconstruction_loss(x_c1,px_s, px_r, px_d)
-			train_loss_batch = criterion(batch_pred, batch)
+			train_loss_batch = criterion(batch_pred, batch_labels)
 			train_loss = train_loss_z + train_loss_recon + train_loss_batch
 			train_loss.backward()
 
@@ -94,5 +114,5 @@ def train(model,data,l_rate,epochs=100):
 
 	return epoch_losses
  
-def predict_batch(model,x_c1,y,x_zc):
-	return model(x_c1,x_zc),y
+def predict_batch(model,x_c1,y,x_zc,edge_index):
+	return model(x_c1, x_zc, edge_index),y
