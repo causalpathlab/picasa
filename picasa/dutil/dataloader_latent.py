@@ -39,7 +39,7 @@ class SparseDataset(Dataset):
 
 		return x_cell, self.x_label[idx], z_cell
 
-def nn_load_data_with_latent(adata_x,adata_z,batch_name,device,batch_size):
+def nn_load_data_with_latent(adata_x,df_z,batch_name,device,batch_size):
 
 	device = torch.device(device)
    
@@ -47,9 +47,9 @@ def nn_load_data_with_latent(adata_x,adata_z,batch_name,device,batch_size):
 	x_indices = torch.tensor(adata_x.X.indices.astype(np.int32), dtype=torch.int32, device=device)
 	x_vals = torch.tensor(adata_x.X.data.astype(np.int32), dtype=torch.int32, device=device)
 	x_shape = tuple(adata_x.X.shape)
-	x_label = adata_x.obs.index.values
+	x_label = [x+'@'+batch_name for x in adata_x.obs.index.values]
  
-	z_common = adata_z[x_label].X.copy()
+	z_common = df_z.loc[x_label,:].values
 
 	spdata = SparseData(x_indptr,x_indices,x_vals,x_shape,x_label,z_common)
 

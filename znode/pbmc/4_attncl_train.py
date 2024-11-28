@@ -21,7 +21,7 @@ picasa_object = picasa.pic.create_picasa_object(
 	{'pbmc1':batch1,
 	 'pbmc2':batch2,
 	 },
-	'unq',
+	'seq',
 	wdir
  	)
 

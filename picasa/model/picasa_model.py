@@ -2,19 +2,59 @@ import torch
 torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn.init as init
 import random 
-from .loss import pcl_loss,pcl_loss_with_rare_cluster,pcl_loss_with_weighted_cluster,latent_alignment_loss
 import logging
 logger = logging.getLogger(__name__)
-import numpy as np
 
 
-import torch.nn.init as init
-torch.manual_seed(0)
-np.random.seed(0)
-random.seed(0)
+		  
+class Stacklayers(nn.Module):
+	"""
+	Stacklayers
+  
+    Parameters
+    ----------
+	input_size: dimension of the input vector
+	layers: list with hidden layer sizes
+	dropout: proportion for dropout
 
-class PICASAOUT:
+	"""
+	def __init__(self,input_size,layers,dropout=0.1):
+		super(Stacklayers, self).__init__()
+		self.layers = nn.ModuleList()
+		self.input_size = input_size
+		for next_l in layers:
+			self.layers.append(nn.Linear(self.input_size,next_l))
+			self.layers.append(nn.BatchNorm1d(next_l))
+			self.layers.append(self.get_activation())
+			self.layers.append(nn.Dropout(dropout))
+			self.input_size = next_l
+
+	def forward(self, input_data):
+		for layer in self.layers:
+			input_data = layer(input_data)
+		return input_data
+
+	def get_activation(self):
+		return nn.ReLU()
+
+class MLP(nn.Module):
+    def __init__(self,
+        input_dims:int,
+        layers:list
+        ):
+        super(MLP, self).__init__()
+        
+        self.fc = Stacklayers(input_dims,layers)
+
+    def forward(self, x:torch.tensor):
+        z = self.fc(x)
+        return z
+
+###### PICASA COMMON MODEL #######
+
+class PICASACommonOut:
     def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1=None, attn_c2=None):
         self.h_c1 = h_c1
         self.h_c2 = h_c2
@@ -23,40 +63,13 @@ class PICASAOUT:
         self.attn_c1 = attn_c1
         self.attn_c2 = attn_c2
 
-class PICASAel:
+class PICASAEntropy:
     def __init__(self,el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2):
         self.el_attn_c1 = el_attn_c1
         self.el_attn_c2 = el_attn_c2
         self.el_cl_c1 = el_cl_c1
         self.el_cl_c2 = el_cl_c2
                    
-class Stacklayers(nn.Module):
-    
-    def __init__(self,
-        input_size:int,
-        layers:list,
-        dropout:float=0.1
-        ):
-        super(Stacklayers, self).__init__()
-        
-        self.layers = nn.ModuleList()
-        self.input_size = input_size
-        for next_l in layers:
-            self.layers.append(nn.Linear(self.input_size,next_l))
-            self.layers.append(nn.BatchNorm1d(next_l))
-            self.layers.append(self.get_activation())
-            self.layers.append(nn.Dropout(dropout))
-            self.input_size = next_l
-
-    def forward(self, 
-        input_data:torch.tensor):
-        for layer in self.layers:
-            input_data = layer(input_data)
-        return input_data
-
-    def get_activation(self):
-        return nn.ReLU()
-
 class GeneEmbedor(nn.Module):
     
     def __init__(self,
@@ -143,20 +156,7 @@ class ENCODER(nn.Module):
     def forward(self, x:torch.tensor):
         return self.fc(x)
 
-class MLP(nn.Module):
-    def __init__(self,
-        input_dims:int,
-        layers:list
-        ):
-        super(MLP, self).__init__()
-        
-        self.fc = Stacklayers(input_dims,layers)
-
-    def forward(self, x:torch.tensor):
-        z = self.fc(x)
-        return z
-
-class PICASANET(nn.Module):
+class PICASACommonNet(nn.Module):
     def __init__(self,
         input_dim:int, 
         embedding_dim:int, 
@@ -167,7 +167,7 @@ class PICASANET(nn.Module):
         corruption_tol:float,
         pair_importance_weight:float
         ):
-        super(PICASANET,self).__init__()
+        super(PICASACommonNet,self).__init__()
 
         self.embedding = GeneEmbedor(embedding_dim,attention_dim)
         self.attention = ScaledDotAttention(attention_dim,input_dim,pair_importance_weight)
@@ -227,109 +227,43 @@ class PICASANET(nn.Module):
         pred_c2 = torch.softmax(h_c2, dim=1)
         el_cl_c2 = -torch.mean(torch.sum(pred_c2 * torch.log(pred_c2 + 1e-10), dim=1))
 
-        return PICASAOUT(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w), PICASAel(el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2)
-
-def train(model,data,
-    epochs:int,
-    lambda_loss:float,
-    l_rate:float,
-    cl_loss_mode:str, 
-    loss_clusters:float, 
-    loss_threshold:float, 
-    loss_weight:float,
-    temperature:float,
-    min_batchsize:int
-    ):
-    
-    logger.info('Init training....nn_attn')
-    opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
-    epoch_losses = []
-    lambda_attn_loss = float(lambda_loss[0])
-    lambda_latent_loss = float(lambda_loss[1])
-    lambda_latalign_loss = float(lambda_loss[2])
-    lambda_cl_loss = float(lambda_loss[3])
-    for epoch in range(epochs):
-        epoch_l, cl, el, el_attn_c1, el_attn_c2, el_cl_c1, el_cl_c2 = (0,) * 7
-        for x_c1,y,x_c2,nbr_weight in data:
-                        
-            if x_c1.shape[0] < min_batchsize:
-                continue
-            
-            opt.zero_grad()
-
-            picasa_out,picasa_el = model(x_c1,x_c2,nbr_weight)
-
-            if cl_loss_mode == 'rare':
-                cl_loss = lambda_cl_loss * pcl_loss_with_rare_cluster(picasa_out.z_c1, picasa_out.z_c2,loss_clusters, loss_threshold, loss_weight,temperature)
-            elif cl_loss_mode == 'weighted':
-                cl_loss = lambda_cl_loss * pcl_loss_with_weighted_cluster(picasa_out.z_c1, picasa_out.z_c2,loss_clusters,loss_weight,temperature)
-            else:
-                cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
+        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w),\
+               PICASAEntropy(el_attn_c1,el_attn_c2,el_cl_c1,el_cl_c2)
 
 
-            entropy_loss = (picasa_el.el_attn_c1 * lambda_attn_loss +
-                        picasa_el.el_attn_c2 * lambda_attn_loss +
-                        picasa_el.el_cl_c1 * lambda_latent_loss +
-                        picasa_el.el_cl_c2 * lambda_latent_loss)
-            
-            alignment_loss = latent_alignment_loss(picasa_out.z_c1, picasa_out.z_c2) * lambda_latalign_loss
+###### PICASA UNIQUE MODEL #######
 
-            train_loss = cl_loss + entropy_loss + alignment_loss
-            
-            train_loss.backward()
+class PICASAUniqueNet(nn.Module):
+	def __init__(self,input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches):
+		super(PICASAUniqueNet,self).__init__()
+		self.u_encoder = MLP(input_dim,enc_layers)
 
-            opt.step()
-            epoch_l += train_loss.item()
-            cl += cl_loss.item() + alignment_loss.item()
-            el += entropy_loss.item()
-            el_attn_c1 += picasa_el.el_attn_c1.item()
-            el_attn_c2 += picasa_el.el_attn_c2.item()
-            el_cl_c1 += picasa_el.el_cl_c1.item()
-            el_cl_c2 += picasa_el.el_cl_c2.item()
-           
-        epoch_losses.append([epoch_l/len(data),cl/len(data),el/len(data),el_attn_c1/len(data),el_attn_c2/len(data),el_cl_c1/len(data),el_cl_c2/len(data)])  
-        
-        if epoch % 10 == 0:
-            logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
+		concat_dim = common_latent_dim + unique_latent_dim 
+		self.u_decoder = MLP(concat_dim,dec_layers)
+  
+		decoder_in_dim = dec_layers[len(dec_layers)-1]  
+		self.zinb_scale = nn.Linear(decoder_in_dim, input_dim) 
+		self.zinb_dropout = nn.Linear(decoder_in_dim, input_dim)
+		self.zinb_dispersion = nn.Parameter(torch.randn(input_dim), requires_grad=True)
+		
+		self.batch_discriminator = nn.Linear(unique_latent_dim, num_batches)
 
-        return epoch_losses
+	
+	def forward(self,x_c1,x_zcommon):	
  
-def predict_batch(model,x_c1,y,x_c2 ):
-    return model(x_c1,x_c2),y
+		row_sums = x_c1.sum(dim=1, keepdim=True)
+		x_norm = torch.div(x_c1, row_sums) * 1e4
+  
+		z_unique = self.u_encoder(x_norm.float())
+		
+		z_combined = torch.cat((x_zcommon, z_unique), dim=1)
 
-def predict_attention(model,
-    x_c1:torch.tensor,
-    x_c2:torch.tensor
-    ):
-    
-    x_c1_emb = model.embedding(x_c1)
-    x_c2_emb = model.embedding(x_c2)
-
-    _,x_c1_attention,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
-    
-    return x_c1_attention
-
-def predict_context(model,
-    x_c1:torch.tensor,
-    x_c2:torch.tensor                
-    ):
-    
-    x_c1_emb = model.embedding(x_c1)
-    x_c2_emb = model.embedding(x_c2)
-
-    x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
-    
-    return x_c1_context
-
-def get_latent(model,
-    x_c1:torch.tensor,
-    x_c2:torch.tensor
-    ):
-    
-    x_c1_emb = model.embedding(x_c1)
-    x_c2_emb = model.embedding(x_c2)
-    x_c1_context,_,_ = model.attention(x_c1_emb,x_c2_emb,x_c2_emb)
-    x_c1_pool_out = model.pooling(x_c1_context)
-    h_c1 = model.encoder(x_c1_pool_out)
-    return h_c1
-    
+		h = self.u_decoder(z_combined)
+  
+		px_scale = torch.exp(self.zinb_scale(h))  
+		px_dropout = self.zinb_dropout(h)  
+		px_rate = self.zinb_dispersion.exp()
+  
+		batch_pred = self.batch_discriminator(z_unique)
+		
+		return z_unique,px_scale,px_rate,px_dropout,batch_pred

@@ -4,22 +4,6 @@ from sklearn.cluster import KMeans
 from scvi.distributions import ZeroInflatedNegativeBinomial
 
 
-def reparameterize(mean,lnvar):
-	sig = torch.exp(lnvar/2.)
-	eps = torch.randn_like(sig)
-	return eps.mul_(sig).add_(mean)
-
-def multinm_log_likelihood(xx,pr, eps=1e-8):
-	return torch.sum(xx * torch.log(pr+eps),dim=-1)
-
-def multi_dir_log_likelihood(x,alpha):
-	a = torch.lgamma(alpha.sum(1)) - torch.lgamma(alpha).sum(1)
-	b = torch.lgamma(x + alpha).sum(1) - torch.lgamma( (x + alpha).sum(1))
-	return a + b 
-
-def kl_loss(mean,lnvar):
-	return  -0.5 * torch.sum(1. + lnvar - torch.pow(mean,2) - torch.exp(lnvar), dim=-1)
-
 def get_zinb_reconstruction_loss(x, px_s, px_r, px_d):
 	'''https://github.com/scverse/scvi-tools/blob/master/scvi/module/_vae.py'''
 	return torch.mean(-ZeroInflatedNegativeBinomial(mu=px_s, theta=px_r, zi_logits=px_d).log_prob(x).sum(dim=-1))
@@ -121,7 +105,6 @@ def pcl_loss(z_i, z_j,temperature = 1.0):
 	
 		batch_size = z_i.size(0)
 
-		# compute similarity between the sample's embedding and its corrupted view
 		z = torch.cat([z_i, z_j], dim=0)
 		similarity = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2)
 
@@ -159,9 +142,7 @@ def tcl_ce_loss(z_a, z_p, z_n, temperature = 1.0):
 
 	all_losses = -torch.log(numerator / denominator)
 	loss = torch.mean(all_losses)
-	
-	# print("NaN values in :", torch.isnan(pos_similarity).any())
-	
+		
 	return loss
 
 def latent_alignment_loss(z_c1, z_c2):

@@ -1,5 +1,4 @@
 import annoy
-import numpy as np
 from anndata import AnnData
 import logging
 logger = logging.getLogger(__name__)
