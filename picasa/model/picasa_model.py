@@ -267,3 +267,36 @@ class PICASAUniqueNet(nn.Module):
 		batch_pred = self.batch_discriminator(z_unique)
 		
 		return z_unique,px_scale,px_rate,px_dropout,batch_pred
+
+###### PICASA BASE MODEL #######
+
+class PICASABaseNet(nn.Module):
+	def __init__(self,input_dim,latent_dim,enc_layers,dec_layers,num_batches):
+		super(PICASABaseNet,self).__init__()
+  
+		self.u_encoder = MLP(input_dim,enc_layers)
+		self.u_decoder = MLP(latent_dim,dec_layers)
+  
+		decoder_in_dim = dec_layers[len(dec_layers)-1]  
+		self.zinb_scale = nn.Linear(decoder_in_dim, input_dim) 
+		self.zinb_dropout = nn.Linear(decoder_in_dim, input_dim)
+		self.zinb_dispersion = nn.Parameter(torch.randn(input_dim), requires_grad=True)
+		
+		self.batch_discriminator = nn.Linear(latent_dim, num_batches)
+
+	
+	def forward(self,x_c1):	
+ 
+		row_sums = x_c1.sum(dim=1, keepdim=True)
+		x_norm = torch.div(x_c1, row_sums) * 1e4
+  
+		z = self.u_encoder(x_norm.float())
+		h = self.u_decoder(z)
+  
+		px_scale = torch.exp(self.zinb_scale(h))  
+		px_dropout = self.zinb_dropout(h)  
+		px_rate = self.zinb_dispersion.exp()
+  
+		batch_pred = self.batch_discriminator(z)
+		
+		return z,px_scale,px_rate,px_dropout,batch_pred

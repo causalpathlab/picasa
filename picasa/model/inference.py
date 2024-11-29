@@ -44,5 +44,8 @@ def get_latent_common(model,
 def predict_batch_unique(model,x_c1,y,x_zc):
 	return model(x_c1,x_zc),y
 
+def predict_batch_base(model,x_c1,y):
+	return model(x_c1),y
+
     
     

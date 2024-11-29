@@ -53,7 +53,7 @@ class SparseDataset(Dataset):
 
 		return sc_cell, self.sc_label[idx], sp_pos_cell, sp_pos_value
 
-def nn_load_data(adata_sc,adata_sp,scsp_map,device,bath_size):
+def nn_load_data_pairs(adata_sc,adata_sp,scsp_map,device,bath_size):
 
 
 	device = torch.device(device)

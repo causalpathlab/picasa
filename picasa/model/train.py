@@ -106,3 +106,31 @@ def picasa_train_unique(model,data,l_rate,epochs=100):
 
 	return epoch_losses
  
+
+def picasa_train_base(model,data,l_rate,epochs=100):
+
+	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
+	epoch_losses = []
+	criterion = nn.CrossEntropyLoss() 
+	for epoch in range(epochs):
+		epoch_l,el_recon,el_batch = (0,)*3
+		for x_c1,y,batch in data:
+			opt.zero_grad()
+			z,px_s,px_r,px_d,batch_pred = model(x_c1)
+			train_loss_recon = get_zinb_reconstruction_loss(x_c1,px_s, px_r, px_d)
+			train_loss_batch = criterion(batch_pred, batch)
+			train_loss = train_loss_recon + train_loss_batch
+			train_loss.backward()
+
+			opt.step()
+			epoch_l += train_loss.item()
+			el_recon += train_loss_recon.item()
+			el_batch += train_loss_batch.item()
+		   
+		epoch_losses.append([epoch_l/len(data),0.0,el_recon/len(data),el_batch/len(data)])  
+		
+		if epoch % 10 == 0:
+			logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
+
+	return epoch_losses
+ 

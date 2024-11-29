@@ -445,6 +445,101 @@ class picasa(object):
         df_u_latent.columns = ['unique_'+str(x) for x in df_u_latent.columns]
         self.result.obsm['unique'] = df_u_latent
 
+    def train_base(self,
+        input_dim:int,
+        enc_layers:list,
+        latent_dim:int,
+        dec_layers:list,
+        l_rate:float,
+        epochs:int,
+        batch_size:int,
+        device:str
+        ):
+
+        num_batches = len(self.adata_keys)
+        picasa_base_model = model.PICASABaseNet(input_dim,latent_dim,enc_layers,dec_layers,num_batches).to(device)
+    
+        logging.info(picasa_base_model)
+  
+        x_c1_batches = []
+        y_batches = []
+        b_ids_batches = []
+  
+        logging.info("Creating dataloader for training PICASA base model.")
+  
+        for batch in self.adata_keys:
+            adata_x = self.data.adata_list[batch]
+
+            data = dutil.nn_load_data_base(adata_x,batch,'cpu',batch_size)
+    
+            for x_c1,y in data:		
+                x_c1_batches.append(x_c1)
+                y_batches.append(np.array(y))
+                b_ids_batches.append(torch.tensor([ self.batch_mapping[y_id] for y_id in y]))
+    
+        all_x_c1 = torch.cat(x_c1_batches, dim=0)  
+        all_y = np.concatenate(y_batches)        
+        all_b_ids = torch.cat(b_ids_batches,dim=0)  
+
+        train_data =dutil.get_dataloader_mem_base(all_x_c1,all_y,all_b_ids,batch_size,device)
+
+        logging.info('Training... PICASE unique model.')
+        loss = model.picasa_train_base(picasa_base_model,train_data,l_rate,epochs)
+
+        torch.save(picasa_base_model.state_dict(),self.wdir+'/results/picasa_base.model')
+        pd.DataFrame(loss,columns=['ep_l','el_z','el_recon','el_batch']).to_csv(self.wdir+'/results/picasa_base_train_loss.txt.gz',index=False,compression='gzip',header=True)
+        logging.info('Completed training...model saved in '+self.wdir+'/results/picasa_base.model')
+  
+    def eval_base(self,	 
+        input_dim:int,
+        enc_layers:list,
+        latent_dim:int,
+        dec_layers:list,
+        eval_batch_size:int, 
+        device:str
+        ):
+
+        num_batches = len(self.adata_keys)
+        picasa_base_model = model.PICASABaseNet(input_dim,latent_dim,enc_layers,dec_layers,num_batches).to(device)
+    
+        picasa_base_model.load_state_dict(torch.load(self.wdir+'/results/picasa_base.model', map_location=torch.device(device)))
+
+        picasa_base_model.eval()
+  
+        x_c1_batches = []
+        y_batches = []
+        b_ids_batches = []
+  
+        logging.info("Creating dataloader for evaluating PICASA unique model.")
+  
+        for batch in self.adata_keys:
+            adata_x = self.data.adata_list[batch]
+
+            data = dutil.nn_load_data_base(adata_x,batch,'cpu',eval_batch_size)
+    
+            for x_c1,y in data:		
+                x_c1_batches.append(x_c1)
+                y_batches.append(np.array(y))
+                b_ids_batches.append(torch.tensor([ self.batch_mapping[y_id] for y_id in y]))
+    
+        all_x_c1 = torch.cat(x_c1_batches, dim=0)  
+        all_y = np.concatenate(y_batches)        
+        all_b_ids = torch.cat(b_ids_batches,dim=0)  
+
+        train_data =dutil.get_dataloader_mem_base(all_x_c1,all_y,all_b_ids,eval_batch_size,device)
+            
+        df_u_latent = pd.DataFrame()
+  
+        for x_c1,y,b_id in train_data:
+            z,ylabel = model.predict_batch_base(picasa_base_model,x_c1,y)
+            z_u = z[0]
+            df_u_latent = pd.concat([df_u_latent,pd.DataFrame(z_u.cpu().detach().numpy(),index=ylabel)],axis=0)
+
+        df_u_base = df_u_latent.loc[self.result.obsm['common'].index.values,:]
+        df_u_base.columns = ['base_'+str(x) for x in df_u_latent.columns]
+        self.result.obsm['base'] = df_u_base
+
+
     def plot_loss(self,
         tag:str
         ):
@@ -453,6 +548,8 @@ class picasa(object):
             plot_loss(self.wdir+'/results/picasa_common_train_loss.txt.gz',self.wdir+'/results/picasa_common_train_loss.png')
         elif tag=='unq':
             plot_loss(self.wdir+'/results/picasa_unique_train_loss.txt.gz',self.wdir+'/results/picasa_unique_train_loss.png')
+        elif tag=='base':
+            plot_loss(self.wdir+'/results/picasa_base_train_loss.txt.gz',self.wdir+'/results/picasa_base_train_loss.png')
     
     def save_model(self):
         self.result.write(self.wdir+'/results/picasa.h5ad',compression='gzip')
