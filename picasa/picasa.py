@@ -213,7 +213,6 @@ class picasa(object):
         adata.uns['nbr_map'] = nbr_map_df    
         self.result = adata
     
-    
     def set_batch_mapping(self):
         
         batch_ids = {label: idx for idx, label in enumerate(self.result.obs['batch'].unique())}
@@ -221,125 +220,6 @@ class picasa(object):
         batch_mapping = { idx:label for idx, label in zip(self.result.obs.index.values,self.result.obs['batch_id'])}
 
         self.batch_mapping = batch_mapping
-
-     
-    def eval_attention_common(self,
-        adata_p1:an.AnnData, 
-        adata_p2:an.AnnData,
-        adata_nbr_map:dict,
-        eval_batch_size:int,
-        eval_total_size:int,
-        device:str='cpu'
-        ):
-        
-        picasa_model = model.picasa_model.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
-  
-        picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
-        picasa_model.eval()
-  
-        data_pred = dutil.nn_load_data_pairs(adata_p1, adata_p2, adata_nbr_map,device,eval_batch_size)
-
-        attn_list = []
-        ylabel_list = []
-        y_count = 0
-
-        for x_c1,y,x_c2,nbr_weight in data_pred:
-            x_c1_attn = model.picasa_model.predict_attention(picasa_model,x_c1,x_c2)
-            attn_list.append(x_c1_attn.cpu().detach().numpy())
-            ylabel_list.append(y)
-            
-            y_count += len(y)
-            if y_count>eval_total_size:
-                break
-            
-            del x_c1_attn, y
-            gc.collect()
-
-        attn_list = np.concatenate(attn_list, axis=0)
-        ylabel_list = np.concatenate(ylabel_list, axis=0)
-
-        return attn_list,ylabel_list
-
-    # def get_attention_common_estimate(self,
-    #     adata_p1:an.AnnData, 
-    #     adata_p2:an.AnnData,
-    #     adata_nbr_map:dict,
-    #     eval_batch_size:int,
-    #     eval_total_size:int,
-    #     device:str='cpu'
-    #     ):
-        
-    #     picasa_model = model.picasa_model.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
-  
-    #     picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
-    #     picasa_model.eval()
-  
-    #     data_pred = dutil.nn_load_data_pairs(adata_p1, adata_p2, adata_nbr_map,device,eval_batch_size)
-
-    #     global_mean = None
-    #     y_count = 0
-
-    #     for x_c1,y,x_c2,nbr_weight in data_pred:
-    #         x_c1_attn = model.picasa_model.predict_attention(picasa_model,x_c1,x_c2)
-    #         batch_mean = x_c1_attn.mean(dim=0) 
-    #         if global_mean is None:
-    #             global_mean = batch_mean
-    #         else:
-    #             global_mean = ( (global_mean * y_count) + (batch_mean * len(y) )) / (y_count + len(y))
-                
-    #         y_count += len(y)
-    #         if y_count>eval_total_size:
-    #             break
-            
-    #         del x_c1_attn, y
-    #         gc.collect()
-
-    #     return global_mean
-
-
-    #     # attn_file_p1 = self.wdir+'results/'+p1+'_attention.npz'
-    #     # index_file_p1 = self.wdir+'results/'+p1+'_index.csv.gz'
-            
-    #     # np.savez_compressed(attn_file_p1, np.concatenate(attn_list, axis=0))
-    #     # pd.DataFrame(ylabel_list).index.to_series().to_csv(index_file_p1, compression='gzip')
-
-    # def eval_context_common(self,
-    #     adata_p1:an.AnnData, 
-    #     adata_p2:an.AnnData,
-    #     adata_nbr_map:dict,
-    #     eval_batch_size:int,
-    #     eval_total_size:int,
-    #     device:str='cpu'
-    #     ):
-
-    #     picasa_model = model.picasa_model.PICASANET(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
-  
-    #     picasa_model.load_state_dict(torch.load(self.wdir+'results/nn_attncl.model', map_location=torch.device(device)))
-    #     picasa_model.eval()
-  
-    #     data_pred = dutil.nn_load_data_pairs(adata_p1, adata_p2, adata_nbr_map,device,eval_batch_size)
-
-    #     context_list = []
-    #     ylabel_list = []
-    #     y_count = 0
-  
-    #     for x_c1,y,x_c2,nbr_weight in data_pred:
-    #         x_context = model.picasa_model.predict_context(picasa_model,x_c1,x_c2)
-    #         context_list.append(x_context.cpu().detach().numpy())
-    #         ylabel_list.append(y)
-
-    #         y_count += len(y)
-    #         if y_count>eval_total_size:
-    #             break
-
-    #         del x_context, y
-    #         gc.collect()
-
-
-    #     context_list = np.concatenate(context_list, axis=0)
-    #     ylabel_list = np.concatenate(ylabel_list, axis=0)
-
-    #     return context_list,ylabel_list  
 
     def train_unique(self,
         input_dim:int,
