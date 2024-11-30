@@ -40,10 +40,10 @@ class picasa(object):
         self.sample = sample
         self.wdir = wdir+sample
         
-        dutil.data.create_model_directories(self.wdir,['results'])
+        # dutil.data.create_model_directories(self.wdir,['results'])
         
         print(self.wdir)
-        logging.basicConfig(filename=self.wdir+'/picasa_model.log',
+        logging.basicConfig(filename=self.wdir+'/results/picasa_model.log',
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
@@ -142,7 +142,8 @@ class picasa(object):
   
     def eval_common(self,
         eval_batch_size:int,
-        eval_total_size:int,device='cpu'
+        eval_total_size:int,
+        device='cpu'
         ):
      
         picasa_model = model.PICASACommonNet(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
