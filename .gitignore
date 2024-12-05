@@ -9,17 +9,24 @@ Makefile
 .vscode/
 .snakemake/
 
-/figures/*/data
-/figures/*/results*
+/picasa_reproducibility/figures/*/data
+/picasa_reproducibility/figures/*/results
+
+
 
 io.py
 scratch.py
+
+nohup.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 /build
+
+/picasa.egg-info
+/.snakemake
 
 *.so
 
@@ -32,5 +39,6 @@ __pycache__/
 *.log
 *.out
 *.model
+*.RDS
 
 

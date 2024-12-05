@@ -22,7 +22,7 @@ picasa_object = picasa.create_picasa_object(
  	)
 
 
-params = {'device': 'cuda', 'batch_size': 128, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 25, 'latent_dim': 15, 'encoder_layers': [100,15], 'projection_layers': [15, 15], 'learning_rate': 0.001, 'lambda_loss': [0.5, 0.1, 0.01, 1.0], 'temperature_cl': 1.0, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.0, 'corruption_tol':2, 'cl_loss_mode': 'weighted', 'loss_clusters': 5, 'loss_threshold': 0.1, 'loss_weight': 2.0, 'epochs': 1, 'titration': 25}
+params = {'device': 'cuda', 'batch_size': 128, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 25, 'latent_dim': 15, 'encoder_layers': [100,15], 'projection_layers': [15, 15], 'learning_rate': 0.001, 'lambda_loss': [0.5, 0.1, 0.01, 1.0], 'temperature_cl': 1.0, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.0, 'corruption_tol':10, 'cl_loss_mode': 'weighted', 'loss_clusters': 5, 'loss_threshold': 0.1, 'loss_weight': 2.0, 'epochs': 1, 'titration': 25}
 
 picasa_object.estimate_neighbour(params['pair_search_method'])
 	

@@ -98,7 +98,58 @@ class picasa(object):
         params: dict
         ):
         self.nn_params = params
-  
+    
+    def create_model_adata(self,latent):
+    
+        batches = latent.keys()
+        df = pd.DataFrame()
+
+        for b in batches:
+            c_df = latent[b]
+            c_df.index = [x+'@'+b for x in c_df.index.values]
+            df = pd.concat([df,c_df])
+
+        df.columns = ['common_'+str(x) for x in df.columns]
+        
+        adata = an.AnnData(obs=pd.DataFrame(index=df.index))
+        adata.obsm['common'] = df
+        
+        batch_loc = len(df.index.values[0].split('@'))-1
+        adata.obs['batch'] = [x.split('@')[batch_loc] for x in df.index.values]
+
+        adata.uns['adata_keys'] = self.adata_keys
+        adata.uns['adata_pairs'] = self.adata_pairs
+        adata.uns['nn_params'] = self.nn_params
+        
+        batch_ids = {label: idx for idx, label in enumerate(adata.obs['batch'].unique())}
+        adata.obs['batch_id'] = [batch_ids[x] for x in adata.obs['batch']]
+
+        nbr_map_df = pd.DataFrame([
+            {'batch_pair': l1_item, 'key': k, 'neighbor': v[0], 'score': v[1]}
+            for l1_item, inner_map in self.nbr_map.items()
+            for k, v in inner_map.items()
+        ])
+        adata.uns['nbr_map'] = nbr_map_df    
+        self.result = adata
+            
+    def set_batch_mapping(self):
+        
+        batch_mapping = { idx:label for idx, label in zip(self.result.obs.index.values,self.result.obs['batch_id'])}
+        self.batch_mapping = batch_mapping
+        
+    def set_metadata(self):
+        
+        df_meta = pd.DataFrame()
+        for ad_name in self.data.adata_list:
+            ad = self.data.adata_list[ad_name]
+            df_meta = pd.concat([df_meta,ad.obs])
+        
+        df_meta.index = [x+'@'+y for x,y in zip(df_meta.index.values,df_meta['batch'])]
+        sel_col = [ x for x in df_meta.columns if x not in ['batch','batch_id']]
+        
+        self.result.obs = pd.merge(self.result.obs,df_meta[sel_col],left_index=True,right_index=True,how='left')
+        
+            
     def train_common(self):
 
         logging.info('Starting PICASA common training...')
@@ -139,10 +190,9 @@ class picasa(object):
         torch.save(picasa_model.state_dict(),self.wdir+'/results/picasa_common.model')
         pd.DataFrame(loss,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(self.wdir+'/results/picasa_common_train_loss.txt.gz',index=False,compression='gzip',header=True)
         logging.info('Completed training...model saved in '+self.wdir+'/results/picasa_common.model')
-  
+    
     def eval_common(self,
         eval_batch_size:int,
-        eval_total_size:int,
         device='cpu'
         ):
      
@@ -178,49 +228,13 @@ class picasa(object):
 
                     del x_c1, y, x_c2, m_el, ylabel
                     gc.collect()
-
-                    if df_latent.shape[0]>eval_total_size:
-                        break
           
                 latent[p1] = df_latent
                 evaled.append(p1)
-
-        batches = latent.keys()
-        df = pd.DataFrame()
-
-        for b in batches:
-            c_df = latent[b]
-            c_df.index = [x+'@'+b for x in c_df.index.values]
-
-            df = pd.concat([df,c_df])
-
-        df.columns = ['common_'+str(x) for x in df.columns]
+                
+        self.create_model_adata(latent)
+        self.set_metadata()
         
-        adata = an.AnnData(obs=pd.DataFrame(index=df.index))
-        adata.obsm['common'] = df
-        
-        batch_loc = len(df.index.values[0].split('@'))-1
-        adata.obs['batch'] = [x.split('@')[batch_loc] for x in df.index.values]
-
-        adata.uns['adata_keys'] = self.adata_keys
-        adata.uns['adata_pairs'] = self.adata_pairs
-        adata.uns['nn_params'] = self.nn_params
-        
-        nbr_map_df = pd.DataFrame([
-            {'batch_pair': l1_item, 'key': k, 'neighbor': v[0], 'score': v[1]}
-            for l1_item, inner_map in self.nbr_map.items()
-            for k, v in inner_map.items()
-        ])
-        adata.uns['nbr_map'] = nbr_map_df    
-        self.result = adata
-    
-    def set_batch_mapping(self):
-        
-        batch_ids = {label: idx for idx, label in enumerate(self.result.obs['batch'].unique())}
-        self.result.obs['batch_id'] = [batch_ids[x] for x in self.result.obs['batch']]
-        batch_mapping = { idx:label for idx, label in zip(self.result.obs.index.values,self.result.obs['batch_id'])}
-
-        self.batch_mapping = batch_mapping
 
     def train_unique(self,
         input_dim:int,
@@ -238,7 +252,9 @@ class picasa(object):
         picasa_unq_model = model.PICASAUniqueNet(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
     
         logging.info(picasa_unq_model)
-  
+
+        self.set_batch_mapping()
+        
         x_c1_batches = []
         y_batches = []
         x_zc_batches = []
@@ -364,7 +380,7 @@ class picasa(object):
 
         train_data =dutil.get_dataloader_mem_base(all_x_c1,all_y,all_b_ids,batch_size,device)
 
-        logging.info('Training... PICASE unique model.')
+        logging.info('Training... PICASE base model.')
         loss = model.picasa_train_base(picasa_base_model,train_data,l_rate,epochs)
 
         torch.save(picasa_base_model.state_dict(),self.wdir+'/results/picasa_base.model')
@@ -391,7 +407,7 @@ class picasa(object):
         y_batches = []
         b_ids_batches = []
   
-        logging.info("Creating dataloader for evaluating PICASA unique model.")
+        logging.info("Creating dataloader for evaluating PICASA base model.")
   
         for batch in self.adata_keys:
             adata_x = self.data.adata_list[batch]
