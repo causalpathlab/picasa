@@ -188,7 +188,7 @@ class picasa(object):
                 loss.append(np.mean(stacked_loss_p, axis=0))
 
         torch.save(picasa_model.state_dict(),self.wdir+'/results/picasa_common.model')
-        pd.DataFrame(loss,columns=['ep_l','cl','el','el_attn_sc','el_attn_sp','el_cl_sc','el_cl_sp']).to_csv(self.wdir+'/results/picasa_common_train_loss.txt.gz',index=False,compression='gzip',header=True)
+        pd.DataFrame(loss,columns=['ep_l','cl','al','el']).to_csv(self.wdir+'/results/picasa_common_train_loss.txt.gz',index=False,compression='gzip',header=True)
         logging.info('Completed training...model saved in '+self.wdir+'/results/picasa_common.model')
     
     def eval_common(self,
@@ -222,11 +222,10 @@ class picasa(object):
                 df_latent = pd.DataFrame()
 
                 for x_c1,y,x_c2,nbr_weight in data_pred:
-                    m_el,ylabel = model.predict_batch_common(picasa_model,x_c1,y,x_c2)
-                    m = m_el[0]
-                    df_latent = pd.concat([df_latent,pd.DataFrame(m.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
+                    picasa_out,ylabel = model.predict_batch_common(picasa_model,x_c1,y,x_c2)
+                    df_latent = pd.concat([df_latent,pd.DataFrame(picasa_out.h_c1.cpu().detach().numpy(),index=ylabel)],axis=0)
 
-                    del x_c1, y, x_c2, m_el, ylabel
+                    del x_c1, y, x_c2, picasa_out, ylabel
                     gc.collect()
           
                 latent[p1] = df_latent

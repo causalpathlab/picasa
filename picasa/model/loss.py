@@ -145,5 +145,32 @@ def tcl_ce_loss(z_a, z_p, z_n, temperature = 1.0):
 		
 	return loss
 
-def latent_alignment_loss(z_c1, z_c2):
+def similarity_loss(z_c1, z_c2):
 	return 1 - F.cosine_similarity(z_c1, z_c2).mean()
+
+
+def attention_entropy(attention_weights):
+	l = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
+	return l
+
+
+def repulsive_loss(z):
+    pairwise_distances = torch.cdist(z, z, p=2)  
+    
+    max_distance = pairwise_distances.max().detach() 
+    normalized_distances = pairwise_distances / max_distance
+    
+    threshold = 0.5
+    mask = (normalized_distances < threshold).float() 
+    
+    loss = torch.sum((threshold - normalized_distances) * mask) / (z.size(0) ** 2)  
+    
+    return loss
+
+
+def latent_alignment_loss(z_c1, z_c2):
+
+	# increase similarity between latent spaces
+    alignment_loss = similarity_loss(z_c1, z_c2)
+    
+    return alignment_loss

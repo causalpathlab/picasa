@@ -37,47 +37,24 @@ picasa_object = picasa.create_picasa_object(
 params = {'device' : 'cuda',
 		'batch_size' : 64,
 		'input_dim' : 2000,
-		'embedding_dim' : 2000,
+		'embedding_dim' : 1000,
 		'attention_dim' : 15,
 		'latent_dim' : 15,
 		'encoder_layers' : [100,15],
 		'projection_layers' : [15,15],
 		'learning_rate' : 0.001,
-		'lambda_loss' : [1.0,0.1,0.0,1.0],
+		'lambda_loss' : [1.0,0.5,0.1],
 		'temperature_cl' : 1.0,
 		'pair_search_method' : 'approx_50',
-        'pair_importance_weight': 0.0,
+        'pair_importance_weight': 0.5,
 	 	'corruption_tol' : 10.0,
         'cl_loss_mode' : 'weighted', 
-        'loss_threshold' : 0.1, 
       	'loss_clusters' : 5, 
-        'loss_weight': 1.2,
+        'loss_threshold' : 0.1, 
+        'loss_weight': 2.0,
 		'epochs': 1,
-		'titration': 40
-		}
-#1 same as sim4  
-#2
-# params = {'device' : 'cuda',
-# 		'batch_size' : 64,
-# 		'input_dim' : 2000,
-# 		'embedding_dim' : 1000,
-# 		'attention_dim' : 15,
-# 		'latent_dim' : 15,
-# 		'encoder_layers' : [100,15],
-# 		'projection_layers' : [15,15],
-# 		'learning_rate' : 0.001,
-# 		'lambda_loss' : [1.0,0.1,0.0,1.0],
-# 		'temperature_cl' : 1.0,
-# 		'pair_search_method' : 'approx_50',
-#         'pair_importance_weight': 0.0,
-# 	 	'corruption_tol' : 10.0,
-#         'cl_loss_mode' : 'weighted', 
-#         'loss_threshold' : 0.1, 
-#       	'loss_clusters' : 5, 
-#         'loss_weight': 1.2,
-# 		'epochs': 1,
-# 		'titration': 40
-# 		}  
+		'titration': 15
+		}  
 
 picasa_object.estimate_neighbour(params['pair_search_method'])
 	
@@ -89,7 +66,7 @@ picasa_object.plot_loss(tag='common')
 
 device = 'cpu'
 picasa_object.nn_params['device'] = device
-eval_batch_size = 10
+eval_batch_size = 100
 picasa_object.eval_common(eval_batch_size,device)
 picasa_object.save_model()
 

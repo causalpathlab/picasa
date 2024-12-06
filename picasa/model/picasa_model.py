@@ -55,20 +55,13 @@ class MLP(nn.Module):
 ###### PICASA COMMON MODEL #######
 
 class PICASACommonOut:
-    def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1=None, attn_c2=None):
+    def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1, attn_c2):
         self.h_c1 = h_c1
         self.h_c2 = h_c2
         self.z_c1 = z_c1
         self.z_c2 = z_c2
         self.attn_c1 = attn_c1
         self.attn_c2 = attn_c2
-
-class PICASAEntropy:
-    def __init__(self,el_attn_c1,el_attn_c2, el_cl_c1,el_cl_c2):
-        self.el_attn_c1 = el_attn_c1
-        self.el_attn_c2 = el_attn_c2
-        self.el_cl_c1 = el_cl_c1
-        self.el_cl_c2 = el_cl_c2
                    
 class GeneEmbedor(nn.Module):
     
@@ -121,11 +114,9 @@ class ScaledDotAttention(nn.Module):
         scores = scores + p_importance
     
         attention_weights = torch.softmax(scores, dim=-1)
-        entropy_loss_attn = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
-
         output = torch.matmul(attention_weights, value_proj)
 
-        return output, attention_weights, entropy_loss_attn
+        return output, attention_weights
 
 class AttentionPooling(nn.Module):
 
@@ -209,10 +200,10 @@ class PICASACommonNet(nn.Module):
         x_c1_emb = self.embedding(x_c1)
         x_c2_emb = self.embedding(x_c2)
   
-        x_c1_att_out, x_c1_att_w,el_attn_c1 = self.attention(x_c1_emb,x_c2_emb,x_c2_emb)
+        x_c1_att_out, x_c1_att_w = self.attention(x_c1_emb,x_c2_emb,x_c2_emb)
         x_c1_pool_out = self.pooling(x_c1_att_out)
-
-        x_c2_att_out, x_c2_att_w,el_attn_c2 = self.attention(x_c2_emb,x_c1_emb,x_c1_emb)
+        
+        x_c2_att_out, x_c2_att_w = self.attention(x_c2_emb,x_c1_emb,x_c1_emb)
         x_c2_pool_out = self.pooling(x_c2_att_out)
 
         h_c1 = self.encoder(x_c1_pool_out)
@@ -221,15 +212,7 @@ class PICASACommonNet(nn.Module):
         z_c1 = self.projector(h_c1)
         z_c2 = self.projector(h_c2)
                 
-        pred_c1 = torch.softmax(h_c1, dim=1)
-        el_cl_c1 = -torch.mean(torch.sum(pred_c1 * torch.log(pred_c1 + 1e-10), dim=1))
-
-        pred_c2 = torch.softmax(h_c2, dim=1)
-        el_cl_c2 = -torch.mean(torch.sum(pred_c2 * torch.log(pred_c2 + 1e-10), dim=1))
-
-        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w),\
-               PICASAEntropy(el_attn_c1,el_attn_c2,el_cl_c1,el_cl_c2)
-
+        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w)
 
 ###### PICASA UNIQUE MODEL #######
 
