@@ -174,13 +174,13 @@ class picasa(object):
         
                 data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
-                loss_p1_p2 = model.picasa_train_common(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['cl_loss_mode'],self.nn_params['loss_clusters'],self.nn_params['loss_threshold'], self.nn_params['loss_weight'],self.nn_params['temperature_cl'],self.nn_params['loss_clusters'])
+                loss_p1_p2 = model.picasa_train_common(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['cl_loss_mode'])
     
                 logging.info('Training...PICASA common model-'+p2+'_'+p1)
     
                 data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
-                loss_p2_p1 = model.picasa_train_common(picasa_model,data,self.nn_params['epochs'],self.nn_params['lambda_loss'],self.nn_params['learning_rate'],self.nn_params['cl_loss_mode'],self.nn_params['loss_clusters'],self.nn_params['loss_threshold'], self.nn_params['loss_weight'],self.nn_params['temperature_cl'],self.nn_params['loss_clusters'])
+                loss_p2_p1 = model.picasa_train_common(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['cl_loss_mode'])
 
                 loss_p1_p2 = np.array(loss_p1_p2)
                 loss_p2_p1 = np.array(loss_p2_p1)

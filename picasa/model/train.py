@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .loss import pcl_loss,pcl_loss_with_rare_cluster,pcl_loss_with_weighted_cluster,\
                 latent_alignment_loss, minimal_overlap_loss, get_zinb_reconstruction_loss,\
-                attention_entropy
+                pcl_loss_with_margin
 import logging
 logger = logging.getLogger(__name__)
 import numpy as np
@@ -15,23 +15,15 @@ random.seed(0)
 
 def picasa_train_common(model,data,
     epochs:int,
-    lambda_loss:float,
     l_rate:float,
     cl_loss_mode:str, 
-    loss_clusters:float, 
-    loss_threshold:float, 
-    loss_weight:float,
-    temperature:float,
-    min_batchsize:int
+    min_batchsize:int = 5
     ):
     
     opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
     epoch_losses = []
-    lambda_cl_loss = float(lambda_loss[0])
-    lambda_latalign_loss = float(lambda_loss[1])
-    lambda_attn_loss = float(lambda_loss[2])
     for epoch in range(epochs):
-        epoch_l, cl, el, al = (0,) * 4
+        epoch_l, cl, al = (0,) * 3
         for x_c1,y,x_c2,nbr_weight in data:
                         
             if x_c1.shape[0] < min_batchsize:
@@ -42,19 +34,16 @@ def picasa_train_common(model,data,
             picasa_out = model(x_c1,x_c2,nbr_weight)
 
             if cl_loss_mode == 'rare':
-                cl_loss = lambda_cl_loss * pcl_loss_with_rare_cluster(picasa_out.z_c1, picasa_out.z_c2,loss_clusters, loss_threshold, loss_weight,temperature)
+                cl_loss = pcl_loss_with_rare_cluster(picasa_out.z_c1, picasa_out.z_c2)
             elif cl_loss_mode == 'weighted':
-                cl_loss = lambda_cl_loss * pcl_loss_with_weighted_cluster(picasa_out.z_c1, picasa_out.z_c2,loss_clusters,loss_weight,temperature)
+                cl_loss = pcl_loss_with_weighted_cluster(picasa_out.z_c1, picasa_out.z_c2)
+            elif cl_loss_mode == 'margin':
+                cl_loss = pcl_loss_with_margin(picasa_out.z_c1, picasa_out.z_c2)
             else:
-                cl_loss = lambda_cl_loss * pcl_loss(picasa_out.z_c1, picasa_out.z_c2,temperature)
+                cl_loss = pcl_loss(picasa_out.z_c1, picasa_out.z_c2)
             
-            alignment_loss = latent_alignment_loss(picasa_out.h_c1, picasa_out.h_c2) * lambda_latalign_loss
-
-            attn_el_c1 = attention_entropy(picasa_out.attn_c1) * lambda_attn_loss
-            attn_el_c2 = attention_entropy(picasa_out.attn_c2) * lambda_attn_loss
-            attn_entropy_loss = attn_el_c1 +attn_el_c2            
-            
-            train_loss = cl_loss + attn_entropy_loss + alignment_loss
+            alignment_loss = latent_alignment_loss(picasa_out.h_x1, picasa_out.h_x2) 
+            train_loss = cl_loss + alignment_loss
             
             train_loss.backward()
 
@@ -62,12 +51,11 @@ def picasa_train_common(model,data,
             epoch_l += train_loss.item()
             cl += cl_loss.item() 
             al +=  alignment_loss.item()
-            el += attn_entropy_loss.item()
            
-        epoch_losses.append([epoch_l/len(data),cl/len(data),al/len(data),el/len(data)])  
+        epoch_losses.append([epoch_l/len(data),cl/len(data),al/len(data),0.0])  
         
         if epoch % 10 == 0:
-            logger.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch,epoch_l/len(data) ))
+            logger.info('====> Epoch: {} Average loss: {:.4f} , {:.4f} , {:.4f}'.format(epoch,epoch_l/len(data),cl/len(data),al/len(data) ))
 
         return epoch_losses
 
@@ -93,7 +81,6 @@ def picasa_train_unique(model,data,l_rate,epochs=100):
 			el_z += train_loss_z.item()
 			el_recon += train_loss_recon.item()
 			el_batch += train_loss_batch.item()
-		   
 		epoch_losses.append([epoch_l/len(data),el_z/len(data),el_recon/len(data),el_batch/len(data)])  
 		
 		if epoch % 10 == 0:

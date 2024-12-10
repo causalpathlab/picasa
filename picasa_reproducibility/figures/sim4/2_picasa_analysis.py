@@ -7,7 +7,7 @@ import anndata as an
 import pandas as pd
 
 
-pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa'
+pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/'
 sample = 'sim4'
 
 
@@ -47,14 +47,14 @@ sc.pl.umap(picasa_adata,color=['batch','celltype'])
 plt.savefig(wdir+'/results/picasa_common_umap.png')
 
 
-sc.pp.neighbors(picasa_adata,use_rep='unique')
-sc.tl.umap(picasa_adata)
-sc.tl.leiden(picasa_adata)
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
-plt.savefig(wdir+'/results/picasa_unique_umap.png')
+# sc.pp.neighbors(picasa_adata,use_rep='unique')
+# sc.tl.umap(picasa_adata)
+# sc.tl.leiden(picasa_adata)
+# sc.pl.umap(picasa_adata,color=['batch','celltype'])
+# plt.savefig(wdir+'/results/picasa_unique_umap.png')
 
-sc.pp.neighbors(picasa_adata,use_rep='base')
-sc.tl.umap(picasa_adata)
-sc.tl.leiden(picasa_adata)
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
-plt.savefig(wdir+'/results/picasa_base_umap.png')
+# sc.pp.neighbors(picasa_adata,use_rep='base')
+# sc.tl.umap(picasa_adata)
+# sc.tl.leiden(picasa_adata)
+# sc.pl.umap(picasa_adata,color=['batch','celltype'])
+# plt.savefig(wdir+'/results/picasa_base_umap.png')

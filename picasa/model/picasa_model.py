@@ -55,13 +55,15 @@ class MLP(nn.Module):
 ###### PICASA COMMON MODEL #######
 
 class PICASACommonOut:
-    def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1, attn_c2):
+    def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1, attn_c2,h_x1,h_x2):
         self.h_c1 = h_c1
         self.h_c2 = h_c2
         self.z_c1 = z_c1
         self.z_c2 = z_c2
         self.attn_c1 = attn_c1
         self.attn_c2 = attn_c2
+        self.h_x1 = h_x1
+        self.h_x2 = h_x2
                    
 class GeneEmbedor(nn.Module):
     
@@ -86,8 +88,7 @@ class ScaledDotAttention(nn.Module):
     
     def __init__(self,
         weight_dim:int,
-        input_dim:int,
-        pair_importance_weight:float
+        pair_importance_weight:float=0.0
         ):
         super(ScaledDotAttention, self).__init__()
         
@@ -147,6 +148,24 @@ class ENCODER(nn.Module):
     def forward(self, x:torch.tensor):
         return self.fc(x)
 
+class ProjectorX(nn.Module):
+
+    def __init__(self, 
+        input_dim:int,
+        output_dim:int
+        ):
+        super(ProjectorX,self).__init__()
+        
+        self.output_transform = nn.Linear(input_dim, output_dim)  
+    
+    def forward(self, 
+        x:torch.tensor
+        ):
+        
+        output = self.output_transform(x)
+        return output
+    
+    
 class PICASACommonNet(nn.Module):
     def __init__(self,
         input_dim:int, 
@@ -161,11 +180,16 @@ class PICASACommonNet(nn.Module):
         super(PICASACommonNet,self).__init__()
 
         self.embedding = GeneEmbedor(embedding_dim,attention_dim)
-        self.attention = ScaledDotAttention(attention_dim,input_dim,pair_importance_weight)
+        
+        self.attention = ScaledDotAttention(attention_dim,pair_importance_weight)
+        
         self.pooling = AttentionPooling(attention_dim)
 
         self.encoder = ENCODER(input_dim,encoder_layers)
-        self.projector = MLP(latent_dim, projection_layers)
+        
+        self.projector_cl = MLP(latent_dim, projection_layers)
+        
+        self.projector_x = ProjectorX(latent_dim,encoder_layers[0])
         
         self.corruption_tol = corruption_tol
         
@@ -209,10 +233,122 @@ class PICASACommonNet(nn.Module):
         h_c1 = self.encoder(x_c1_pool_out)
         h_c2 = self.encoder(x_c2_pool_out)
 
+        z_c1 = self.projector_cl(h_c1)
+        z_c2 = self.projector_cl(h_c2)
+        
+        h_x1 = self.projector_x(h_c1)        
+        h_x2 = self.projector_x(h_c2)
+                
+        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w,h_x1,h_x2)
+
+
+
+
+###### PICASA COMMON + CELLWISE ATTENTION MODEL #######
+
+class ProjectionCellwise(nn.Module):
+
+    def __init__(self, 
+        input_dim:int,
+        output_dim:int
+        ):
+        super(ProjectionCellwise,self).__init__()
+        
+        self.output_transform = nn.Linear(input_dim, output_dim)  
+    
+    def forward(self, 
+        x:torch.tensor
+        ):
+        
+        output = self.output_transform(x)
+        return output
+
+class PICASACommonNetv2(nn.Module):
+    def __init__(self,
+        input_dim:int, 
+        embedding_dim:int, 
+        attention_dim:int, 
+        latent_dim:int,
+        encoder_layers:list,
+        projection_layers:list,
+        corruption_tol:float,
+        pair_importance_weight:float
+        ):
+        super(PICASACommonNetv2,self).__init__()
+
+        self.embedding = GeneEmbedor(embedding_dim,attention_dim)
+        self.attention = ScaledDotAttention(attention_dim,pair_importance_weight)
+        # self.attention_cellwise = ScaledDotAttention(attention_dim)
+        
+        self.pooling = AttentionPooling(attention_dim)
+        self.projection_cellwise = ProjectionCellwise(input_dim,attention_dim)
+
+        self.encoder = ENCODER(input_dim,encoder_layers)
+        self.projector = MLP(latent_dim, projection_layers)
+        
+        self.corruption_tol = corruption_tol
+        
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            init.xavier_uniform_(module.weight)
+        elif isinstance(module, nn.Parameter):
+            init.xavier_uniform_(module)
+            
+    def forward(self,x_c1,x_c2,nbr_weight=None):
+        
+        if nbr_weight != None:
+            mean_val = torch.mean(nbr_weight)
+            std_val = torch.std(nbr_weight)
+            threshold = self.corruption_tol * std_val
+            outliers = torch.where(torch.abs(nbr_weight - mean_val) > threshold)
+            outlier_indices = outliers[0]
+            
+            all_indices = torch.arange(nbr_weight.size(0))
+            non_outlier_indices = torch.tensor([i for i in all_indices if i not in outlier_indices])
+            sampled_indices = random.sample(non_outlier_indices.tolist(), len(outlier_indices))
+
+            x_c1[outlier_indices] = x_c1[sampled_indices]
+            x_c2[outlier_indices] = x_c2[sampled_indices]
+
+        x_c1_emb = self.embedding(x_c1)
+        x_c2_emb = self.embedding(x_c2)
+  
+        x_c1_att_out, x_c1_att_w = self.attention(x_c1_emb,x_c2_emb,x_c2_emb)
+        x_c1_pool_out = self.pooling(x_c1_att_out)
+        
+        x_c2_att_out, x_c2_att_w = self.attention(x_c2_emb,x_c1_emb,x_c1_emb)
+        x_c2_pool_out = self.pooling(x_c2_att_out)
+
+        
+        x_c1_emb_cellwise = self.projection_cellwise(x_c1.float())    
+        x_c2_emb_cellwise = self.projection_cellwise(x_c2.float())    
+        
+        # x_c1_att_out_cellwise, x_c1_att_w_cellwise  = self.attention_cellwise(x_c1_emb_cellwise, x_c2_emb_cellwise, x_c1_emb_cellwise)
+        # x_c2_att_out_cellwise, x_c2_att_w_cellwise  = self.attention_cellwise(x_c2_emb_cellwise, x_c1_emb_cellwise, x_c2_emb_cellwise)
+        # x_c1_pool_out_all = torch.cat((x_c1_pool_out, x_c1_att_out_cellwise), dim=-1)
+        # x_c2_pool_out_all = torch.cat((x_c2_pool_out, x_c2_att_out_cellwise), dim=-1)
+        
+        
+        x_c1_att_out_cellwise = torch.softmax(torch.matmul(x_c1_emb_cellwise,x_c1_emb_cellwise.T),dim=-1)
+        x_c2_att_out_cellwise = torch.softmax(torch.matmul(x_c2_emb_cellwise,x_c2_emb_cellwise.T),dim=-1)
+        
+        x_c1_pool_out_all = x_c1_att_out_cellwise @ x_c1_pool_out
+        x_c2_pool_out_all = x_c2_att_out_cellwise @ x_c2_pool_out
+
+        h_c1 = self.encoder(x_c1_pool_out_all)
+        h_c2 = self.encoder(x_c2_pool_out_all)
+
         z_c1 = self.projector(h_c1)
         z_c2 = self.projector(h_c2)
                 
         return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w)
+
 
 ###### PICASA UNIQUE MODEL #######
 

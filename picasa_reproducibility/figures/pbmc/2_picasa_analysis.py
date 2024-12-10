@@ -42,22 +42,22 @@ sc.pl.umap(picasa_adata,color=['batch','celltype'])
 plt.savefig(wdir+'/results/picasa_common_umap.png')
 
 
-sc.pp.neighbors(picasa_adata,use_rep='unique')
-sc.tl.umap(picasa_adata)
-sc.tl.leiden(picasa_adata)
-picasa_adata.obsp['unique_distances'] = picasa_adata.obsp['distances']
-picasa_adata.obsp['unique_connectivities'] = picasa_adata.obsp['connectivities']
-del picasa_adata.obsp['distances']
-del picasa_adata.obsp['connectivities']
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
-plt.savefig(wdir+'/results/picasa_unique_umap.png')
+# sc.pp.neighbors(picasa_adata,use_rep='unique')
+# sc.tl.umap(picasa_adata)
+# sc.tl.leiden(picasa_adata)
+# picasa_adata.obsp['unique_distances'] = picasa_adata.obsp['distances']
+# picasa_adata.obsp['unique_connectivities'] = picasa_adata.obsp['connectivities']
+# del picasa_adata.obsp['distances']
+# del picasa_adata.obsp['connectivities']
+# sc.pl.umap(picasa_adata,color=['batch','celltype'])
+# plt.savefig(wdir+'/results/picasa_unique_umap.png')
 
-sc.pp.neighbors(picasa_adata,use_rep='base')
-sc.tl.umap(picasa_adata)
-sc.tl.leiden(picasa_adata)
-picasa_adata.obsp['base_distances'] = picasa_adata.obsp['distances']
-picasa_adata.obsp['base_connectivities'] = picasa_adata.obsp['connectivities']
-del picasa_adata.obsp['distances']
-del picasa_adata.obsp['connectivities']
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
-plt.savefig(wdir+'/results/picasa_base_umap.png')
+# sc.pp.neighbors(picasa_adata,use_rep='base')
+# sc.tl.umap(picasa_adata)
+# sc.tl.leiden(picasa_adata)
+# picasa_adata.obsp['base_distances'] = picasa_adata.obsp['distances']
+# picasa_adata.obsp['base_connectivities'] = picasa_adata.obsp['connectivities']
+# del picasa_adata.obsp['distances']
+# del picasa_adata.obsp['connectivities']
+# sc.pl.umap(picasa_adata,color=['batch','celltype'])
+# plt.savefig(wdir+'/results/picasa_base_umap.png')

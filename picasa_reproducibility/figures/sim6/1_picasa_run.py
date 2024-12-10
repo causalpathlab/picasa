@@ -8,7 +8,7 @@ import glob
 import os
 
 
-sample = 'sim5'
+sample = 'sim6'
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 ddir = wdir+sample+'/data/'
 
@@ -45,7 +45,7 @@ params = {'device' : 'cuda',
 		'projection_layers' : [25,25],
 		'learning_rate' : 0.001,
 		'pair_search_method' : 'approx_50',
-        'pair_importance_weight': 20,
+        'pair_importance_weight': 12,
 	 	'corruption_tol' : 10.0,
         'cl_loss_mode' : 'none', 
 		'epochs': 1,
@@ -57,21 +57,28 @@ params = {'device' : 'cuda',
 picasa_object.estimate_neighbour(params['pair_search_method'])
 
 
-import matplotlib.pylab as plt
-import seaborn as sns
-import numpy as np
-import itertools 
+def check_nbr_dist():
+	import matplotlib.pylab as plt
+	import seaborn as sns
+	import numpy as np
+	import itertools 
 
-dists = []
-for nb_pair in picasa_object.nbr_map:
-    dists.append([ x[1] for x in picasa_object.nbr_map[nb_pair].values()])
+	dists2 = []
+	for nb_pair in picasa_object.nbr_map:
+		dists2.append([ x[1] for x in picasa_object.nbr_map[nb_pair].values()])
 
-dists = np.array(list(itertools.chain.from_iterable(dists)))    
-sns.displot(dists)
-plt.savefig(wdir+sample+'/results/dist.png')
-plt.close()
+	dists2 = np.array(list(itertools.chain.from_iterable(dists2))) 
 	
- 
+	sns.displot(dists)
+	sns.displot(dists2)
+
+	sns.histplot(dists, color="blue", kde=True,stat='density', label="sim5")
+
+	sns.histplot(dists2, color="orange", kde=True,stat='density', label="sim6")
+
+	plt.savefig(wdir+sample+'/results/dist_combine.png')
+	plt.close()
+	
 picasa_object.set_nn_params(params)
 
 

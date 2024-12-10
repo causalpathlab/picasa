@@ -1,46 +1,17 @@
 
 import pandas as pd
 from scipy.sparse import csr_matrix
-import h5py as hf
 import anndata as an
 
 
-wdir = "simulation/"
+adata = an.read_h5ad('PBMC.merged.h5ad')
 
-df = pd.DataFrame()
-dfl = pd.DataFrame()
-for i in [1]:
-    df_c= pd.read_csv(wdir+'counts_data_'+str(i)+'.csv').T
-    dfl_c= pd.read_csv(wdir+'col_data_'+str(i)+'.csv')
-
-    df = pd.concat((df,df_c),axis=0)
-    dfl = pd.concat((dfl,dfl_c),axis=0)
-    print(df.shape, dfl.shape)
-
-
-print(dfl.groupby(['Batch','Group']).count().reset_index())
-
-smat = csr_matrix(df.to_numpy())
-adata = an.AnnData(X=smat)
-adata.var_names = ['g'+str(x)  for x in df.columns.values]
-adata.obs_names = df.index.values
-
-
-for c in dfl.columns:
-    adata.obs[c] = dfl[c].values
-
-adata.obs.index = df.index.values
-
-adata.obs['batch'] = adata.obs['Batch'].values
-adata.obs['celltype'] = adata.obs['Group'].values
+adata.obs['batch'] = ['batch_'+str(x) for x in adata.obs['batch'].values]
+adata.obs['celltype'] = adata.obs['Cell type'].values
 
 print(adata.obs.celltype.value_counts())
 print(adata.obs.batch.value_counts())
 
-import scanpy as sc
-
-sc.pp.normalize_total(adata, target_sum=1e4)
-sc.pp.log1p(adata)
 
 
 wdir = ''
@@ -56,9 +27,9 @@ for batch in batch_keys:
     adata_b.var_names = df_c.columns.values
     adata_b.obs_names = df_c.index.values
 
-    adata_b.write(wdir+'sim5_'+str(batch)+'.h5ad',compression='gzip')
+    adata_b.write(wdir+'pbmc_'+str(batch)+'.h5ad',compression='gzip')
 
 dfl = adata.obs.reset_index()
-dfl.to_csv(wdir+'sim5_label.csv.gz',compression='gzip')
+dfl.to_csv(wdir+'pbmc_label.csv.gz',compression='gzip')
 
 
