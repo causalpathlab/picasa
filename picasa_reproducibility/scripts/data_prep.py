@@ -86,10 +86,26 @@ def prep_sim6_data():
 
     adata = adata[ (adata.obs[constants.BATCH] != 'Batch5') \
          & (adata.obs[constants.BATCH] != 'Batch6') \
-         & (adata.obs[constants.GROUP] != 'Group5') \
-         & (adata.obs[constants.GROUP] != 'Group6') \
          & (adata.obs[constants.GROUP] != 'Group7') \
          ]
+    return adata
+
+def prep_pancreas_data():
+    file_path = '/data/sishir/data/batch_correction/pancreas/spancreas_raw.h5ad'
+    adata = an.read(file_path)
+    
+    adata.var.set_index('_index',inplace=True)
+    
+    adata.obs['Cell'] = adata.obs.index.values
+    
+    adata.obs = adata.obs[['Cell','BATCH','celltype']]
+    column_map = {
+        'Cell'  : constants.SAMPLE,
+        'BATCH' : constants.BATCH,
+        'celltype' : constants.GROUP,
+        }
+    adata.obs.rename(columns=column_map,inplace=True)
+
     return adata
 
 
@@ -132,5 +148,5 @@ def generate_batch_data(adata,sample_name):
         adata_b.write(sample_name+'_'+str(batch)+'.h5ad',compression='gzip')
 
 
-generate_batch_data(adata,'sim6')
+generate_batch_data(adata,'pancreas')
 

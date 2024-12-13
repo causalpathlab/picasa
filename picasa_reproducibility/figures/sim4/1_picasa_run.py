@@ -84,3 +84,14 @@ picasa_object.save_model()
 
 # picasa_object.save_model()
 
+
+
+import infercnvpy as cnv
+import numpy as np
+import pandas as pd
+
+
+expression_data = batch1.X
+expression_data = expression_data.toarray()
+df = pd.DataFrame(expression_data.T, index=batch1.var_names, columns=batch1.obs_names)
+cnv_results = cnv.tl.infercnv(batch1)

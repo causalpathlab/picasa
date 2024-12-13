@@ -15,7 +15,7 @@ import constants
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-SAMPLE = 'sim6'
+SAMPLE = 'pancreas'
 WDIR = f'figures/{SAMPLE}/'
 DATA_DIR = os.path.join(WDIR, 'data')
 RESULTS_DIR = os.path.join(WDIR, 'results')

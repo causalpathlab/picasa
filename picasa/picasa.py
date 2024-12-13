@@ -49,15 +49,45 @@ class picasa(object):
         datefmt='%Y-%m-%d %H:%M:%S')
   
         self.adata_keys = list(self.data.adata_list.keys())
-         
+
+        
         if pair_mode == 'seq':
+
             indices = range(len(self.data.adata_list))
             adata_pairs = [(indices[i], indices[i+1]) for i in range(0, len(indices)-1, 1)]
             adata_pairs.append((adata_pairs[len(adata_pairs)-1][1],adata_pairs[0][0]))
             self.adata_pairs = adata_pairs
+            
+        elif 'approx' in pair_mode:
+            
+            from sklearn.decomposition import TruncatedSVD
+            from sklearn.metrics.pairwise import euclidean_distances
+            
+            blist = [self.data.adata_list[x].X for x in self.data.adata_list]
+            number_of_pairs = int(pair_mode.split('_')[1])
+            blist_keys = self.data.adata_list.keys()
+
+            batch_similarity = euclidean_distances([TruncatedSVD(n_components=10).fit_transform(b).mean(axis=0) for b in blist])
+
+            df_sim = pd.DataFrame(batch_similarity)
+
+            top_n_pairs = pd.DataFrame({
+                batch: distances.nsmallest(number_of_pairs + 1).iloc[1:].index.tolist() 
+                for batch, distances in df_sim.iterrows()
+            }).T
+
+            unique_pairs = set()
+            for batch, neighbors in top_n_pairs.iterrows():
+                for neighbor in neighbors:
+                    unique_pairs.add(tuple(sorted([batch, neighbor])))
+
+            self.adata_pairs = list(unique_pairs)
+
         else:
+
             indices = list(range(len(self.data.adata_list)))
             self.adata_pairs = list(itertools.combinations(indices, 2))
+            
     
     def estimate_neighbour(self,
         method:str ='approx_50'

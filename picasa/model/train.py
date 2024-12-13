@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .loss import pcl_loss,pcl_loss_with_rare_cluster,pcl_loss_with_weighted_cluster,\
-                latent_alignment_loss, minimal_overlap_loss, get_zinb_reconstruction_loss,\
-                pcl_loss_with_margin
+from .loss import pcl_loss,latent_alignment_loss, minimal_overlap_loss, get_zinb_reconstruction_loss
+				
 import logging
 logger = logging.getLogger(__name__)
 import numpy as np
@@ -14,50 +13,44 @@ random.seed(0)
 
 
 def picasa_train_common(model,data,
-    epochs:int,
-    l_rate:float,
-    cl_loss_mode:str, 
-    min_batchsize:int = 5
-    ):
-    
-    opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
-    epoch_losses = []
-    for epoch in range(epochs):
-        epoch_l, cl, al = (0,) * 3
-        for x_c1,y,x_c2,nbr_weight in data:
-                        
-            if x_c1.shape[0] < min_batchsize:
-                continue
-            
-            opt.zero_grad()
+	epochs:int,
+	l_rate:float,
+	cl_loss_mode:str, 
+	min_batchsize:int = 5
+	):
+	
+	opt = torch.optim.Adam(model.parameters(),lr=l_rate,weight_decay=1e-4)
+	epoch_losses = []
+	for epoch in range(epochs):
+		epoch_l, cl, al = (0,) * 3
+		for x_c1,y,x_c2,nbr_weight in data:
+						
+			if x_c1.shape[0] < min_batchsize:
+				continue
+			
+			opt.zero_grad()
 
-            picasa_out = model(x_c1,x_c2,nbr_weight)
+			picasa_out = model(x_c1,x_c2,nbr_weight)
 
-            if cl_loss_mode == 'rare':
-                cl_loss = pcl_loss_with_rare_cluster(picasa_out.z_c1, picasa_out.z_c2)
-            elif cl_loss_mode == 'weighted':
-                cl_loss = pcl_loss_with_weighted_cluster(picasa_out.z_c1, picasa_out.z_c2)
-            elif cl_loss_mode == 'margin':
-                cl_loss = pcl_loss_with_margin(picasa_out.z_c1, picasa_out.z_c2)
-            else:
-                cl_loss = pcl_loss(picasa_out.z_c1, picasa_out.z_c2)
-            
-            alignment_loss = latent_alignment_loss(picasa_out.h_x1, picasa_out.h_x2) 
-            train_loss = cl_loss + alignment_loss
-            
-            train_loss.backward()
+			cl_loss = pcl_loss(picasa_out.z_c1, picasa_out.z_c2,cl_loss_mode)
+			
+			alignment_loss = latent_alignment_loss(picasa_out.h_x1, picasa_out.h_x2)
 
-            opt.step()
-            epoch_l += train_loss.item()
-            cl += cl_loss.item() 
-            al +=  alignment_loss.item()
-           
-        epoch_losses.append([epoch_l/len(data),cl/len(data),al/len(data),0.0])  
-        
-        if epoch % 10 == 0:
-            logger.info('====> Epoch: {} Average loss: {:.4f} , {:.4f} , {:.4f}'.format(epoch,epoch_l/len(data),cl/len(data),al/len(data) ))
+			train_loss = cl_loss + alignment_loss
+			
+			train_loss.backward()
 
-        return epoch_losses
+			opt.step()
+			epoch_l += train_loss.item()
+			cl += cl_loss.item() 
+			al +=  alignment_loss.item()
+		   
+		epoch_losses.append([epoch_l/len(data),cl/len(data),al/len(data),0.0])  
+		
+		if epoch % 10 == 0:
+			logger.info('====> Epoch: {} Average loss: {:.4f} , {:.4f} , {:.4f}'.format(epoch,epoch_l/len(data),cl/len(data),al/len(data) ))
+
+		return epoch_losses
 
 
 def picasa_train_unique(model,data,l_rate,epochs=100):

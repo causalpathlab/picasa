@@ -10,7 +10,7 @@ import os
 import glob 
 
 pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
-sample = 'sim5'
+sample = 'pancreas'
 
 ############ read model results as adata 
 wdir = pp+sample
@@ -30,15 +30,15 @@ for b in picasa_adata.obs['batch'].unique():
     sc.pl.umap(picasa_adata[picasa_adata.obs['batch']==b],color=['batch','celltype'])
     plt.savefig(wdir+'/results/picasa_common_umap_'+b+'.png')
 
-# sc.pp.neighbors(picasa_adata,use_rep='unique')
-# sc.tl.umap(picasa_adata)
-# sc.tl.leiden(picasa_adata)
-# sc.pl.umap(picasa_adata,color=['batch','celltype'])
-# plt.savefig(wdir+'/results/picasa_unique_umap.png')
+sc.pp.neighbors(picasa_adata,use_rep='unique')
+sc.tl.umap(picasa_adata)
+sc.tl.leiden(picasa_adata)
+sc.pl.umap(picasa_adata,color=['batch','celltype'])
+plt.savefig(wdir+'/results/picasa_unique_umap.png')
 
 
-# sc.pp.neighbors(picasa_adata,use_rep='base')
-# sc.tl.umap(picasa_adata)
-# sc.tl.leiden(picasa_adata)
-# sc.pl.umap(picasa_adata,color=['batch','celltype'])
-# plt.savefig(wdir+'/results/picasa_base_umap.png')
+sc.pp.neighbors(picasa_adata,use_rep='base')
+sc.tl.umap(picasa_adata)
+sc.tl.leiden(picasa_adata)
+sc.pl.umap(picasa_adata,color=['batch','celltype'])
+plt.savefig(wdir+'/results/picasa_base_umap.png')

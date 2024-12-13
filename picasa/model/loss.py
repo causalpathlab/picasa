@@ -14,18 +14,6 @@ def minimal_overlap_loss(z_common, z_unique):
     cosine_similarity = torch.sum(z_common_norm * z_unique_norm, dim=-1)
     return torch.mean(torch.abs(cosine_similarity))
 
-
-def cl_loss(anchor, positive, negative, margin=1.0):
-    # distance_positive = (anchor - positive).pow(2).sum(1)  
-    # distance_negative = (anchor - negative).pow(2).sum(1)  
-
-    distance_positive = F.pairwise_distance(anchor, positive, keepdim=True)
-    distance_negative = F.pairwise_distance(anchor, negative, keepdim=True)
-
-    losses = F.relu(distance_positive - distance_negative + margin)
-
-    return losses.mean()
-
 def identify_rare_groups(latent_space, num_clusters=5, rare_group_threshold=0.1):
     kmeans = KMeans(n_clusters=num_clusters)
     cluster_labels = kmeans.fit_predict(latent_space.cpu().detach().numpy())
@@ -99,7 +87,6 @@ def pcl_loss_with_weighted_cluster(z_i, z_j, num_clusters=5, unmatched_group_wei
 
     return loss
 
-
 def pcl_loss_with_margin(z_i, z_j, margin=0.5, temperature=1.0):
 
     batch_size = z_i.size(0)
@@ -126,8 +113,7 @@ def pcl_loss_with_margin(z_i, z_j, margin=0.5, temperature=1.0):
 
     return loss
 
-
-def pcl_loss(z_i, z_j,temperature = 1.0):
+def pcl_loss_base(z_i, z_j,temperature = 1.0):
     
         batch_size = z_i.size(0)
 
@@ -144,10 +130,8 @@ def pcl_loss(z_i, z_j,temperature = 1.0):
 
         all_losses = -torch.log(numerator / torch.sum(denominator, dim=1))
         loss = torch.sum(all_losses) / (2 * batch_size)
-  
         return loss 
-
-
+  
 def pcl_loss_with_triplet(z_i, z_j, margin=1.0, temperature=1.0):
     batch_size = z_i.size(0)
 
@@ -186,29 +170,19 @@ def pcl_loss_with_triplet(z_i, z_j, margin=1.0, temperature=1.0):
     total_loss = contrastive_loss + triplet_loss
     return total_loss
 
+def pcl_loss(z_i, z_j,mode):
     
-def tcl_loss(z_a, z_p, z_n,temperature = 1.0):
-    dist_pos = (z_a - z_p).pow(2).sum(1)
-    dist_neg = (z_a - z_n).pow(2).sum(1)
-    loss = F.relu(dist_pos - dist_neg + temperature)
-    return loss.mean()
-
-def tcl_ce_loss(z_a, z_p, z_n, temperature = 1.0):
+    loss = None 
     
-    batch_size = z_a.size(0)
-
-    pos_similarity = F.cosine_similarity(z_a, z_p, dim=-1)
-    neg_similarity = F.cosine_similarity(z_a.unsqueeze(1), z_n.unsqueeze(0), dim=2)
-
-    numerator = torch.exp(pos_similarity/temperature)
-    denominator = torch.exp(pos_similarity / temperature) + torch.sum(torch.exp(neg_similarity / temperature), dim=1)
-
-    mask = torch.eye(batch_size, dtype=torch.bool, device=z_a.device)
-    denominator = denominator.masked_fill(mask, 0)
-
-    all_losses = -torch.log(numerator / denominator)
-    loss = torch.mean(all_losses)
-        
+    if mode == 'weighted':
+        loss = pcl_loss_with_weighted_cluster(z_i,z_j)
+    elif mode == 'rare':
+        loss = pcl_loss_with_rare_cluster(z_i,z_j)
+    elif mode == 'margin':
+        loss = pcl_loss_with_margin(z_i,z_j)
+    else:
+        loss = pcl_loss_base(z_i,z_j)
+    
     return loss
 
 
@@ -216,27 +190,12 @@ def attention_entropy(attention_weights):
     l = -torch.mean(torch.sum(attention_weights * torch.log(attention_weights + 1e-10), dim=-1))
     return l
 
-def repulsive_loss(z):
-    pairwise_distances = torch.cdist(z, z, p=2)  
-    
-    max_distance = pairwise_distances.max().detach() 
-    normalized_distances = pairwise_distances / max_distance
-    
-    threshold = 0.5
-    mask = (normalized_distances < threshold).float() 
-    
-    loss = torch.sum((threshold - normalized_distances) * mask) / (z.size(0) ** 2)  
-    
-    return loss
-
 def cosine_similarity_loss(h1,h2):
     batch_size = h1.size(0)
     all_loss =1- F.cosine_similarity(h1, h2)
     loss = torch.sum(all_loss) / (2 * batch_size)
     return loss
     
-
-
 def cosine_similarity_loss_with_margin(h1, h2, margin=0.2):
     cos_sim = F.cosine_similarity(h1, h2)
     return torch.clamp(1 - cos_sim - margin, min=0).mean()
@@ -264,7 +223,6 @@ def mse_similarity_loss_with_shuffle(h1, h2):
     loss = F.mse_loss(sim1, sim2)
     
     return loss
-
 
 
 def correlation_loss(h1, h2):
@@ -309,22 +267,8 @@ def reconstuction_loss(h1, h2):
     return loss
     
 def latent_alignment_loss(h1, h2):
-
-    # increase similarity between latent spaces
-    
-    # alignment_loss = cosine_similarity_loss(h1, h2)
-    
-    # alignment_loss = cosine_similarity_loss_with_margin(h1, h2)
     
     alignment_loss = mse_similarity_loss_with_shuffle(h1, h2)
-    
-    # alignment_loss = mse_similarity_loss(h1, h2)
-    
-    # alignment_loss = correlation_loss(h1, h2)
-    
-    # alignment_loss = symmetric_kl_loss(h1, h2)
-    
-    # alignment_loss = reconstuction_loss(h1, h2)
     
     return alignment_loss
 
