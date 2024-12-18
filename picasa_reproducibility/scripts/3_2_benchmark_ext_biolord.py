@@ -19,10 +19,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 SAMPLE = sys.argv[1] 
 WDIR = sys.argv[2]
 
-# SAMPLE = 'sim6'
-# WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
-
-
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -48,11 +44,10 @@ batch_map = load_batches(DATA_DIR, PATTERN)
 adata_combined = sc.concat(batch_map, join="outer", label="batch")
 
 
-
 biolord.Biolord.setup_anndata(
     adata_combined,
     ordered_attributes_keys=None,
-    categorical_attributes_keys=[constants.GROUP],
+    categorical_attributes_keys=['batch','celltype'],
 )
 
 
@@ -105,17 +100,44 @@ model.train(
     enable_checkpointing=False,
 )
 
-adata_prep = model.predict(adata_combined)[0]
 
-sc.pp.pca(adata_prep)
-sc.pp.neighbors(adata_prep, use_rep="X_pca")
+adata_preps = model.get_latent_representation_adata()[1]
 
 
+adata_preps.obsm['unknown']= adata_preps.X[:,:15]
+adata_preps.obsm['batch']= adata_preps.X[:,15:19]
+adata_preps.obsm['celltype']= adata_preps.X[:,19:]
 
-sc.tl.umap(adata_prep)
-sc.pl.umap(adata_prep, color=[constants.BATCH, constants.GROUP])
-plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_umap_biolord.png'))
+sc.pp.neighbors(adata_preps, use_rep="celltype")
+sc.tl.umap(adata_preps)
+sc.pl.umap(adata_preps, color=[constants.BATCH],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_biolord_umap_'+constants.BATCH+'.png'))
+plt.close()
+
+sc.pl.umap(adata_preps, color=[constants.GROUP],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_biolord_umap_'+constants.GROUP+'.png'))
 plt.close()
 
 
-pd.DataFrame(adata_prep.obsm['X_pca'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_biolord.csv.gz'),compression='gzip')
+pd.DataFrame(adata_preps.obsm['celltype'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_biolord.csv.gz'),compression='gzip')
+
+
+sc.pp.neighbors(adata_preps, use_rep="batch")
+sc.tl.umap(adata_preps)
+sc.pl.umap(adata_preps, color=[constants.BATCH],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_biolord_umap_'+constants.BATCH+'_unique.png'))
+plt.close()
+
+sc.pl.umap(adata_preps, color=[constants.GROUP],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_biolord_umap_'+constants.GROUP+'_unique.png'))
+plt.close()
+
+sc.pp.neighbors(adata_preps, use_rep="unknown")
+sc.tl.umap(adata_preps)
+sc.pl.umap(adata_preps, color=[constants.BATCH],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_biolord_umap_'+constants.BATCH+'_unknown.png'))
+plt.close()
+
+sc.pl.umap(adata_preps, color=[constants.GROUP],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_biolord_umap_'+constants.GROUP+'_unknown.png'))
+plt.close()

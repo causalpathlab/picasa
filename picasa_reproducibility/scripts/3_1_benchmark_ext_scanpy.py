@@ -19,9 +19,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 SAMPLE = sys.argv[1] 
 WDIR = sys.argv[2]
 
-# SAMPLE = 'sim6'
-# WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
-
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
@@ -74,8 +71,13 @@ def run_scanpy_external_analysis(adata, method, save_path, batch_key=constants.B
         pd.DataFrame(adata.obsm['X_pca'],index=adata.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_pca.csv.gz'),compression='gzip')
     
     sc.tl.umap(adata)
-    sc.pl.umap(adata, color=[batch_key, group_key])
-    plt.savefig(save_path)
+    
+    sc.pl.umap(adata, color=[batch_key],legend_loc=None)
+    plt.savefig(os.path.join(save_path+'_'+batch_key+'.png'))
+    plt.close()
+
+    sc.pl.umap(adata, color=[group_key],legend_loc=None)
+    plt.savefig(os.path.join(save_path+'_'+group_key+'.png'))
     plt.close()
 
     logging.info(f"UMAP saved to {save_path}")
@@ -91,11 +93,11 @@ if __name__ == "__main__":
     adata_main = integrate_data(batch_map)
         
     methods = {
-        'uncorrected': os.path.join(RESULTS_DIR, 'scanpy_umap.png'),
-        'bbknn': os.path.join(RESULTS_DIR, 'scanpy_umap_bbknn.png'),
-        'combat': os.path.join(RESULTS_DIR, 'scanpy_umap_combat.png'),
-        'harmony': os.path.join(RESULTS_DIR, 'scanpy_umap_harmony.png'),
-        'scanorama': os.path.join(RESULTS_DIR, 'scanpy_umap_scanorama.png'),
+        'uncorrected': os.path.join(RESULTS_DIR, 'scanpy_pca_umap'),
+        'bbknn': os.path.join(RESULTS_DIR, 'scanpy_bbknn_umap'),
+        'combat': os.path.join(RESULTS_DIR, 'scanpy_combat_umap'),
+        'harmony': os.path.join(RESULTS_DIR, 'scanpy_harmony_umap'),
+        'scanorama': os.path.join(RESULTS_DIR, 'scanpy_scanorama_umap'),
     }
         
     for method, save_path in methods.items():

@@ -8,14 +8,11 @@ import glob
 import os
 
 
-sample = 'sim6'
-wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
+sample = sys.argv[1] 
+wdir = sys.argv[2]
 
-# sample = sys.argv[1] 
-# wdir = sys.argv[2]
-
-common_epoch = 1
-common_titration = 15
+common_epochs = 1
+common_meta_epoch = 15
 unique_epoch = 250
 base_epoch = 250
 
@@ -46,8 +43,8 @@ picasa_object = picasa.create_picasa_object(
   
 params = {'device' : 'cuda',
 		'batch_size' : 64,
-		'input_dim' : 2000,
-		'embedding_dim' : 3000,
+		'input_dim' : 1000,
+		'embedding_dim' : 1000,
 		'attention_dim' : 15,
 		'latent_dim' : 15,
 		'encoder_layers' : [100,15],
@@ -57,8 +54,8 @@ params = {'device' : 'cuda',
         'pair_importance_weight': 12,
 	 	'corruption_tol' : 10.0,
         'cl_loss_mode' : 'none', 
-		'epochs': common_epoch,
-		'titration': common_titration
+		'epochs': common_epochs,
+		'meta_epochs': common_meta_epoch
 		}   
   
 

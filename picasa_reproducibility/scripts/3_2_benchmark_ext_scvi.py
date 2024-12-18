@@ -19,10 +19,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 SAMPLE = sys.argv[1] 
 WDIR = sys.argv[2]
 
-# SAMPLE = 'sim6'
-# WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
-
-
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -50,12 +46,18 @@ adata_combined = sc.concat(batch_map, join="outer", label="batch")
 scvi.model.SCVI.setup_anndata(adata_combined, batch_key="batch") 
 model = scvi.model.SCVI(adata_combined)
 model.train(max_epochs=400)
+
 adata_combined.obsm["X_scVI"] = model.get_latent_representation()
 pd.DataFrame(adata_combined.obsm['X_scVI'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_scvi.csv.gz'),compression='gzip')
 
 
 sc.pp.neighbors(adata_combined, use_rep="X_scVI")
 sc.tl.umap(adata_combined)
-sc.pl.umap(adata_combined, color=[constants.BATCH, constants.GROUP])
-plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_umap_scvi.png'))
+
+sc.pl.umap(adata_combined, color=[constants.BATCH],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_scvi_umap_'+constants.BATCH+'.png'))
+plt.close()
+
+sc.pl.umap(adata_combined, color=[constants.GROUP],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_scvi_umap_'+constants.GROUP+'.png'))
 plt.close()

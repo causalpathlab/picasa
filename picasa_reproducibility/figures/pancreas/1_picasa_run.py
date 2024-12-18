@@ -29,7 +29,7 @@ for file_name in file_names:
 picasa_object = picasa.create_picasa_object(
 	batch_map,
     sample,
-	'seq',
+	'approx_3',
 	wdir
  	)
 
@@ -75,7 +75,7 @@ picasa_object.estimate_neighbour(params['pair_search_method'])
 picasa_object.set_nn_params(params)
 
 
-# picasa_object.train_common()
+picasa_object.train_common()
 picasa_object.plot_loss(tag='common')
 
 device = 'cpu'
@@ -85,22 +85,22 @@ picasa_object.eval_common(eval_batch_size,device)
 picasa_object.save_model()
 
 
-input_dim = 2000
-enc_layers = [128,15]
-unique_latent_dim = 15
-common_latent_dim = picasa_object.result.obsm['common'].shape[1]
-dec_layers = [128,128]
+# input_dim = 2000
+# enc_layers = [128,15]
+# unique_latent_dim = 15
+# common_latent_dim = picasa_object.result.obsm['common'].shape[1]
+# dec_layers = [128,128]
 
-picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=250,batch_size=128,device='cuda')
-picasa_object.plot_loss(tag='unq')
-eval_batch_size = 10
-picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size,device='cuda')
+# picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=250,batch_size=128,device='cuda')
+# picasa_object.plot_loss(tag='unq')
+# eval_batch_size = 10
+# picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size,device='cuda')
 
-latent_dim=15
-picasa_object.train_base(input_dim, enc_layers,latent_dim,dec_layers,l_rate=0.001,epochs=250,batch_size=128,device='cuda')
-picasa_object.plot_loss(tag='base')
-eval_batch_size = 10
-picasa_object.eval_base(input_dim, enc_layers,latent_dim,dec_layers,eval_batch_size,device='cuda')
+# latent_dim=15
+# picasa_object.train_base(input_dim, enc_layers,latent_dim,dec_layers,l_rate=0.001,epochs=250,batch_size=128,device='cuda')
+# picasa_object.plot_loss(tag='base')
+# eval_batch_size = 10
+# picasa_object.eval_base(input_dim, enc_layers,latent_dim,dec_layers,eval_batch_size,device='cuda')
 
-picasa_object.save_model()
+# picasa_object.save_model()
 

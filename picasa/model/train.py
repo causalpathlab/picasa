@@ -48,7 +48,7 @@ def picasa_train_common(model,data,
 		epoch_losses.append([epoch_l/len(data),cl/len(data),al/len(data),0.0])  
 		
 		if epoch % 10 == 0:
-			logger.info('====> Epoch: {} Average loss: {:.4f} , {:.4f} , {:.4f}'.format(epoch,epoch_l/len(data),cl/len(data),al/len(data) ))
+			logger.info('====> Epoch: {} Average loss: {:.4f} , {:.4f} , {:.4f}'.format(epoch+1,epoch_l/len(data),cl/len(data),al/len(data) ))
 
 		return epoch_losses
 

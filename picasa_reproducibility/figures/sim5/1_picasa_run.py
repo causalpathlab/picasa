@@ -29,49 +29,14 @@ for file_name in file_names:
 picasa_object = picasa.create_picasa_object(
 	batch_map,
     sample,
-	'approx_2',
+	'seq',
 	wdir
  	)
  
-params = {'device' : 'cuda',
-		'batch_size' : 64,
-		'input_dim' : 2000,
-		'embedding_dim' : 3000,
-		'attention_dim' : 15,
-		'latent_dim' : 15,
-		'encoder_layers' : [100,15],
-		'projection_layers' : [25,25],
-		'learning_rate' : 0.001,
-		'pair_search_method' : 'approx_50',
-        'pair_importance_weight': 20,
-	 	'corruption_tol' : 10.0,
-        'cl_loss_mode' : 'none', 
-		'epochs': 1,
-		'titration': 15
-		}   
+params =  {'device': 'cuda', 'batch_size': 100, 'input_dim': 2000, 'embedding_dim': 3000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 20, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'titration': 16}
   
-
-
 picasa_object.estimate_neighbour(params['pair_search_method'])
-
-def plot_distances():
-	import matplotlib.pylab as plt
-	import seaborn as sns
-	import numpy as np
-	import itertools 
-
-	dists = []
-	for nb_pair in picasa_object.nbr_map:
-		dists.append([ x[1] for x in picasa_object.nbr_map[nb_pair].values()])
-
-	dists = np.array(list(itertools.chain.from_iterable(dists)))    
-	sns.displot(dists)
-	plt.savefig(wdir+sample+'/results/dist.png')
-	plt.close()
-	
- 
 picasa_object.set_nn_params(params)
-
 
 picasa_object.train_common()
 picasa_object.plot_loss(tag='common')

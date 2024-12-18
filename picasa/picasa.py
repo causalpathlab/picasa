@@ -42,17 +42,24 @@ class picasa(object):
         
         # dutil.data.create_model_directories(self.wdir,['results'])
         
-        print(self.wdir)
         logging.basicConfig(filename=self.wdir+'/results/picasa_model.log',
         format='%(asctime)s %(levelname)-8s %(message)s',
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
   
+        console_handler = logging.StreamHandler()
+        console_formatter = logging.Formatter('%(message)s')  
+        console_handler.setFormatter(console_formatter)
+        logging.getLogger().addHandler(console_handler)
+        
+        
         self.adata_keys = list(self.data.adata_list.keys())
 
         
+        logging.info('Batch pair mode is - '+pair_mode)
+        
         if pair_mode == 'seq':
-
+            
             indices = range(len(self.data.adata_list))
             adata_pairs = [(indices[i], indices[i+1]) for i in range(0, len(indices)-1, 1)]
             adata_pairs.append((adata_pairs[len(adata_pairs)-1][1],adata_pairs[0][0]))
@@ -87,13 +94,12 @@ class picasa(object):
 
             indices = list(range(len(self.data.adata_list)))
             self.adata_pairs = list(itertools.combinations(indices, 2))
-            
-    
+                    
     def estimate_neighbour(self,
         method:str ='approx_50'
         ):
      
-        logging.info('Assign neighbour - '+ method)
+        logging.info('Pair search method - '+ method)
         self.nbr_map = {}
   
         if 'approx' in method :
@@ -122,7 +128,8 @@ class picasa(object):
                 sorted_indices_p2 = np.argsort(distmat.T, axis=1)
                 self.nbr_map[p2+'_'+p1] = {x:y[0] for x,y in enumerate(sorted_indices_p2)}
                 self.nbr_map[p1+'_'+p2] = {x:y[0] for x,y in enumerate(sorted_indices_p1)}
-            logging.info('Exact neighbour estimate complete.')
+                
+        logging.info('Pair search estimate is complete.')
                 
     def set_nn_params(self,
         params: dict
@@ -192,9 +199,9 @@ class picasa(object):
   
         loss = []
 
-        for it in range(self.nn_params['titration']):
+        for it in range(self.nn_params['meta_epochs']):
         
-            logging.info('titration : '+ str(it))
+            logging.info('meta_epochs : '+ str(it)+'/'+str(self.nn_params['meta_epochs']))
   
             for ad_pair in self.adata_pairs:
                 p1 = self.adata_keys[ad_pair[0]]

@@ -3,6 +3,7 @@ import glob
 import logging
 import matplotlib.pyplot as plt
 import seaborn as sn
+import numpy as np
 import anndata as an
 import pandas as pd
 import scanpy as sc
@@ -19,9 +20,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 SAMPLE = sys.argv[1] 
 WDIR = sys.argv[2]
-
-# SAMPLE = 'sim6'
-# WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
@@ -46,6 +44,7 @@ def load_batches(data_dir, pattern, max_batches=25):
 
 batch_map = load_batches(DATA_DIR, PATTERN)
 
+adata_combined = sc.concat(batch_map, join="outer", label="batch")
 
 for batch, adata in batch_map.items():
 	adata.var.rename(columns={0:'gene'},inplace=True) 
@@ -84,13 +83,18 @@ pyliger.quantile_norm(ifnb_liger)
 
 h_norm = np.vstack([adata.obsm["H_norm"] for adata in ifnb_liger.adata_list])
 
-adata_combined = sc.concat(batch_map, join="outer", label="batch")
 
 adata_combined.obsm['X_liger'] = h_norm
 sc.pp.neighbors(adata_combined, use_rep="X_liger")
 sc.tl.umap(adata_combined)
-sc.pl.umap(adata_combined, color=[constants.BATCH, constants.GROUP])
-plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_umap_liger.png'))
+
+
+sc.pl.umap(adata_combined, color=[constants.BATCH],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_liger_umap_'+constants.BATCH+'.png'))
+plt.close()
+
+sc.pl.umap(adata_combined, color=[constants.GROUP],legend_loc=None)
+plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_liger_umap_'+constants.GROUP+'.png'))
 plt.close()
 
 

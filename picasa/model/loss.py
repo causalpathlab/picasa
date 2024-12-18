@@ -14,6 +14,48 @@ def minimal_overlap_loss(z_common, z_unique):
     cosine_similarity = torch.sum(z_common_norm * z_unique_norm, dim=-1)
     return torch.mean(torch.abs(cosine_similarity))
 
+
+def entropy_loss(h1, h2):
+
+    h1_normalized = F.normalize(h1, p=2, dim=1)
+    h2_normalized = F.normalize(h2, p=2, dim=1)
+
+    similarity = F.cosine_similarity(h1_normalized.unsqueeze(1), h2_normalized.unsqueeze(0), dim=2)
+
+    entropy = -torch.mean(torch.log(similarity + 1e-6))  
+
+    return entropy
+
+from sklearn.neighbors import NearestNeighbors
+
+def compute_weights(z, k=15):
+    z_numpy = z.cpu().detach().numpy()
+    nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree').fit(z_numpy)
+    distances, _ = nbrs.kneighbors(z_numpy)
+    distances = torch.tensor(distances, device=z.device) 
+    density = torch.exp(-distances).sum(dim=1)  
+    inverse_density = 1.0 / (density + 1e-6)
+    weights = inverse_density / torch.mean(inverse_density)
+    return weights
+
+def pcl_loss_with_weighted_nbr(z_i, z_j, temperature=1.0, k=15):
+    batch_size = z_i.size(0)
+    z = torch.cat([z_i, z_j], dim=0)
+    similarity = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2)
+    sim_ij = torch.diag(similarity, batch_size)
+    sim_ji = torch.diag(similarity, -batch_size)
+    positives = torch.cat([sim_ij, sim_ji], dim=0)
+    mask = (~torch.eye(batch_size * 2, batch_size * 2, dtype=torch.bool, device=z_i.device)).float()
+    numerator = torch.exp(positives / temperature)
+    denominator = mask * torch.exp(similarity / temperature)
+    weights = compute_weights(torch.cat([z_i, z_j], dim=0), k)
+    numerator = numerator * weights
+    denominator = denominator * weights.unsqueeze(0)
+    all_losses = -torch.log(numerator / torch.sum(denominator, dim=1))
+    loss = torch.sum(all_losses) / (2 * batch_size)
+    return loss
+
+
 def identify_rare_groups(latent_space, num_clusters=5, rare_group_threshold=0.1):
     kmeans = KMeans(n_clusters=num_clusters)
     cluster_labels = kmeans.fit_predict(latent_space.cpu().detach().numpy())
@@ -24,7 +66,7 @@ def identify_rare_groups(latent_space, num_clusters=5, rare_group_threshold=0.1)
     
     return torch.tensor(cluster_labels, device=latent_space.device), rare_clusters
 
-def pcl_loss_with_rare_cluster(z_i, z_j, num_clusters=5, rare_group_threshold=0.1, rare_group_weight=1.5,temperature=1.0):
+def pcl_loss_with_rare_cluster(z_i, z_j, num_clusters=10, rare_group_threshold=0.05, rare_group_weight=2.5,temperature=1.0):
     batch_size = z_i.size(0)
 
     z = torch.cat([z_i, z_j], dim=0)
@@ -52,7 +94,7 @@ def pcl_loss_with_rare_cluster(z_i, z_j, num_clusters=5, rare_group_threshold=0.
 
     return loss
 
-def pcl_loss_with_weighted_cluster(z_i, z_j, num_clusters=5, unmatched_group_weight=2.0,temperature=1.0):
+def pcl_loss_with_weighted_cluster(z_i, z_j, num_clusters=10, unmatched_group_weight=2.0,temperature=1.0):
 
     batch_size = z_i.size(0)
     
@@ -180,6 +222,8 @@ def pcl_loss(z_i, z_j,mode):
         loss = pcl_loss_with_rare_cluster(z_i,z_j)
     elif mode == 'margin':
         loss = pcl_loss_with_margin(z_i,z_j)
+    elif mode == 'wnbr':
+        loss = pcl_loss_with_weighted_nbr(z_i,z_j)
     else:
         loss = pcl_loss_base(z_i,z_j)
     
@@ -204,6 +248,7 @@ def mse_similarity_loss(h1, h2):
     # h1 = F.normalize(h1, dim=1)
     # h2 = F.normalize(h2, dim=1)
     return F.mse_loss(h1, h2)
+
 
 
 def mse_similarity_loss_with_shuffle(h1, h2):
