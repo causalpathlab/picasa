@@ -55,15 +55,13 @@ class MLP(nn.Module):
 ###### PICASA COMMON MODEL #######
 
 class PICASACommonOut:
-    def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1, attn_c2,h_x1,h_x2):
+    def __init__(self,h_c1,h_c2,z_c1,z_c2,attn_c1, attn_c2):
         self.h_c1 = h_c1
         self.h_c2 = h_c2
         self.z_c1 = z_c1
         self.z_c2 = z_c2
         self.attn_c1 = attn_c1
         self.attn_c2 = attn_c2
-        self.h_x1 = h_x1
-        self.h_x2 = h_x2
                    
 class GeneEmbedor(nn.Module):
     
@@ -156,7 +154,11 @@ class ProjectorX(nn.Module):
         ):
         super(ProjectorX,self).__init__()
         
-        self.output_transform = nn.Linear(input_dim, output_dim)  
+        self.output_transform = nn.Linear(input_dim, output_dim, bias=False)
+        nn.init.orthogonal_(self.output_transform.weight)  
+        
+        for param in self.output_transform.parameters():
+            param.requires_grad = False  
     
     def forward(self, 
         x:torch.tensor
@@ -188,9 +190,7 @@ class PICASACommonNet(nn.Module):
         self.encoder = ENCODER(input_dim,encoder_layers)
         
         self.projector_cl = MLP(latent_dim, projection_layers)
-        
-        self.projector_x = ProjectorX(latent_dim,encoder_layers[0])
-        
+                
         self.corruption_tol = corruption_tol
         
         self.apply(self._init_weights)
@@ -236,10 +236,7 @@ class PICASACommonNet(nn.Module):
         z_c1 = self.projector_cl(h_c1)
         z_c2 = self.projector_cl(h_c2)
         
-        h_x1 = self.projector_x(h_c1)        
-        h_x2 = self.projector_x(h_c2)
-                
-        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w,h_x1,h_x2)
+        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w)
 
 
 

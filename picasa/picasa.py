@@ -201,19 +201,19 @@ class picasa(object):
 
         for it in range(self.nn_params['meta_epochs']):
         
-            logging.info('meta_epochs : '+ str(it)+'/'+str(self.nn_params['meta_epochs']))
+            logging.info('meta_epochs : '+ str(it+1)+'/'+str(self.nn_params['meta_epochs']))
   
             for ad_pair in self.adata_pairs:
                 p1 = self.adata_keys[ad_pair[0]]
                 p2 = self.adata_keys[ad_pair[1]]
     
-                logging.info('Training...PICASA common model-'+p1+'_'+p2)
+                logging.info('Training pair - '+p1+'_'+p2)
         
                 data = dutil.nn_load_data_pairs(self.data.adata_list[p1],self.data.adata_list[p2],self.nbr_map[p1+'_'+p2],self.nn_params['device'],self.nn_params['batch_size'])
 
                 loss_p1_p2 = model.picasa_train_common(picasa_model,data,self.nn_params['epochs'],self.nn_params['learning_rate'],self.nn_params['cl_loss_mode'])
     
-                logging.info('Training...PICASA common model-'+p2+'_'+p1)
+                logging.info('Training pair switch - '+p2+'_'+p1)
     
                 data = dutil.nn_load_data_pairs(self.data.adata_list[p2],self.data.adata_list[p1],self.nbr_map[p2+'_'+p1],self.nn_params['device'],self.nn_params['batch_size'])
 
@@ -225,7 +225,7 @@ class picasa(object):
                 loss.append(np.mean(stacked_loss_p, axis=0))
 
         torch.save(picasa_model.state_dict(),self.wdir+'/results/picasa_common.model')
-        pd.DataFrame(loss,columns=['ep_l','cl','al','el']).to_csv(self.wdir+'/results/picasa_common_train_loss.txt.gz',index=False,compression='gzip',header=True)
+        pd.DataFrame(loss,columns=['ep_cl']).to_csv(self.wdir+'/results/picasa_common_train_loss.txt.gz',index=False,compression='gzip',header=True)
         logging.info('Completed training...model saved in '+self.wdir+'/results/picasa_common.model')
     
     def eval_common(self,

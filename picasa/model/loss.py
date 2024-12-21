@@ -245,8 +245,6 @@ def cosine_similarity_loss_with_margin(h1, h2, margin=0.2):
     return torch.clamp(1 - cos_sim - margin, min=0).mean()
 
 def mse_similarity_loss(h1, h2):
-    # h1 = F.normalize(h1, dim=1)
-    # h2 = F.normalize(h2, dim=1)
     return F.mse_loss(h1, h2)
 
 
@@ -313,7 +311,7 @@ def reconstuction_loss(h1, h2):
     
 def latent_alignment_loss(h1, h2):
     
-    alignment_loss = mse_similarity_loss_with_shuffle(h1, h2)
+    alignment_loss = mse_similarity_loss(h1, h2)
     
     return alignment_loss
 

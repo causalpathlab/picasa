@@ -7,29 +7,36 @@ import anndata as an
 import pandas as pd
 
 
-pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa'
-sample = 'pbmc'
+sample = sys.argv[1] 
+pp = sys.argv[2]
 
 
 ############ read original data as adata list
+import os 
+import glob 
 
-ddir = pp+'/figures/'+sample+'/data/'
-batch1 = an.read_h5ad(ddir+sample+'_pbmc1.h5ad')
-batch2 = an.read_h5ad(ddir+sample+'_pbmc2.h5ad')
-picasa_data = {'pbmc1':batch1,'pbmc2':batch2}
+ddir = pp+sample+'/data/'
+pattern = sample+'_*.h5ad'
+
+file_paths = glob.glob(os.path.join(ddir, pattern))
+file_names = [os.path.basename(file_path) for file_path in file_paths]
+
+batch_map = {}
+batch_count = 0
+for file_name in file_names:
+	print(file_name)
+	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = an.read_h5ad(ddir+file_name)
+	batch_count += 1
+	if batch_count >=4:
+		break
+
+picasa_data = batch_map
 
 
 ############ read model results as adata 
-wdir = pp+'/figures/'+sample
+wdir = pp+sample
 picasa_adata = an.read_h5ad(wdir+'/results/picasa.h5ad')
 
-
-############ add metadata
-dfl= pd.read_csv(ddir+sample+'_label.csv.gz')
-dfl.columns = ['index','cell','batch','celltype']
-dfl.cell = [x+'@'+y for x,y in zip(dfl['cell'],dfl['batch'])]
-dfl = dfl[['index','cell','celltype']]
-picasa_adata.obs = pd.merge(picasa_adata.obs,dfl,left_index=True,right_on='cell')
 
 
 
@@ -41,15 +48,16 @@ picasa_common_model = model.PICASACommonNet(nn_params['input_dim'], nn_params['e
 picasa_common_model.load_state_dict(torch.load(wdir+'/results/picasa_common.model', map_location=torch.device(nn_params['device'])))
 
 
-p1 = 'pbmc1'
-p2 = 'pbmc2'
+p1 = picasa_adata.uns['adata_keys'][0]
+p2 = picasa_adata.uns['adata_keys'][1]
+
 adata_p1 = picasa_data[p1]
 adata_p2 = picasa_data[p2]
 df_nbr = picasa_adata.uns['nbr_map']
 df_nbr = df_nbr[df_nbr['batch_pair']==p1+'_'+p2]
 nbr_map = {x:(y,z) for x,y,z in zip(df_nbr['key'],df_nbr['neighbor'],df_nbr['score'])}
 
-data_loader = dutil.nn_load_data_pairs(adata_p1, adata_p2, nbr_map,nn_params['device'],batch_size=100)
+data_loader = dutil.nn_load_data_pairs(adata_p1, adata_p2, nbr_map,nn_params['device'],batch_size=500)
 
 main_attn,main_y = model.eval_attention_common(picasa_common_model,data_loader)
 
@@ -86,13 +94,13 @@ def plot_attention_group_wise(main_attn,main_y,mode='top_genes',marker=None):
     
     top_genes = []
     
-    if mode == 'top_genes':
+    # if mode == 'top_genes':
     
-        top_genes = get_top_genes_per_group(main_attn,main_y)
+    #     top_genes = get_top_genes_per_group(main_attn,main_y)
     
-    if mode == 'marker':
+    # elif mode == 'marker':
         
-        top_genes = marker
+    #     top_genes = marker
         
     for idx, ct in enumerate(unique_celltypes):
         ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
@@ -104,15 +112,14 @@ def plot_attention_group_wise(main_attn,main_y,mode='top_genes',marker=None):
         df_attn[df_attn > 5] = 5
         df_attn[df_attn < -5] = -5
 
-        df_attn = df_attn.loc[:,top_genes]
-        df_attn = df_attn.loc[top_genes,:]
+        # df_attn = df_attn.loc[:,top_genes]
+        # df_attn = df_attn.loc[top_genes,:]
   
-        sns.clustermap(df_attn, cmap='viridis')
+        sns.heatmap(df_attn, cmap='viridis')
         plt.tight_layout()
         plt.savefig(wdir + '/results/picasa_common_attention_'+ct+'.png')
         plt.close()
 
-plot_attention_group_wise(main_attn,main_y)
 
 marker = np.array(['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FCGR3A',
 	'GNLY', 'NKG7', 'CST3', 'CD3E', 'FCER1A', 'CD74', 'LST1', 'CCL5',
@@ -120,4 +127,4 @@ marker = np.array(['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FC
 	'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
 	'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN'])
 
-plot_attention_group_wise(main_attn,main_y,mode='marker',marker=marker)
+plot_attention_group_wise(main_attn,main_y,mode='top_genes')
