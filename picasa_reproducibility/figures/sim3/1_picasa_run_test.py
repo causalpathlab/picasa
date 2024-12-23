@@ -16,7 +16,7 @@ pl = sys.argv[5]
 lr = sys.argv[6]
 pw = sys.argv[7]
 common_epochs = 1
-common_meta_epoch = 1
+common_meta_epoch = 17
 
 
 pattern_r = '_ed_'+str(ed)+'_ad_'+str(ad)+'_pl_'+str(pl)+'_lr_'+str(lr)+'_pw_'+str(pw)+'_'

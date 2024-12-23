@@ -3,7 +3,7 @@ import shutil
 onsuccess:
     shutil.rmtree(".snakemake")
 
-SAMPLE='sim2'
+SAMPLE='pancreas'
 
 WDIR='/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
@@ -11,16 +11,6 @@ OUTDIR=WDIR+SAMPLE+'/results/'
 
 rule all:
     input:
-        expand(OUTDIR+'picasa_common_train_loss.txt.gz'),
-        expand(OUTDIR+'picasa_common_train_loss.png'),
-        expand(OUTDIR+'picasa_common.model'),
-        expand(OUTDIR+'picasa_unique_train_loss.txt.gz'),
-        expand(OUTDIR+'picasa_unique_train_loss.png'),
-        expand(OUTDIR+'picasa_unique.model'),
-        expand(OUTDIR+'picasa_base_train_loss.txt.gz'),
-        expand(OUTDIR+'picasa_base_train_loss.png'),
-        expand(OUTDIR+'picasa_base.model'),
-        expand(OUTDIR+'picasa.h5ad'),
         expand(OUTDIR+'picasa_common_umap.png'),
         expand(OUTDIR+'picasa_unique_umap.png'),
         expand(OUTDIR+'picasa_base_umap.png'),
@@ -35,29 +25,11 @@ rule all:
         expand(OUTDIR+'benchmark_plot_lisi_group.png'),
         expand(OUTDIR+'benchmark_plot_umap_batch.png')
 
-rule train_model:
-    input:
-        script = WDIR+SAMPLE+'/1_picasa_run.py'
-    params:
-        sample = SAMPLE,
-        wdir = WDIR
-    output:
-        tc = OUTDIR+'picasa_common_train_loss.txt.gz',
-        tc_i = OUTDIR+'picasa_common_train_loss.png',
-        tc_m = OUTDIR+'picasa_common.model',
-        tu = OUTDIR+'picasa_unique_train_loss.txt.gz',
-        tu_i = OUTDIR+'picasa_unique_train_loss.png',
-        tu_m = OUTDIR+'picasa_unique.model',
-        tb = OUTDIR+'picasa_base_train_loss.txt.gz',
-        tb_i = OUTDIR+'picasa_base_train_loss.png',
-        tb_m = OUTDIR+'picasa_base.model',
-        t_d = OUTDIR+'picasa.h5ad'
-    shell:
-        'python {input.script} {params.sample} {params.wdir}'
 
-rule model_analysis:
+rule picasa_analysis:
     input:
-        script = '2_picasa_analysis.py'
+        script = '2_picasa_analysis.py',
+        infile = OUTDIR+'picasa.h5ad'
     params:
         sample = SAMPLE,
         wdir = WDIR
@@ -137,7 +109,7 @@ rule biolord_analysis:
 rule eval:
     input:
         script = '4_eval.py',
-        picasa = rules.train_model.output.t_d,
+        picasa = rules.picasa_analysis.output.c_umap,
         combat = rules.scanpy_external_analysis.output.outc,
         harmony = rules.scanpy_external_analysis.output.outh,
         scanorama = rules.scanpy_external_analysis.output.outs,

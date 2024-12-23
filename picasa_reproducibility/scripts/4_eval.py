@@ -16,8 +16,11 @@ import constants
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-SAMPLE = sys.argv[1] 
-WDIR = sys.argv[2]
+# SAMPLE = sys.argv[1] 
+# WDIR = sys.argv[2]
+
+SAMPLE = 'pancreas' 
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
@@ -43,6 +46,12 @@ def get_lisi(method,df,df_meta,batch_key=constants.BATCH,group_key=constants.GRO
     res = []
     for group in df_meta[constants.GROUP].unique():
         indices = df_meta[df_meta[constants.GROUP] == group].index.values
+        
+        ## need minimum sample >= 100 for compute_lisi to work
+        
+        if len(indices) < 100:
+            continue
+        
         res_lisi = hm.compute_lisi(df.loc[indices],df_meta.loc[indices],[batch_key])
         # min_lisi = np.min(res_lisi)
         # max_lisi = np.max(res_lisi)
@@ -150,8 +159,8 @@ def plot_asw(df_sil):
     
 
     plt.figure(figsize=(8, 6))
-    sns.boxplot(data=df_sil[df_sil['metric'].str.contains('Group')], x="method", y="score", palette="Set2")
-    sns.stripplot(data=df_sil[df_sil['metric'].str.contains('GROUP')], x="method", y="score", color="grey", size=1, alpha=0.3, jitter=True)
+    sns.boxplot(data=df_sil, x="method", y="score", palette="Set2")
+    sns.stripplot(data=df_sil, x="method", y="score", color="grey", size=1, alpha=0.3, jitter=True)
     
     plt.title("ASW evaluation by group")
     plt.xlabel("Method")
@@ -207,7 +216,7 @@ df_sil = pd.concat([df_sil,df_picasa_sil],axis=0)
 #### plot
 plot_lisi(df_lisi)
 # plot_clust(df_clust)
-plot_asw(df_sil)
+# plot_asw(df_sil)
 
 
 

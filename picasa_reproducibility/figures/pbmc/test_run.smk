@@ -2,16 +2,15 @@ import shutil
 onsuccess:
     shutil.rmtree(".snakemake")
 
-sample = 'sim3'
+sample = 'pbmc'
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
 
-ED = [2500,2750,3000]
+ED = [3000]
 AD = [15]
 PL = [25]
 LR = [1e-3]
-PW = [0.7,0.75,0.8]
-
+PW = [1.0]
 
 
 sim_data_pattern = '_ed_{ed}_ad_{ad}_pl_{pl}_lr_{lr}_pw_{pw}_'

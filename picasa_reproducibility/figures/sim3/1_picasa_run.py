@@ -51,7 +51,7 @@ params = {'device' : 'cuda',
 		'latent_dim' : 15,
 		'encoder_layers' : [100,15],
 		'projection_layers' : [25,25],
-		'learning_rate' : 0.0000001,
+		'learning_rate' : 0.001,
 		'pair_search_method' : 'approx_50',
         'pair_importance_weight': 0.1,
 	 	'corruption_tol' : 10.0,
@@ -59,24 +59,6 @@ params = {'device' : 'cuda',
 		'epochs': common_epochs,
 		'meta_epochs': common_meta_epoch
 		}   
-  
-# params = {'device' : 'cuda',
-# 		'batch_size' : 100,
-# 		'input_dim' : 2000,
-# 		'embedding_dim' : 2000,
-# 		'attention_dim' : 15,
-# 		'latent_dim' : 15,
-# 		'encoder_layers' : [100,15],
-# 		'projection_layers' : [25,25],
-# 		'learning_rate' : 0.0001,
-# 		'pair_search_method' : 'approx_50',
-#         'pair_importance_weight': 1.0,
-# 	 	'corruption_tol' : 10.0,
-#         'cl_loss_mode' : 'none', 
-# 		'epochs': common_epochs,
-# 		'meta_epochs': common_meta_epoch
-# 		}   
-  
 
 
 

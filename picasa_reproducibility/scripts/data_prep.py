@@ -46,7 +46,7 @@ def prep_sim1_data():
 		}
 	adata.obs.rename(columns=column_map,inplace=True)
  
-  	return adata
+	return adata
 
 def prep_sim2_data():
 
@@ -63,23 +63,6 @@ def prep_sim2_data():
 
 	return adata
 
-def prep_sim3_data():
-	file_path = '/data/sishir/data/batch_correction/sim1_multi/sim1_multi_raw.h5ad'
-	adata = ad.read(file_path)
-
-	adata.obs = adata.obs.iloc[:,:3]
-	column_map = {
-		'Cell'  : constants.SAMPLE,
-		'Batch' : constants.BATCH,
-		'Group' : constants.GROUP,
-		}
-	adata.obs.rename(columns=column_map,inplace=True)
-
-	# adata = adata[ (adata.obs[constants.BATCH] != 'Batch5') \
-	# 	 & (adata.obs[constants.BATCH] != 'Batch6') \
-	# 	 & (adata.obs[constants.GROUP] != 'Group7') \
-	# 	 ]
-	return adata
 
 def prep_pbmc_data():
 			
@@ -87,8 +70,7 @@ def prep_pbmc_data():
 	df = df[['Cell','Celltype (major-lineage)', 'Sample']]
 	df.columns = ['cell','celltype','batch']
 
-	
-	
+
 	import h5py
 	f= h5py.File("PBMC_60K_expression.h5", "r") 
 
@@ -136,29 +118,10 @@ def prep_pbmc_data():
 	# hvgenes = np.unique(hvgenes)
 	# adata = adata[:, hvgenes] 
  
-def prep_pbmc3k(meta_file,data_file):
-	
-
-	
-	df = pd.read_csv(data_file,header=0)
-	df = df.T
-	df.columns = df.iloc[0,:]
-	df = df.iloc[1:,:]
-	df = df.astype(int)
-
-	dfl = pd.read_csv(meta_file,header=0)
-	dfl.columns = ['cell','celltype','batch']
-
-# smat = csr_matrix(df.to_numpy())
-# adata = an.AnnData(X=smat)
-# adata.var_names = df.columns.values
-# adata.obs_names = df.index.values
-# adata.obs['batch'] = [ x.split('_')[0] for x in df.index.values]
-
 
 def prep_pancreas_data():
 	file_path = '/data/sishir/data/batch_correction/pancreas/spancreas_raw.h5ad'
-	adata = an.read(file_path)
+	adata = ad.read(file_path)
 	
 	adata.var.set_index('_index',inplace=True)
 	
@@ -176,7 +139,7 @@ def prep_pancreas_data():
 
 def prep_ovary_data():
 	file_path = '/data/sishir/data/batch_correction/pancreas/pancreas_raw.h5ad'
-	adata = an.read(file_path)
+	adata = ad.read(file_path)
 	
 	adata.var.set_index('_index',inplace=True)
 	
@@ -237,9 +200,12 @@ def generate_batch_data(adata,sample_name,attr_list):
 
 
 
+##get adata
+sample = 'sim3'
 adata = prep_sim1_data()
-adata = qc(adata)
 
+
+adata = qc(adata)
 attr_list = [constants.BATCH,constants.GROUP]
-generate_batch_data(adata,'sim3',attr_list)
+generate_batch_data(adata,sample,attr_list)
 
