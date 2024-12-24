@@ -138,18 +138,38 @@ def prep_pancreas_data():
 	return adata
 
 def prep_ovary_data():
-	file_path = '/data/sishir/data/batch_correction/pancreas/pancreas_raw.h5ad'
+    '''
+    download data from 
+    https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE165897
+    
+    and convert to adata
+    '''
+	file_path = '/data/sishir/data/ovary/ovary_main.h5ad'
 	adata = ad.read(file_path)
 	
-	adata.var.set_index('_index',inplace=True)
+	ctmap = {
+    "T": "T",
+    "EOC": "EOC",
+    "Macrophages": "Macrophages",
+    "CAF": "CAF",
+    "B": "B",
+    "Mesothelial": "CAF",
+    "NK": "NK",
+    "DC": "DC",
+    "Mast": "Mast",
+    "Plasma": "Plasma",
+    "pDC": "DC",
+    "ILC": "B",
+    "Endothelial": "Endothelial"
+	}
+
+	adata.obs['celltype'] = [ctmap[x.split('-')[0].split('_')[0]] for x in adata.obs['cell_subtype']]
+
+	adata.obs['celltype'].value_counts()
 	
-	adata.obs['Cell'] = adata.obs.index.values
-	
-	adata.obs = adata.obs[['Cell','BATCH','celltype']]
 	column_map = {
-		'Cell'  : constants.SAMPLE,
-		'BATCH' : constants.BATCH,
-		'celltype' : constants.GROUP,
+		'cell'  : constants.SAMPLE,
+		'patient_id' : constants.BATCH,
 		}
 	adata.obs.rename(columns=column_map,inplace=True)
 
@@ -205,7 +225,13 @@ sample = 'sim3'
 adata = prep_sim1_data()
 
 
+sample = 'ovary'
+adata = prep_sim1_data()
+
+
 adata = qc(adata)
-attr_list = [constants.BATCH,constants.GROUP]
+attr_list = [constants.BATCH,constants.GROUP,'treatment_phase','cell_type']
 generate_batch_data(adata,sample,attr_list)
+
+
 

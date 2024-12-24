@@ -3,7 +3,7 @@ import shutil
 onsuccess:
     shutil.rmtree(".snakemake")
 
-SAMPLE='pancreas'
+SAMPLE='ovary'
 
 WDIR='/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 

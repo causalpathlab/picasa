@@ -239,114 +239,6 @@ class PICASACommonNet(nn.Module):
         return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w)
 
 
-
-
-###### PICASA COMMON + CELLWISE ATTENTION MODEL #######
-
-class ProjectionCellwise(nn.Module):
-
-    def __init__(self, 
-        input_dim:int,
-        output_dim:int
-        ):
-        super(ProjectionCellwise,self).__init__()
-        
-        self.output_transform = nn.Linear(input_dim, output_dim)  
-    
-    def forward(self, 
-        x:torch.tensor
-        ):
-        
-        output = self.output_transform(x)
-        return output
-
-class PICASACommonNetv2(nn.Module):
-    def __init__(self,
-        input_dim:int, 
-        embedding_dim:int, 
-        attention_dim:int, 
-        latent_dim:int,
-        encoder_layers:list,
-        projection_layers:list,
-        corruption_tol:float,
-        pair_importance_weight:float
-        ):
-        super(PICASACommonNetv2,self).__init__()
-
-        self.embedding = GeneEmbedor(embedding_dim,attention_dim)
-        self.attention = ScaledDotAttention(attention_dim,pair_importance_weight)
-        # self.attention_cellwise = ScaledDotAttention(attention_dim)
-        
-        self.pooling = AttentionPooling(attention_dim)
-        self.projection_cellwise = ProjectionCellwise(input_dim,attention_dim)
-
-        self.encoder = ENCODER(input_dim,encoder_layers)
-        self.projector = MLP(latent_dim, projection_layers)
-        
-        self.corruption_tol = corruption_tol
-        
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            init.xavier_uniform_(module.weight)
-            if module.bias is not None:
-                init.zeros_(module.bias)
-        elif isinstance(module, nn.Embedding):
-            init.xavier_uniform_(module.weight)
-        elif isinstance(module, nn.Parameter):
-            init.xavier_uniform_(module)
-            
-    def forward(self,x_c1,x_c2,nbr_weight=None):
-        
-        if nbr_weight != None:
-            mean_val = torch.mean(nbr_weight)
-            std_val = torch.std(nbr_weight)
-            threshold = self.corruption_tol * std_val
-            outliers = torch.where(torch.abs(nbr_weight - mean_val) > threshold)
-            outlier_indices = outliers[0]
-            
-            all_indices = torch.arange(nbr_weight.size(0))
-            non_outlier_indices = torch.tensor([i for i in all_indices if i not in outlier_indices])
-            sampled_indices = random.sample(non_outlier_indices.tolist(), len(outlier_indices))
-
-            x_c1[outlier_indices] = x_c1[sampled_indices]
-            x_c2[outlier_indices] = x_c2[sampled_indices]
-
-        x_c1_emb = self.embedding(x_c1)
-        x_c2_emb = self.embedding(x_c2)
-  
-        x_c1_att_out, x_c1_att_w = self.attention(x_c1_emb,x_c2_emb,x_c2_emb)
-        x_c1_pool_out = self.pooling(x_c1_att_out)
-        
-        x_c2_att_out, x_c2_att_w = self.attention(x_c2_emb,x_c1_emb,x_c1_emb)
-        x_c2_pool_out = self.pooling(x_c2_att_out)
-
-        
-        x_c1_emb_cellwise = self.projection_cellwise(x_c1.float())    
-        x_c2_emb_cellwise = self.projection_cellwise(x_c2.float())    
-        
-        # x_c1_att_out_cellwise, x_c1_att_w_cellwise  = self.attention_cellwise(x_c1_emb_cellwise, x_c2_emb_cellwise, x_c1_emb_cellwise)
-        # x_c2_att_out_cellwise, x_c2_att_w_cellwise  = self.attention_cellwise(x_c2_emb_cellwise, x_c1_emb_cellwise, x_c2_emb_cellwise)
-        # x_c1_pool_out_all = torch.cat((x_c1_pool_out, x_c1_att_out_cellwise), dim=-1)
-        # x_c2_pool_out_all = torch.cat((x_c2_pool_out, x_c2_att_out_cellwise), dim=-1)
-        
-        
-        x_c1_att_out_cellwise = torch.softmax(torch.matmul(x_c1_emb_cellwise,x_c1_emb_cellwise.T),dim=-1)
-        x_c2_att_out_cellwise = torch.softmax(torch.matmul(x_c2_emb_cellwise,x_c2_emb_cellwise.T),dim=-1)
-        
-        x_c1_pool_out_all = x_c1_att_out_cellwise @ x_c1_pool_out
-        x_c2_pool_out_all = x_c2_att_out_cellwise @ x_c2_pool_out
-
-        h_c1 = self.encoder(x_c1_pool_out_all)
-        h_c2 = self.encoder(x_c2_pool_out_all)
-
-        z_c1 = self.projector(h_c1)
-        z_c2 = self.projector(h_c2)
-                
-        return PICASACommonOut(h_c1,h_c2,z_c1,z_c2,x_c1_att_w,x_c2_att_w)
-
-
 ###### PICASA UNIQUE MODEL #######
 
 class PICASAUniqueNet(nn.Module):
@@ -357,7 +249,8 @@ class PICASAUniqueNet(nn.Module):
 		concat_dim = common_latent_dim + unique_latent_dim 
 		self.u_decoder = MLP(concat_dim,dec_layers)
   
-		decoder_in_dim = dec_layers[len(dec_layers)-1]  
+		decoder_in_dim = dec_layers[len(dec_layers)-1] 
+   
 		self.zinb_scale = nn.Linear(decoder_in_dim, input_dim) 
 		self.zinb_dropout = nn.Linear(decoder_in_dim, input_dim)
 		self.zinb_dispersion = nn.Parameter(torch.randn(input_dim), requires_grad=True)
@@ -366,15 +259,10 @@ class PICASAUniqueNet(nn.Module):
 
 	
 	def forward(self,x_c1,x_zcommon):	
- 
-		row_sums = x_c1.sum(dim=1, keepdim=True)
-		x_norm = torch.div(x_c1, row_sums) * 1e4
-  
-		z_unique = self.u_encoder(x_norm.float())
+   
+		z_unique = self.u_encoder(x_c1.float())
 		
-		z_combined = torch.cat((x_zcommon, z_unique), dim=1)
-
-		h = self.u_decoder(z_combined)
+		h = self.u_decoder(torch.cat((x_zcommon, z_unique), dim=1))
   
 		px_scale = torch.exp(self.zinb_scale(h))  
 		px_dropout = self.zinb_dropout(h)  

@@ -38,7 +38,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = an.read_h5ad(ddir+file_name)
 	batch_count += 1
-	if batch_count >=10:
+	if batch_count >=12:
 		break
 
 picasa_object = picasa.create_picasa_object(
@@ -50,7 +50,7 @@ picasa_object = picasa.create_picasa_object(
   
 params = {'device' : 'cuda',
 		'batch_size' : 100,
-		'input_dim' : 2046,
+		'input_dim' : 2000,
 		'embedding_dim' : int(ed),
 		'attention_dim' : int(ad),
 		'latent_dim' : int(ad),
@@ -74,7 +74,7 @@ picasa_object.plot_loss(tag='common')
 
 device = 'cpu'
 picasa_object.nn_params['device'] = device
-eval_batch_size = 500
+eval_batch_size = 100
 picasa_object.eval_common(eval_batch_size,device)
 
 
@@ -86,3 +86,6 @@ sc.pp.neighbors(picasa_adata,use_rep='common')
 sc.tl.umap(picasa_adata)
 sc.pl.umap(picasa_adata,color=['batch','celltype'])
 plt.savefig(pdir_r2+'/'+sample+pattern_r+'.png')
+
+sc.pl.umap(picasa_adata,color=['treatment_phase','cell_subtype'])
+plt.savefig(pdir_r2+'/'+sample+pattern_r+'_2.png')

@@ -128,3 +128,6 @@ marker = np.array(['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FC
 	'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN'])
 
 plot_attention_group_wise(main_attn,main_y,mode='top_genes')
+
+
+

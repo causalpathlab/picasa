@@ -77,6 +77,7 @@ def run_scanpy_external_analysis(adata, method, save_path, batch_key=constants.B
     plt.close()
 
     sc.pl.umap(adata, color=[group_key],legend_loc=None)
+    
     plt.savefig(os.path.join(save_path+'_'+group_key+'.png'))
     plt.close()
 

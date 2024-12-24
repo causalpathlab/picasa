@@ -12,7 +12,8 @@ def minimal_overlap_loss(z_common, z_unique):
     z_common_norm = F.normalize(z_common, p=2, dim=-1)
     z_unique_norm = F.normalize(z_unique, p=2, dim=-1)
     cosine_similarity = torch.sum(z_common_norm * z_unique_norm, dim=-1)
-    return torch.mean(torch.abs(cosine_similarity))
+    # return torch.mean(torch.abs(cosine_similarity))
+    return torch.mean(cosine_similarity)
 
 
 def entropy_loss(h1, h2):

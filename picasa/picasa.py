@@ -168,6 +168,29 @@ class picasa(object):
         ])
         adata.uns['nbr_map'] = nbr_map_df    
         self.result = adata
+
+    def create_model_adata_prev_common(self,df):
+        
+        adata = an.AnnData(obs=pd.DataFrame(index=df.index))
+        adata.obsm['common'] = df
+        
+        batch_loc = len(df.index.values[0].split('@'))-1
+        adata.obs['batch'] = [x.split('@')[batch_loc] for x in df.index.values]
+
+        adata.uns['adata_keys'] = self.adata_keys
+        adata.uns['adata_pairs'] = self.adata_pairs
+        adata.uns['nn_params'] = self.nn_params
+        
+        batch_ids = {label: idx for idx, label in enumerate(adata.obs['batch'].unique())}
+        adata.obs['batch_id'] = [batch_ids[x] for x in adata.obs['batch']]
+
+        nbr_map_df = pd.DataFrame([
+            {'batch_pair': l1_item, 'key': k, 'neighbor': v[0], 'score': v[1]}
+            for l1_item, inner_map in self.nbr_map.items()
+            for k, v in inner_map.items()
+        ])
+        adata.uns['nbr_map'] = nbr_map_df    
+        self.result = adata
             
     def set_batch_mapping(self):
         
@@ -271,7 +294,10 @@ class picasa(object):
         self.create_model_adata(latent)
         self.set_metadata()
         
-
+    def prep_previous_common_model(self,df):
+        self.create_model_adata_prev_common(df)
+        self.set_metadata()
+        
     def train_unique(self,
         input_dim:int,
         enc_layers:list,

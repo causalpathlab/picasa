@@ -16,11 +16,8 @@ import constants
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-# SAMPLE = sys.argv[1] 
-# WDIR = sys.argv[2]
-
-SAMPLE = 'pancreas' 
-WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
+SAMPLE = sys.argv[1] 
+WDIR = sys.argv[2]
 
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
@@ -193,8 +190,8 @@ for method in methods:
     # df_clust_res = get_cluster(method,df,df_meta)
     # df_clust = pd.concat([df_clust,df_clust_res],axis=1)
 
-    df_sil_res = get_asw(method,df,df_meta)
-    df_sil = pd.concat([df_sil,df_sil_res],axis=0)
+    # df_sil_res = get_asw(method,df,df_meta)
+    # df_sil = pd.concat([df_sil,df_sil_res],axis=0)
     
 
 
@@ -209,8 +206,8 @@ df_lisi = pd.concat([df_lisi,df_picasa_lisi],axis=0)
 # df_picasa_clust = get_cluster('picasa',picasa_adata.obsm['common'],df_meta)
 # df_clust = pd.concat([df_clust,df_picasa_clust],axis=1)
 
-df_picasa_sil = get_asw('picasa',df_p,df_meta)
-df_sil = pd.concat([df_sil,df_picasa_sil],axis=0)
+# df_picasa_sil = get_asw('picasa',df_p,df_meta)
+# df_sil = pd.concat([df_sil,df_picasa_sil],axis=0)
 
 
 #### plot
