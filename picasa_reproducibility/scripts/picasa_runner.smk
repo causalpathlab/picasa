@@ -3,7 +3,7 @@ import shutil
 onsuccess:
     shutil.rmtree(".snakemake")
 
-SAMPLE='ovary'
+SAMPLE='sim2'
 
 WDIR='/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
@@ -22,7 +22,7 @@ rule all:
         expand(OUTDIR+'benchmark_cellanova.csv.gz'),
         expand(OUTDIR+'benchmark_liger.csv.gz'),
         expand(OUTDIR+'benchmark_biolord.csv.gz'),
-        expand(OUTDIR+'benchmark_plot_lisi_group.png'),
+        expand(OUTDIR+'benchmark_all_scores.csv'),
         expand(OUTDIR+'benchmark_plot_umap_batch.png')
 
 
@@ -122,7 +122,7 @@ rule eval:
         sample = SAMPLE,
         wdir = WDIR
     output:
-        out_lisi = OUTDIR+'benchmark_plot_lisi_group.png'
+        out_lisi = OUTDIR+'benchmark_all_scores.csv'
         # out_clust = OUTDIR+'benchmark_lisi.png'
         # out_asw = OUTDIR+'benchmark_lisi.png'
     shell:

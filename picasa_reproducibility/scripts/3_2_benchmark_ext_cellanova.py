@@ -54,14 +54,19 @@ adata_prep = cnova.model.preprocess_data(adata_combined, integrate_key=constants
 ## model fitting
 adata_prep= cnova.model.calc_ME(adata_prep, integrate_key=constants.BATCH)
 
-control_dict = {
-    'g1': adata_prep.obs.batch.unique(),
-}
-adata_prep = cnova.model.calc_BE(adata_prep, 
-                                 integrate_key=constants.BATCH, 
-                                 control_dict=control_dict)
+# control_dict = {
+#     'g1': adata_prep.obs.batch.unique(),
+# }
+# adata_prep = cnova.model.calc_BE(adata_prep, 
+#                                  integrate_key=constants.BATCH, 
+#                                  control_dict=control_dict)
 
-adata_prep.layers['batch_effect'] = adata_prep.layers['scale'] - adata_prep.layers['corrected']
+
+# adata_prep = cnova.model.calc_TE(adata_prep, 
+#                                  integrate_key=constants.BATCH)
+
+adata_prep
+                                 
 
 
 sc.pp.pca(adata_prep,layer="main_effect")
@@ -78,14 +83,3 @@ plt.close()
 
 pd.DataFrame(adata_prep.obsm['X_pca'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_cellanova.csv.gz'),compression='gzip')
 
-
-sc.pp.pca(adata_prep,layer="batch_effect")
-sc.pp.neighbors(adata_prep, use_rep="X_pca")
-sc.tl.umap(adata_prep)
-sc.pl.umap(adata_prep, color=[constants.BATCH],legend_loc=None)
-plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_cellanova_umap_'+constants.BATCH+'_unique.png'))
-plt.close()
-
-sc.pl.umap(adata_prep, color=[constants.GROUP],legend_loc=None)
-plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_cellanova_umap_'+constants.GROUP+'_unique.png'))
-plt.close()

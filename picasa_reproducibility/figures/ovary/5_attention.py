@@ -7,9 +7,8 @@ import anndata as an
 import pandas as pd
 
 
-sample = sys.argv[1] 
-pp = sys.argv[2]
-
+sample ='ovary'
+pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
 ############ read original data as adata list
 import os 
@@ -27,7 +26,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = an.read_h5ad(ddir+file_name)
 	batch_count += 1
-	if batch_count >=4:
+	if batch_count >=12:
 		break
 
 picasa_data = batch_map
@@ -48,8 +47,11 @@ picasa_common_model = model.PICASACommonNet(nn_params['input_dim'], nn_params['e
 picasa_common_model.load_state_dict(torch.load(wdir+'/results/picasa_common.model', map_location=torch.device(nn_params['device'])))
 
 
-p1 = picasa_adata.uns['adata_keys'][0]
-p2 = picasa_adata.uns['adata_keys'][1]
+# p1 = picasa_adata.uns['adata_keys'][0]
+# p2 = picasa_adata.uns['adata_keys'][1]
+
+p1 = 'EOC3'
+p2 = 'EOC153'
 
 adata_p1 = picasa_data[p1]
 adata_p2 = picasa_data[p2]
@@ -57,9 +59,9 @@ df_nbr = picasa_adata.uns['nbr_map']
 df_nbr = df_nbr[df_nbr['batch_pair']==p1+'_'+p2]
 nbr_map = {x:(y,z) for x,y,z in zip(df_nbr['key'],df_nbr['neighbor'],df_nbr['score'])}
 
-data_loader = dutil.nn_load_data_pairs(adata_p1, adata_p2, nbr_map,nn_params['device'],batch_size=500)
-
-main_attn,main_y = model.eval_attention_common(picasa_common_model,data_loader)
+data_loader = dutil.nn_load_data_pairs(adata_p1, adata_p2, nbr_map,'cpu',batch_size=10)
+eval_total_size=1000
+main_attn,main_y = model.eval_attention_common(picasa_common_model,data_loader,eval_total_size)
 
 
 ##############################################
@@ -73,19 +75,22 @@ num_celltypes = len(unique_celltypes)
 
 def get_top_genes_per_group(main_attn,main_y):
     top_genes = []
-    top_n = 10
+    top_n = 3
     for idx, ct in enumerate(unique_celltypes):
         ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
         ct_yindxs = np.where(np.isin(main_y, ct_ylabel))[0]
         df_attn = pd.DataFrame(np.mean(main_attn[ct_yindxs], axis=0),
                             index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
-        
+        np.fill_diagonal(df_attn.values, 0)
         ## note that prev column is now first column 
         df_attn = df_attn.unstack().reset_index()
         df_attn = df_attn.sort_values(0,ascending=False)
         top_genes.append(df_attn['level_1'].unique()[:top_n])
+        print(ct,df_attn['level_1'].unique()[:top_n])
+        
     top_genes = np.unique(np.array(top_genes).flatten())
     return top_genes
+
 
 def plot_attention_group_wise(main_attn,main_y,mode='top_genes',marker=None):
     import matplotlib.pylab as plt
@@ -94,40 +99,38 @@ def plot_attention_group_wise(main_attn,main_y,mode='top_genes',marker=None):
     
     top_genes = []
     
-    # if mode == 'top_genes':
+    if mode == 'top_genes':
     
-    #     top_genes = get_top_genes_per_group(main_attn,main_y)
+        top_genes = get_top_genes_per_group(main_attn,main_y)
     
-    # elif mode == 'marker':
+    elif mode == 'marker':
         
-    #     top_genes = marker
+        top_genes = marker
         
     for idx, ct in enumerate(unique_celltypes):
         ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
         ct_yindxs = np.where(np.isin(main_y, ct_ylabel))[0]
         df_attn = pd.DataFrame(np.mean(main_attn[ct_yindxs], axis=0),
                             index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
-        
-        df_attn = df_attn.apply(zscore)
-        df_attn[df_attn > 5] = 5
-        df_attn[df_attn < -5] = -5
+        np.fill_diagonal(df_attn.values, 0)
 
-        # df_attn = df_attn.loc[:,top_genes]
-        # df_attn = df_attn.loc[top_genes,:]
+        df_attn = df_attn.apply(zscore)
+        df_attn[df_attn > 10] = 10
+        # df_attn[df_attn < -0.1] = -0.1
+        df_attn = df_attn.loc[:,top_genes]
+        df_attn = df_attn.loc[top_genes,:]
   
         sns.heatmap(df_attn, cmap='viridis')
+        # sns.map(df_attn, cmap='viridis')
         plt.tight_layout()
         plt.savefig(wdir + '/results/picasa_common_attention_'+ct+'.png')
         plt.close()
 
 
-marker = np.array(['IL7R', 'CCR7', 'CD14', 'LYZ', 'S100A4', 'MS4A1', 'CD8A', 'FCGR3A',
-	'GNLY', 'NKG7', 'CST3', 'CD3E', 'FCER1A', 'CD74', 'LST1', 'CCL5',
-	'HLA-DPA1', 'LDHB', 'CD79A', 'FCER1G', 'GZMB', 'S100A9',
-	'HLA-DPB1', 'HLA-DRA', 'AIF1', 'CST7', 'S100A8', 'CD79B', 'COTL1',
-	'CTSW', 'B2M', 'TYROBP', 'HLA-DRB1', 'PRF1', 'GZMA', 'FTL', 'NRGN'])
+marker = np.array(['EPCAM','MKI67','CD3D','CD68','MS4A1','JCHAIN','PECAM1','PDGFRB'])
 
 plot_attention_group_wise(main_attn,main_y,mode='top_genes')
+
 
 
 

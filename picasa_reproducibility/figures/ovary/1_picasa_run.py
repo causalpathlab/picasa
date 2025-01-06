@@ -53,7 +53,7 @@ params = {'device' : 'cuda',
 		'projection_layers' : [50,50],
 		'learning_rate' : 1e-5,
 		'pair_search_method' : 'approx_50',
-        'pair_importance_weight': 0.9,
+        'pair_importance_weight': 0.75,
 	 	'corruption_tol' : 10.0,
         'cl_loss_mode' : 'none', 
 		'epochs': common_epochs,
@@ -71,11 +71,11 @@ picasa_object.set_nn_params(params)
 
 ####### if current common model 
 # picasa_object.train_common()
-# picasa_object.plot_loss(tag='common')
-# device = 'cpu'
-# picasa_object.nn_params['device'] = device
-# eval_batch_size = 500
-# picasa_object.eval_common(eval_batch_size,device)
+picasa_object.plot_loss(tag='common')
+device = 'cpu'
+picasa_object.nn_params['device'] = device
+eval_batch_size = 500
+picasa_object.eval_common(eval_batch_size,device)
 
 
 ###### if previous trained common model 
@@ -97,25 +97,32 @@ picasa_object.plot_loss(tag='unq')
 eval_batch_size = 1000
 picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size,device='cuda')
 
+## if previous trained common model
 picasa_adata.obsm['unique'] = picasa_object.result.obsm['unique']
+
+
+picasa_adata = picasa_object.result
 
 import scanpy as sc 
 import matplotlib.pylab as plt
-sc.pp.neighbors(picasa_adata,use_rep='unique')
+sc.pp.neighbors(picasa_adata,use_rep='common')
 sc.tl.umap(picasa_adata)
 sc.tl.leiden(picasa_adata)
 sc.pl.umap(picasa_adata,color=['batch','celltype'])
-plt.savefig(wdir+sample+'/results/picasa_unique_umap_unq.png')
-sc.pl.umap(picasa_adata,color=['batch','treatment_phase'])
-plt.savefig(wdir+sample+'/results/picasa_unique_umap_unq2.png')
+plt.savefig(wdir+sample+'/results/picasa_common_umap.png')
 
-
-picasa_adata.write(wdir+sample+'/results/picasa.h5ad',compression='gzip')
-
-latent_dim=params['latent_dim']
-picasa_object.train_base(input_dim, enc_layers,latent_dim,dec_layers,l_rate=0.001,epochs=base_epoch,batch_size=128,device='cuda')
-picasa_object.plot_loss(tag='base')
-eval_batch_size = 500
-picasa_object.eval_base(input_dim, enc_layers,latent_dim,dec_layers,eval_batch_size,device='cuda')
 picasa_object.save_model()
+
+# sc.pl.umap(picasa_adata,color=['batch','treatment_phase'])
+# plt.savefig(wdir+sample+'/results/picasa_unique_umap_unq2.png')
+
+
+# picasa_adata.write(wdir+sample+'/results/picasa.h5ad',compression='gzip')
+
+# latent_dim=params['latent_dim']
+# picasa_object.train_base(input_dim, enc_layers,latent_dim,dec_layers,l_rate=0.001,epochs=base_epoch,batch_size=128,device='cuda')
+# picasa_object.plot_loss(tag='base')
+# eval_batch_size = 500
+# picasa_object.eval_base(input_dim, enc_layers,latent_dim,dec_layers,eval_batch_size,device='cuda')
+# picasa_object.save_model()
 

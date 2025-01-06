@@ -66,32 +66,30 @@ def prep_sim2_data():
 
 def prep_pbmc_data():
 			
-	df = pd.read_csv('PBMC_60K_CellMetainfo_table.tsv',sep='\t')    
-	df = df[['Cell','Celltype (major-lineage)', 'Sample']]
-	df.columns = ['cell','celltype','batch']
+	df = pd.read_csv('pbmc_count.csv.gz')    
+
+	df = df.T
+	df.columns = df.iloc[0,:]
+	df = df.iloc[1:,:]
+	df = df.astype(int)
 
 
-	import h5py
-	f= h5py.File("PBMC_60K_expression.h5", "r") 
 
-	mtx_indptr = f['matrix']['indptr']
-	mtx_indices = f['matrix']['indices']
-	mtx_data = f['matrix']['data']
-	barcodes = [x.decode('utf-8') for x in f['matrix']['barcodes']]
-	features = [x.decode('utf-8') for x in f['matrix']['features']['id']]
+	smat = csr_matrix(df.to_numpy())
+	adata = ad.AnnData(X=smat)
+	adata.var_names = df.columns.values
+	adata.obs_names = df.index.values
+	adata.obs['batch'] = [ x.split('_')[0] for x in df.index.values]
 
-	rows = csr_matrix((mtx_data,mtx_indices,mtx_indptr),shape=(len(barcodes),len(features)))
-	mtx= rows.todense()
-	barcodes = [x.decode('utf-8') for x in f['matrix']['barcodes']]
-	features = [x.decode('utf-8') for x in f['matrix']['features']['id']]
- 
-	adata = ad.AnnData(X=mtx, obs=barcodes, var=features)
-	adata.obs.set_index(0,inplace=True)
-	adata.var.set_index(0,inplace=True)
- 
-	adata.obs = pd.merge(adata.obs,df,left_index=True,right_on='cell')
 
-	adata.obs['batch'] = ['batch_'+str(x) for x in adata.obs['batch']] 
+	dfl = pd.read_csv('pbmc_label.csv.gz',header=0)
+	dfl.columns = ['cell','celltype','batch']
+
+	adata.obs['celltype'] = pd.merge(df,dfl,left_index=True,right_on=['cell'],how='left')['celltype'].values
+
+	adata.obs.celltype.value_counts()
+	adata.obs.batch.value_counts()
+
 
 	import scanpy as sc  
 	  
@@ -173,6 +171,34 @@ def prep_ovary_data():
 		}
 	adata.obs.rename(columns=column_map,inplace=True)
 
+	import scanpy as sc  
+	  
+	remove_cols = [ x for x in adata.var.index.values if \
+		x.startswith('MT-') \
+		or x.startswith('RPL') \
+		or x.startswith('RPS') \
+		or x.startswith('RP1') \
+		or x.startswith('MRP')
+	]
+	
+	keep_cols = [ x for x in adata.var.index.values if x  not in remove_cols]
+	adata = adata[:,keep_cols]
+
+
+	sc.pp.filter_genes(adata, min_cells=3)
+	sc.pp.normalize_total(adata, target_sum=1e4)
+	sc.pp.log1p(adata)
+ 
+	sc.pp.highly_variable_genes(adata,n_top_genes=1660)
+ 
+	hvgs = adata.var[adata.var['highly_variable']].index.values
+	
+	sg = pd.read_csv('markers.csv')['genes'].values
+ 
+	allhvgs = np.unique(np.concatenate((hvgs,sg)))
+ 
+	adata = adata[:,adata.var.index.isin(allhvgs)]
+ 
 	return adata
 
 
@@ -194,8 +220,10 @@ def qc(adata):
 	sc.pp.filter_genes(adata, min_cells=3)
 	sc.pp.normalize_total(adata, target_sum=1e4)
 	sc.pp.log1p(adata)
+ 
 	sc.pp.highly_variable_genes(adata,n_top_genes=2000)
-	adata = adata[:, adata.var['highly_variable']]
+ 
+
  
 	return adata
 
