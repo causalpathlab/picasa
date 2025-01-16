@@ -29,7 +29,8 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 def get_meta_data():
 	picasa_adata = an.read_h5ad(os.path.join(RESULTS_DIR, 'picasa.h5ad'))
 	df_meta = picasa_adata.obs.copy()
-	df_meta.index = [x.split('@')[0] for x in df_meta.index.values]
+	# df_meta.index = [x.split('@')[0] for x in df_meta.index.values]
+	df_meta.index = ['@'.join(x.split('@')[:2]) for x in df_meta.index.values]
 	return df_meta
 
 
@@ -263,7 +264,8 @@ def eval():
 	### add picasa
 	picasa_adata = an.read_h5ad(os.path.join(RESULTS_DIR, 'picasa.h5ad'))
 	df_p = picasa_adata.obsm['common'].copy()
-	df_p.index = [x.split('@')[0] for x in df_p.index.values]
+	# df_p.index = [x.split('@')[0] for x in df_p.index.values]
+	df_p.index = ['@'.join(x.split('@')[:2]) for x in df_p.index.values]
 
 	df_picasa_lisi = get_metrics('picasa',df_p,df_meta)
 	df_lisi = pd.concat([df_lisi,df_picasa_lisi],axis=0)
@@ -279,5 +281,5 @@ def eval_plot():
 
 
 
-# eval()
+eval()
 eval_plot()

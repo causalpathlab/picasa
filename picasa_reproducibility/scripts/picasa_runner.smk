@@ -3,7 +3,7 @@ import shutil
 onsuccess:
     shutil.rmtree(".snakemake")
 
-SAMPLE='sim2'
+SAMPLE='lung'
 
 WDIR='/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
@@ -22,6 +22,7 @@ rule all:
         expand(OUTDIR+'benchmark_cellanova.csv.gz'),
         expand(OUTDIR+'benchmark_liger.csv.gz'),
         expand(OUTDIR+'benchmark_biolord.csv.gz'),
+        expand(OUTDIR+'benchmark_dml.csv.gz'),
         expand(OUTDIR+'benchmark_all_scores.csv'),
         expand(OUTDIR+'benchmark_plot_umap_batch.png')
 
@@ -106,6 +107,19 @@ rule biolord_analysis:
     shell:
         'python {input.script} {params.sample} {params.wdir}'
 
+rule dml_analysis:
+    conda:
+        'scvi-env'
+    input:
+        script = '3_2_benchmark_ext_dml.py'
+    params:
+        sample = SAMPLE,
+        wdir = WDIR
+    output:
+        out = OUTDIR+'benchmark_dml.csv.gz'
+    shell:
+        'python {input.script} {params.sample} {params.wdir}'
+
 rule eval:
     input:
         script = '4_eval.py',
@@ -117,7 +131,8 @@ rule eval:
         scvi = rules.scvi_analysis.output.out,
         cellanova = rules.cellanova_analysis.output.out,
         liger = rules.liger_analysis.output.out,
-        biolord = rules.biolord_analysis.output.out
+        biolord = rules.biolord_analysis.output.out,
+        dml = rules.dml_analysis.output.out
     params:
         sample = SAMPLE,
         wdir = WDIR

@@ -114,22 +114,40 @@ def plot_attention_group_wise(main_attn,main_y,mode='top_genes',marker=None):
                             index=adata_p1.var.index.values, columns=adata_p1.var.index.values)
         np.fill_diagonal(df_attn.values, 0)
 
-        df_attn = df_attn.apply(zscore)
-        df_attn[df_attn > 10] = 10
+        # df_attn = df_attn.apply(zscore)
+        df_attn[df_attn > .01] = .01
         # df_attn[df_attn < -0.1] = -0.1
         df_attn = df_attn.loc[:,top_genes]
         df_attn = df_attn.loc[top_genes,:]
   
-        sns.heatmap(df_attn, cmap='viridis')
+        # sns.heatmap(df_attn, cmap='viridis')
         # sns.map(df_attn, cmap='viridis')
+        sns.clustermap(df_attn, 
+                   yticklabels=df_attn.index,  
+                   xticklabels=df_attn.columns,  
+                   cmap='viridis',  
+                   figsize=(10, 10))
         plt.tight_layout()
         plt.savefig(wdir + '/results/picasa_common_attention_'+ct+'.png')
         plt.close()
 
 
-marker = np.array(['EPCAM','MKI67','CD3D','CD68','MS4A1','JCHAIN','PECAM1','PDGFRB'])
+marker = np.array(['EPCAM','WFDC2','PAX8',
+                   'COL1A2','FGFR1','DCN',
+                'CD79A','FCER1G','PTPRC'])
 
-plot_attention_group_wise(main_attn,main_y,mode='top_genes')
+marker = np.unique(marker)
+
+top_genes = get_top_genes_per_group(main_attn,main_y)
+
+marker = [x for x in marker if x in adata_p1.var.index.values]
+
+marker = np.concatenate([top_genes,marker])
+
+marker = np.unique(marker)
+plot_attention_group_wise(main_attn,main_y,mode='marker',marker=marker)
+
+
 
 
 

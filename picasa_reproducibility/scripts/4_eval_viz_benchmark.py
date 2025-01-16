@@ -33,7 +33,7 @@ import matplotlib.image as mpimg
 methods = ['graph_mean:graph_std','ilisi_mean:ilisi_std','isil_mean:isil_std',
            'nmi:ari','clisi_score:csil_score',]
 
-fig, axes = plt.subplots(2, 3, figsize=(20, 10))
+fig, axes = plt.subplots(1, 5, figsize=(20, 10))
 axes = axes.flatten()
 
 for ax, label in zip(axes, methods):

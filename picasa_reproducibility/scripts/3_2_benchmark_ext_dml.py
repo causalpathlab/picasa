@@ -6,7 +6,6 @@ import seaborn as sn
 import anndata as an
 import pandas as pd
 import scanpy as sc
-import biolord
 
 import sys 
 sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/scripts/')
@@ -60,24 +59,27 @@ adata=scdml.preprocess(adata_combined,cluster_method="louvain",resolution=3.0)
 
 
 
-scdml.integrate(adata_combined,batch_key="BATCH",ncluster_list=[ncluster],
+scdml.integrate(adata,batch_key="BATCH",ncluster_list=[ncluster],
 expect_num_cluster=ncluster,merge_rule="rule1",num_epochs=2)
 
-adata_combined.obs['batch'] = adata_combined.obs['BATCH']
+# scdml.integrate(adata,batch_key="BATCH",ncluster_list=[ncluster],
+# expect_num_cluster=ncluster,merge_rule="rule2")
+
+adata.obs['batch'] = adata.obs['BATCH']
 
 
 
-sc.pp.neighbors(adata_combined, use_rep="X_emb")
-sc.tl.umap(adata_combined)
+sc.pp.neighbors(adata, use_rep="X_emb")
+sc.tl.umap(adata)
 
 
-sc.pl.umap(adata_combined, color=[constants.BATCH],legend_loc=None)
+sc.pl.umap(adata, color=[constants.BATCH],legend_loc=None)
 plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_dml_umap_'+constants.BATCH+'.png'))
 plt.close()
 
-sc.pl.umap(adata_combined, color=[constants.GROUP],legend_loc=None)
+sc.pl.umap(adata, color=[constants.GROUP],legend_loc=None)
 plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_dml_umap_'+constants.GROUP+'.png'))
 plt.close()
 
 
-pd.DataFrame(adata_combined.obsm['X_emb'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_dml.csv.gz'),compression='gzip')
+pd.DataFrame(adata.obsm['X_emb'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_dml.csv.gz'),compression='gzip')

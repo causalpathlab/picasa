@@ -25,7 +25,7 @@ rule all:
     input:
         expand(pdir_r2+sample+sim_data_pattern+'.png',ed=ED,ad=AD,pl=PL,lr=LR,pw=PW)
 
-rule run_nmf:
+rule run_picasa:
     input:
         script = '1_picasa_run_test.py'
     output:

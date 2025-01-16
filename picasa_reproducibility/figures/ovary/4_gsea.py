@@ -190,7 +190,10 @@ for db in dbs:
 		else:
 			col_p= sns.color_palette("Blues", as_cmap=True)
 		
-		sns.clustermap(df_result, annot=False, cmap=col_p),# cbar_kws={'label': score_col+' Score'})
+		sns.clustermap(df_result, 
+			yticklabels=df_result.index,  
+			xticklabels=df_result.columns,
+			annot=False, cmap=col_p),# cbar_kws={'label': score_col+' Score'})
 		plt.title(score_col+" score")
 		plt.xticks(rotation=90)
 		plt.savefig(wdir+'/results/gsea_'+db+'.png')

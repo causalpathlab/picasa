@@ -15,7 +15,7 @@ wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibilit
 
 common_epochs = 1
 common_meta_epoch = 15
-unique_epoch = 150
+unique_epoch = 250
 base_epoch = 250
 
 ddir = wdir+sample+'/data/'

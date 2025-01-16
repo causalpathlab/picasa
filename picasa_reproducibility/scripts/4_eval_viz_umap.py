@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 SAMPLE = sys.argv[1] 
-WDIR = sys.argv[2]
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')

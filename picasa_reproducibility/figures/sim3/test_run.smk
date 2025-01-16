@@ -6,11 +6,11 @@ sample = 'sim3'
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
 
 
-ED = [2500,2750,3000]
+ED = [2000,3000]
 AD = [15]
 PL = [25]
-LR = [1e-3]
-PW = [0.7,0.75,0.8]
+LR = [1e-3,1e-4,1e-5]
+PW = [0.5,0.75,1.0]
 
 
 
@@ -25,7 +25,7 @@ rule all:
     input:
         expand(pdir_r2+sample+sim_data_pattern+'.png',ed=ED,ad=AD,pl=PL,lr=LR,pw=PW)
 
-rule run_nmf:
+rule run_picasa:
     input:
         script = '1_picasa_run_test.py'
     output:
