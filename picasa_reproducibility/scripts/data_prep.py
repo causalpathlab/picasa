@@ -64,59 +64,6 @@ def prep_sim2_data():
 	return adata
 
 
-def prep_pbmc_data():
-			
-	df = pd.read_csv('pbmc_count.csv.gz')    
-
-	df = df.T
-	df.columns = df.iloc[0,:]
-	df = df.iloc[1:,:]
-	df = df.astype(int)
-
-
-
-	smat = csr_matrix(df.to_numpy())
-	adata = ad.AnnData(X=smat)
-	adata.var_names = df.columns.values
-	adata.obs_names = df.index.values
-	adata.obs['batch'] = [ x.split('_')[0] for x in df.index.values]
-
-
-	dfl = pd.read_csv('pbmc_label.csv.gz',header=0)
-	dfl.columns = ['cell','celltype','batch']
-
-	adata.obs['celltype'] = pd.merge(df,dfl,left_index=True,right_on=['cell'],how='left')['celltype'].values
-
-	adata.obs.celltype.value_counts()
-	adata.obs.batch.value_counts()
-
-
-	import scanpy as sc  
-	  
-	remove_cols = [ x for x in adata.var.index.values if \
-		x.startswith('MT-') \
-		or x.startswith('RPL') \
-		or x.startswith('RPS') \
-		or x.startswith('RP1') \
-		or x.startswith('MRP')
-	]
-	
-	keep_cols = [ x for x in adata.var.index.values if x  not in remove_cols]
-	adata = adata[:,keep_cols]
-
-
-	sc.pp.filter_genes(adata, min_cells=3)
-	sc.pp.normalize_total(adata, target_sum=1e4)
-	sc.pp.log1p(adata)
- 
-	# ## use custom hvgenes
-	# hvgenes_index = select_hvgenes(adata.X,gene_var_z=2.03)
-	# hvgenes = np.array(adata.var.index[hvgenes_index])
-	# hvgenes = np.concatenate([hvgenes,marker])
-	# hvgenes = np.unique(hvgenes)
-	# adata = adata[:, hvgenes] 
- 
-
 def prep_pancreas_data():
 	file_path = '/data/sishir/data/batch_correction/pancreas/spancreas_raw.h5ad'
 	adata = ad.read(file_path)
@@ -296,6 +243,8 @@ def qc(adata):
 	sc.pp.filter_genes(adata, min_cells=3)
 	sc.pp.normalize_total(adata, target_sum=1e4)
 	sc.pp.log1p(adata)
+
+	adata.write('lung_all.h5ad',compression='gzip')
  
 	sc.pp.highly_variable_genes(adata,n_top_genes=2000)
  

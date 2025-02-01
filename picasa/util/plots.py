@@ -1,36 +1,7 @@
 import pandas as pd
-import numpy as np
 from plotnine import *
 import seaborn as sns
 import matplotlib.pylab as plt
-
-from .analysis import get_topic_top_genes,row_col_order
-from .palette import get_colors
-
-
-def plot_umap_df(df_umap,col,fpath,pt_size=1.0,ftype='png'):
-	
-	nlabel = df_umap[col].nunique()
-	custom_palette = get_colors(nlabel) 
- 
-
-	if ftype == 'pdf':
-		fname = fpath+'_'+col+'_'+'umap.pdf'
-	else:
-		fname = fpath+'_'+col+'_'+'umap.png'
-	
-	legend_size = 7
-		
-	p = (ggplot(data=df_umap, mapping=aes(x='umap1', y='umap2', color=col)) +
-		geom_point(size=pt_size) +
-		scale_color_manual(values=custom_palette)  +
-		guides(color=guide_legend(override_aes={'size': legend_size})))
-	
-	p = p + theme(
-		plot_background=element_rect(fill='white'),
-		panel_background = element_rect(fill='white'))
-	
-	p.save(filename = fname, height=10, width=15, units ='in', dpi=600)
 
 def plot_loss(loss_f,fpath,pt_size=4.0):
     
@@ -54,17 +25,6 @@ def plot_loss(loss_f,fpath,pt_size=4.0):
 	plt.savefig(fpath);plt.close()
 
 
-def plot_gene_loading(df_beta,top_n,max_thresh,fname):
-	df_beta = df_beta.loc[:, ~df_beta.columns.duplicated(keep='first')]
-	df_top = get_topic_top_genes(df_beta.iloc[:,:],top_n)
-	df_beta = df_beta.loc[:,df_top['Gene'].unique()]
-	ro,co = row_col_order(df_beta)
-	df_beta = df_beta.loc[ro,co]
-	df_beta[df_beta>max_thresh] = max_thresh
-	sns.clustermap(df_beta.T,cmap='viridis')
-	plt.savefig(fname+'_bhmap'+'_th_'+str(max_thresh)+'.png');plt.close()
- 
-def plot_marker_genes(fn,df,umap_coords,marker_genes,nr,nc):
 
 	from anndata import AnnData
 	import scanpy as sc

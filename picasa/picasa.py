@@ -299,7 +299,7 @@ class picasa(object):
         self.set_metadata()
         
     def train_unique(self,
-        input_dim:int,
+        input_adata:an.AnnData,             
         enc_layers:list,
         common_latent_dim:int,
         unique_latent_dim:int,
@@ -310,7 +310,8 @@ class picasa(object):
         device:str
         ):
 
-        num_batches = len(self.adata_keys)
+        num_batches = len(input_adata.obs['batch'].unique())
+        input_dim = input_adata.shape[1]
         picasa_unq_model = model.PICASAUniqueNet(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
     
         logging.info(picasa_unq_model)
@@ -325,7 +326,7 @@ class picasa(object):
         logging.info("Creating dataloader for training PICASA unique model.")
   
         for batch in self.adata_keys:
-            adata_x = self.data.adata_list[batch]
+            adata_x = input_adata[input_adata.obs['batch']==batch]
             df_zcommon = self.result.obsm['common'][self.result.obs['batch']==batch]
 
             data = dutil.nn_load_data_with_latent(adata_x,df_zcommon,batch,'cpu',batch_size)
@@ -351,7 +352,7 @@ class picasa(object):
         logging.info('Completed training...model saved in '+self.wdir+'/results/picasa_unique.model')
   
     def eval_unique(self,	 
-        input_dim:int,
+        input_adata:an.AnnData,             
         enc_layers:list,
         common_latent_dim:int,
         unique_latent_dim:int,
@@ -360,8 +361,10 @@ class picasa(object):
         device:str
         ):
 
-        num_batches = len(self.adata_keys)
+        num_batches = len(input_adata.obs['batch'].unique())
+        input_dim = input_adata.shape[1]
         picasa_unq_model = model.PICASAUniqueNet(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
+    
     
         picasa_unq_model.load_state_dict(torch.load(self.wdir+'/results/picasa_unique.model', map_location=torch.device(device)))
 
@@ -375,7 +378,8 @@ class picasa(object):
         logging.info("Creating dataloader for evaluating PICASA unique model.")
   
         for batch in self.adata_keys:
-            adata_x = self.data.adata_list[batch]
+            adata_x = input_adata[input_adata.obs['batch']==batch]
+
             df_zcommon = self.result.obsm['common'][self.result.obs['batch']==batch]
 
             data = dutil.nn_load_data_with_latent(adata_x,df_zcommon,batch,'cpu',eval_batch_size)
@@ -405,7 +409,7 @@ class picasa(object):
         self.result.obsm['unique'] = df_u_latent
 
     def train_base(self,
-        input_dim:int,
+        input_adata:an.AnnData,             
         enc_layers:list,
         latent_dim:int,
         dec_layers:list,
@@ -415,7 +419,8 @@ class picasa(object):
         device:str
         ):
 
-        num_batches = len(self.adata_keys)
+        num_batches = len(input_adata.obs['batch'].unique())
+        input_dim = input_adata.shape[1]
         picasa_base_model = model.PICASABaseNet(input_dim,latent_dim,enc_layers,dec_layers,num_batches).to(device)
     
         logging.info(picasa_base_model)
@@ -427,7 +432,8 @@ class picasa(object):
         logging.info("Creating dataloader for training PICASA base model.")
   
         for batch in self.adata_keys:
-            adata_x = self.data.adata_list[batch]
+            # adata_x = self.data.adata_list[batch]
+            adata_x = input_adata[input_adata.obs['batch']==batch]
 
             data = dutil.nn_load_data_base(adata_x,batch,'cpu',batch_size)
     
@@ -450,7 +456,7 @@ class picasa(object):
         logging.info('Completed training...model saved in '+self.wdir+'/results/picasa_base.model')
   
     def eval_base(self,	 
-        input_dim:int,
+        input_adata:an.AnnData,             
         enc_layers:list,
         latent_dim:int,
         dec_layers:list,
@@ -458,7 +464,8 @@ class picasa(object):
         device:str
         ):
 
-        num_batches = len(self.adata_keys)
+        num_batches = len(input_adata.obs['batch'].unique())
+        input_dim = input_adata.shape[1]
         picasa_base_model = model.PICASABaseNet(input_dim,latent_dim,enc_layers,dec_layers,num_batches).to(device)
     
         picasa_base_model.load_state_dict(torch.load(self.wdir+'/results/picasa_base.model', map_location=torch.device(device)))
@@ -472,7 +479,8 @@ class picasa(object):
         logging.info("Creating dataloader for evaluating PICASA base model.")
   
         for batch in self.adata_keys:
-            adata_x = self.data.adata_list[batch]
+            # adata_x = self.data.adata_list[batch]
+            adata_x = input_adata[input_adata.obs['batch']==batch]
 
             data = dutil.nn_load_data_base(adata_x,batch,'cpu',eval_batch_size)
     

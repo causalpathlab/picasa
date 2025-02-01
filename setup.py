@@ -15,7 +15,7 @@ setup(
         "anndata==0.10.8",
         "annoy==1.17.0",
         "numpy==1.24.4",
-        "pandas==2.0.3",
+        "pandas>=2.0.3",
         "scanpy==1.9.3",
         "torch==2.5.1"
     ],
