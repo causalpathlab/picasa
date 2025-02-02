@@ -24,7 +24,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = ad.read_h5ad(ddir+file_name)
 	batch_count += 1
-	if batch_count >=12:
+	if batch_count >=25:
 		break
 
 picasa_data = batch_map
@@ -43,9 +43,9 @@ from picasa import model
 import torch 
 
 def get_zinb_reconstruction(x, px_s, px_r, px_d):
-    zinb_dist = ZeroInflatedNegativeBinomial(mu=px_s, theta=px_r, zi_logits=px_d)
-    reconstructed_x = zinb_dist.sample()
-    return reconstructed_x
+	zinb_dist = ZeroInflatedNegativeBinomial(mu=px_s, theta=px_r, zi_logits=px_d)
+	reconstructed_x = zinb_dist.sample()
+	return reconstructed_x
 
 
 num_batches = len(picasa_adata.obs['batch'].unique())
@@ -63,9 +63,12 @@ picasa_unique_model.load_state_dict(torch.load(wdir+'/model_results/picasa_uniqu
 
 picasa_unique_model.eval()
 
+df_recons = pd.DataFrame()
 
 for p1 in adata.obs['batch'].unique():
-    
+	
+	print(p1)
+	
 	current_adata = adata[adata.obs['batch']==p1].copy()
  
 	df = current_adata.to_df()
@@ -84,15 +87,16 @@ for p1 in adata.obs['batch'].unique():
 
 
 	x_recons = get_zinb_reconstruction(x_c1,px_scale,px_rate,px_dropout)
-	df_recons = pd.DataFrame(x_recons.detach().numpy(),index=df.index.values,columns = df.columns)
-	df_recons.to_csv('data/figure5_cnv_x_recons_'+p1+'.csv.gz',compression='gzip')
-	df.to_csv('data/figure5_cnv_x_orig_'+p1+'.csv.gz',compression='gzip')
+	df_recons_current = pd.DataFrame(x_recons.detach().numpy(),index=df.index.values,columns = df.columns)
+	df_recons = pd.concat([df_recons,df_recons_current])
 
 
-	current_adata.obsm['unique'] = z_u.detach().numpy()
-	sc.pp.neighbors(current_adata, use_rep="unique")
-	sc.tl.umap(current_adata)
-	sc.pl.umap(current_adata,color=['batch','celltype'] )
-	plt.savefig('results/figure5_cnv_unique_pred_'+p1+'.png')
+	# current_adata.obsm['unique'] = z_u.detach().numpy()
+	# sc.pp.neighbors(current_adata, use_rep="unique")
+	# sc.tl.umap(current_adata)
+	# sc.pl.umap(current_adata,color=['batch','celltype'] )
+	# plt.savefig('results/figure5_cnv_unique_pred_'+p1+'.png')
 
 
+adata_recons = ad.AnnData(df_recons)
+adata_recons.write_h5ad('data/figure5_unique_recons.h5ad',compression='gzip')

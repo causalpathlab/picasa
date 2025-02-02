@@ -24,7 +24,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = ad.read_h5ad(ddir+file_name)
 	batch_count += 1
-	if batch_count >=12:
+	if batch_count >=25:
 		break
 
 picasa_data = batch_map
@@ -46,12 +46,27 @@ patient_analyzed = []
 
 df = pd.DataFrame()
 
+# pmap ={
+# 'P10':'LUSC',
+# 'P23':'LUSC',
+# 'P1':'LUSC',
+# 'P4':'LUSC',
+# 'P37':'LUSC',
+# 'P38':'LUAD',
+# 'P21':'LUAD',
+# 'P39':'LUAD',
+# 'P16':'LUAD',
+# }
+## select 5 from both groups 
+sel_patients = ['P10','P23','P1','P4','P37','P38','P21','P39','P16']
+
+
 for pairs in picasa_adata.uns['adata_pairs']:
     
 	p1 = picasa_adata.uns['adata_keys'][pairs[0]]
 	p2 = picasa_adata.uns['adata_keys'][pairs[1]]
 
-	if p1 not in patient_analyzed:
+	if p1 not in patient_analyzed and p1 in sel_patients:
 		adata_p1 = picasa_data[p1]
 		adata_p2 = picasa_data[p2]
 		df_nbr = picasa_adata.uns['nbr_map']
@@ -73,8 +88,9 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			
 			ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
 			ct_yindxs = np.where(np.isin(main_y, ct_ylabel))[0]
-   
-			if len(ct_yindxs) < 100:
+
+			min_cells = 25
+			if len(ct_yindxs) < min_cells:
 				continue
 
 			df_attn = pd.DataFrame(np.mean(main_attn[ct_yindxs], axis=0),
@@ -85,6 +101,4 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			print(p1,ct,len(ct_yindxs),df.shape)
 			patient_analyzed.append(p1)
 	
-
-df.isnull().any().any()
 df.to_csv(wdir+'/notebooks/data/figure2_attention_scores.csv.gz',compression='gzip')

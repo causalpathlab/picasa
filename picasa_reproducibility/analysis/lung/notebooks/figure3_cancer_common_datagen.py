@@ -29,7 +29,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = ad.read_h5ad(ddir+file_name)
 	batch_count += 1
-	if batch_count >=12:
+	if batch_count >=25:
 		break
 
 picasa_data = batch_map

@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pylab as plt
 
 def plot_loss(loss_f,fpath,pt_size=4.0):
-    
+	import matplotlib.pylab as plt
 	plt.rcParams.update({'font.size': 20})
  
 	data = pd.read_csv(loss_f)

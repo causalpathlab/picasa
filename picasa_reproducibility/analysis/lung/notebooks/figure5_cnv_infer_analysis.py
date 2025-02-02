@@ -14,6 +14,10 @@ picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
 df_obs = picasa_adata.obs.copy()
 df_obs.index = ['@'.join(x.split('@')[:2])for x in df_obs.index.values]
 
+
+# adata = cnv.datasets.maynard2020_3k()
+# adata.var.loc[:, ["ensg", "chromosome", "start", "end"]]
+# adata.var.to_csv(wdir+'/model_data/df_gene_coord.csv.gz')
 df_gene = pd.read_csv(wdir+'/model_data/df_gene_coord.csv.gz',index_col=0)
 
 
@@ -76,20 +80,14 @@ def cnv_analysis(df_expr,df_gene,df_obs,tag):
 	# df_cnv.to_csv('results/cnv_'+tag+'.csv.gz',compression='gzip')
 
 	# plot_prop(adata.obs.copy(),tag)
- 
-tag = sys.argv[1]
 
-if tag=='orig':
-	df_expr = pd.DataFrame()
-	for p1 in picasa_adata.obs['batch'].unique():	
-		df_expr_p = pd.read_csv('data/figure5_cnv_x_orig_'+p1+'.csv.gz',index_col=0)
-		df_expr = pd.concat([df_expr,df_expr_p])
-	cnv_analysis(df_expr,df_gene,df_obs,tag)
 
-elif tag=='recons':
-	df_expr = pd.DataFrame()
-	for p1 in picasa_adata.obs['batch'].unique():	
-		df_expr_p = pd.read_csv('data/figure5_cnv_x_recons_'+p1+'.csv.gz',index_col=0)
-		df_expr = pd.concat([df_expr,df_expr_p])
- 
-	cnv_analysis(df_expr,df_gene,df_obs,tag)
+tag = 'orig'
+adata = ad.read_h5ad(wdir+'/model_data/all_lung.h5ad')
+df_expr = adata.to_df()
+cnv_analysis(df_expr,df_gene,df_obs,tag)
+
+tag='recons'
+adata_recons = ad.read_h5ad('data/figure5_unique_recons.h5ad')
+df_expr = adata_recons.to_df()
+cnv_analysis(df_expr,df_gene,df_obs,tag)

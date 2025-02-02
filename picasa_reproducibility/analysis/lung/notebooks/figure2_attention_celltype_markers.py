@@ -29,6 +29,11 @@ marker = {
     
     'CD8T': ['CD2', 'CD3D', 'CD3E', 'CD3G', 'CD8A', 'TRAC', 'NKG7', 'GNLY', 'GZMA', 'GZMK', 'GZMB', 'GZMH','KLRC1','KLRD1','CCR7','LEF1','IL7R','SELL','LAG3'],
     
+    'Tprolif': [
+    'MKI67', 'TOP2A', 'PCNA', 'CDK1', 'CDKN3', 'BIRC5', 'CCNB1', 
+    'CCNA2', 'TYMS', 'RRM2', 'UBE2C', 'NUSAP1', 'KIF11', 'TUBB', 
+    'E2F1', 'FOXP3'],
+    
     'Endothelial': ['VWF', 'PECAM1', 'CLDN5', 'FLT1', 'KDR', 'CDH5', 'ANGPT2', 'ACKR1', 'GJA5', 'PROX1', 'PDPN', 'ESM1','APLN','CXCL12','NR2F2','MMRN1','GJA4','EFNB2','IFIT1','IFIT3','ISG20'],
     
     'Plasma': ['CD38', 'SDC1', 'MZB1', 'XBP1', 'IGHG1', 'IGHG3', 'PRDM1','JCHAIN'],
@@ -38,7 +43,9 @@ marker = {
     'SERPINB3', 'SERPINB4', 'LAMB3', 'LAMA3', 'SFN', 'KLF5',  
     'CD44', 'VIM', 'NOTCH1', 'JAG1', 'DLL1'],
     
-    'Epithelial ': ['EPCAM','CAPS','TFF3','SNTN','CDH1','CLDN18','AQP4','CAV1','AGER','SFTPC','SFTPA1','ABCA3','SCGB1A1','SCGB3A1','FOXJ1','TPPP3','PIFO']
+    'Epithelial ': ['EPCAM','CAPS','TFF3','SNTN','CDH1','CLDN18','AQP4','CAV1','AGER','SFTPC','SFTPA1','ABCA3','SCGB1A1','SCGB3A1','FOXJ1','TPPP3','PIFO'],
+    
+    'Alveolar': ['CLDN18','AQP4','CAV1','AGER','SFTPC','SFTPA1','ABCA3','SCGB1A1','SCGB3A1','FOXJ1','TPPP3','PIFO']
 }
     
 
@@ -52,7 +59,7 @@ for idx, ct in enumerate(unique_celltypes):
     
     ct_ylabel = dfl[dfl['celltype'] == ct].index.values
     df_attn = df.iloc[ct_ylabel,:].copy()
-    print(df_attn)
+    print(df_attn.shape)
     
     if ct == 'Epithelial' or ct == 'CD8T':
         df_attn[df_attn > .0001] = .0001

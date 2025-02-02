@@ -29,7 +29,7 @@ for file_name in file_names:
 	print(file_name)
 	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = ad.read_h5ad(ddir+file_name)
 	batch_count += 1
-	if batch_count >=12:
+	if batch_count >=25:
 		break
 
 picasa_data = batch_map
@@ -37,6 +37,34 @@ picasa_data = batch_map
 
 
 ## Focus on cancer cells
+
+pmap ={
+'P10':'LUSC',
+'P23':'LUSC',
+'P1':'LUSC',
+'P4':'LUSC',
+'P37':'LUSC',
+'P38':'LUAD',
+'P21':'LUAD',
+'P41':'LUSC',
+'P25':'LUSC',
+'P15':'LUSC',
+'P6':'LUSC',
+'P3':'LUSC',
+'P39':'LUAD',
+'P16':'LUAD',
+'P18':'LUSC',
+'P8':'LUAD',
+'P28':'LUAD',
+'P7':'LUSC',
+'P17':'LUSC',
+'P5':'LUAD',
+'P14':'LUSC',
+'P35':'LUAD',
+'P9':'LUAD'
+}
+
+picasa_adata.obs['disease']= [pmap[x] for x in picasa_adata.obs['batch']]
 
 
 picasa_adata = picasa_adata[picasa_adata.obs['celltype']=='Malignant']
@@ -55,6 +83,9 @@ picasa_adata.obs['cluster'] = ['u_'+str(x) for x in picasa_adata.obs['leiden']]
 
 sc.pl.umap(picasa_adata,color=['batch','celltype','cluster'])
 plt.savefig('results/figure4_cancer_unique_umap.png')
+
+sc.pl.umap(picasa_adata,color=['batch','celltype','disease'])
+plt.savefig('results/figure4_cancer_unique_umap_disease.png')
 
 ### now save original data for the selected cells
 

@@ -9,7 +9,7 @@ import scanpy as sc
 import numpy as np
 
 import sys 
-sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/scripts/')
+sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa')
 
 import constants 
 
