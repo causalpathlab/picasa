@@ -7,7 +7,7 @@ sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/')
 
 ############################
 # sample = sys.argv[1] 
-sample = 'lung' 
+sample = 'brca' 
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'+sample
 
 ############ read model results as adata 

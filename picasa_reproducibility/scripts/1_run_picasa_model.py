@@ -5,7 +5,7 @@ import glob
 import os
 
 
-sample = 'lung' 
+sample = 'brca' 
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 common_epochs = 1
@@ -38,7 +38,7 @@ picasa_object = picasa.create_picasa_object(
 
 params = {'device' : 'cuda',
 		'batch_size' : 100,
-		'input_dim' : 2020,
+		'input_dim' : 2037,
 		'embedding_dim' : 3000,
 		'attention_dim' : 25,
 		'latent_dim' : 25,
@@ -73,7 +73,7 @@ picasa_object.eval_common(eval_batch_size,device)
 
 ### get full data for unique and base model training
 
-adata = an.read_h5ad(wdir+sample+'/data/all_lung.h5ad')
+adata = an.read_h5ad(wdir+sample+'/data/all_brca.h5ad')
 
 enc_layers = [128,25]
 unique_latent_dim = params['latent_dim']

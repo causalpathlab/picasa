@@ -89,7 +89,7 @@ def prep_ovary_data():
 	
 	and convert to adata
 	'''
-	file_path = '/data/sishir/data/ovary/ovary_main.h5ad'
+	file_path = '/data/sishir/backup_picasa_znode/znode/paper_data/ovary_main.h5ad'
 	adata = ad.read(file_path)
 	
 	ctmap = {
@@ -152,7 +152,7 @@ def prep_ovary_data():
 
 def prep_lung_data():
 	import h5py as hf
-	f = hf.File('NSCLC_GSE148071_expression.h5')
+	f = hf.File('/data/sishir/backup_picasa_znode/znode/paper_data/NSCLC_GSE148071_expression.h5')
 
 	mtx_indptr = f['matrix']['indptr']
 	mtx_indices = f['matrix']['indices']
@@ -170,7 +170,7 @@ def prep_lung_data():
 	adata.var.index = features
 
 
-	dfl = pd.read_csv('NSCLC_GSE148071_CellMetainfo_table.tsv',sep='\t')
+	dfl = pd.read_csv('/data/sishir/backup_picasa_znode/znode/paper_data/NSCLC_GSE148071_CellMetainfo_table.tsv',sep='\t')
 
 	# patients more than 2.5k cells
 	sel_patient = dfl.Patient.value_counts().index[:23]
@@ -287,6 +287,82 @@ def prep_gbm_data():
 
 	return adata
 
+def prep_brca_data():
+    
+	import h5py as hf
+	f = hf.File('/data/sishir/backup_picasa_znode/znode/paper_data/BRCA_GSE176078_expression.h5')
+
+	mtx_indptr = f['matrix']['indptr']
+	mtx_indices = f['matrix']['indices']
+	mtx_data = f['matrix']['data']
+	barcodes = [x.decode('utf-8') for x in f['matrix']['barcodes']]
+	features = [x.decode('utf-8') for x in f['matrix']['features']['id']]
+
+	n_genes = len(features)
+	n_cells = len(barcodes)
+
+	matrix = csr_matrix((mtx_data, mtx_indices, mtx_indptr), shape=(n_cells, n_genes))
+
+	adata = ad.AnnData(X=matrix)
+	adata.obs.index = barcodes
+	adata.var.index = features
+
+
+	dfl = pd.read_csv('/data/sishir/backup_picasa_znode/znode/paper_data/BRCA_GSE176078_CellMetainfo_table.tsv',sep='\t')
+
+	# patients more than 1k cells
+	dfl = dfl.groupby("Patient").filter(lambda x: len(x) > 1000)
+	dfl.Patient.value_counts()
+	adata = adata[dfl['Cell'].values,:]
+
+	adata.obs[constants.BATCH] = pd.merge(adata.obs,dfl,left_index=True,right_on='Cell')['Patient'].values
+	adata.obs[constants.GROUP] = pd.merge(adata.obs,dfl,left_index=True,right_on='Cell')['Celltype (major-lineage)'].values
+	adata.obs['subtype'] = pd.merge(adata.obs,dfl,left_index=True,right_on='Cell')['Subtype'].values
+
+	import scanpy as sc  
+	  
+	remove_cols = [ x for x in adata.var.index.values if \
+		x.startswith('MT-') \
+		or x.startswith('RPL') \
+		or x.startswith('RPS') \
+		or x.startswith('RP1') \
+		or x.startswith('MRP')
+	]
+	
+	keep_cols = [ x for x in adata.var.index.values if x  not in remove_cols]
+	adata = adata[:,keep_cols]
+
+
+	sc.pp.filter_genes(adata, min_cells=3)
+	sc.pp.normalize_total(adata, target_sum=1e4)
+	sc.pp.log1p(adata)
+	
+	adata.write('all_brca.h5ad',compression='gzip')
+ 
+	sc.pp.highly_variable_genes(adata,n_top_genes=2000)
+ 
+	marker = [
+    'EPCAM','MKI67', 'CD3D', 'CD68', 'MS4A1', 'JCHAIN', 'PECAM1','PDGFRB',
+    'ACTR3B', 'KRT14', 'ERBB2', 'GRB7',
+    "PHGR1", "CXCL13", "RNASET2", "TFPI2", "S100A1", "KRT8", "TRH", "CCDC117", 
+    "NPY1R", "EMC3", "TMEM150C", "TFF1", "PIP", "HPD", "LINC01285", "SCGB2B2", 
+    "PDSS2", "LGALS7B", "ERBB2", "AR", "C6orf15", "HULC", "KRT14", "MARCO", 
+    "UCHL1", "KRT6B",
+    'CD4','CD8','CD25','CD103','PD-1','CD103','NKP46','TIGIT',
+    'CD1C','CD14','CD16','CD141','CD86','CD127','PD-L1',
+    'PDGFRA','COL1A1','ACTA2','MCAM','CD146',
+    'PECAM1','CD31','CD34','LYVE1','MKI67','CD44','ALDH1A1','CSPG4','RGS5','CD36',
+    'ICAM1','VCAM1' ,'ITGB1','ACKR1', 'SELE', 'SELP','ICAM1','VCAM1','HLA-DRA','VEGFC'
+	]
+ 
+	hvgs = adata.var[adata.var['highly_variable']].index.values
+	 
+	allhvgs = np.unique(np.concatenate((hvgs,marker)))
+ 
+	adata = adata[:,adata.var.index.isin(allhvgs)]
+
+	return adata
+
 def qc(adata):
 	import scanpy as sc  
 	  
@@ -333,19 +409,10 @@ def generate_batch_data(adata,sample_name,attr_list):
 
 
 
-##get adata
 sample = 'sim3'
 adata = prep_sim1_data()
-
-
-sample = 'ovary'
-adata = prep_sim1_data()
-
-
 adata = qc(adata)
-attr_list = [constants.BATCH,constants.GROUP,'treatment_phase','cell_type']
-generate_batch_data(adata,sample,attr_list)
-attr_list = [constants.BATCH,constants.GROUP,'sample']
+attr_list = [constants.BATCH,constants.GROUP,'subtype']
 generate_batch_data(adata,sample,attr_list)
 
 
