@@ -15,15 +15,7 @@ import pandas as pd
 
 
 sample ='lung'
-pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
-
-
-
-############ read model results as adata 
-wdir = pp+sample
 adata = an.read_h5ad('results/picasa.h5ad')
-
-
 
 ####### get patient data #####################
 
@@ -47,7 +39,6 @@ import matplotlib.pyplot as plt
 
 def surv_plot(tag):
     df_latent = pd.DataFrame(adata.obsm[tag], index=adata.obs_names)
-    df_latent.columns = [f'{tag}_{i}' for i in range(df_latent.shape[1])]
     df_latent = df_latent.loc[:, df_latent.median() != 0]
 
     df_latent = df_latent.loc[df_pmeta.index,:]
@@ -98,6 +89,5 @@ def surv_plot(tag):
     plt.tight_layout()
     plt.savefig('results/survival_all_factors_' + tag + '.png')
 
-surv_plot('common')
-surv_plot('unique')
+surv_plot('picasa')
 

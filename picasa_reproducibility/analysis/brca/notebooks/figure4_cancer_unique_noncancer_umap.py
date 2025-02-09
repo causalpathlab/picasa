@@ -13,8 +13,56 @@ wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibilit
 picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
 
 ####################################
-picasa_adata.obs['disease']= picasa_adata.obs['subtype']
 
+############ read original data as adata list
+
+
+ddir = wdir+'/model_data/'
+pattern = sample+'_*.h5ad'
+
+file_paths = glob.glob(os.path.join(ddir, pattern))
+file_names = [os.path.basename(file_path) for file_path in file_paths]
+
+batch_map = {}
+batch_count = 0
+for file_name in file_names:
+	print(file_name)
+	batch_map[file_name.replace('.h5ad','').replace(sample+'_','')] = ad.read_h5ad(ddir+file_name)
+	batch_count += 1
+	if batch_count >=25:
+		break
+
+picasa_data = batch_map
+
+
+
+## Focus on cancer cells
+
+dmap = {
+    'CID4495': 'TNBC',
+    'CID44971': 'TNBC',
+    'CID4471': 'ER+',
+    'CID44991': 'TNBC',
+    'CID4513': 'TNBC',
+    'CID3586': 'HER2+',
+    'CID4066': 'HER2+',
+    'CID4290A': 'ER+',
+    'CID4515': 'TNBC',
+    'CID4530N': 'ER+',
+    'CID3963': 'TNBC',
+    'CID4535': 'ER+',
+    'CID4067': 'ER+',
+    'CID3921': 'HER2+',
+    'CID4398': 'ER+',
+    'CID4040': 'ER+',
+    'CID45171': 'HER2+',
+    'CID3838': 'HER2+',
+    'CID44041': 'TNBC',
+    'CID3948': 'ER+',
+    'CID4523': 'TNBC'
+}
+
+picasa_adata.obs['disease']= [dmap[x] for x in picasa_adata.obs['batch']]
 
 
 picasa_adata = picasa_adata[picasa_adata.obs['celltype']!='Malignant']
@@ -22,5 +70,17 @@ picasa_adata = picasa_adata[picasa_adata.obs['celltype']!='Malignant']
 sc.pp.neighbors(picasa_adata,use_rep='unique')
 sc.tl.umap(picasa_adata)
 sc.tl.leiden(picasa_adata,resolution=0.1)
-sc.pl.umap(picasa_adata,color=['batch','celltype','leiden','disease'])
+
+picasa_adata.obs['cluster'] = ['u_'+str(x) for x in picasa_adata.obs['leiden']]
+
+
+###select clusters with >1k cells
+# label_counts = picasa_adata.obs['cluster'].value_counts()
+# filtered_labels = label_counts.index.values[:10]
+# picasa_adata = picasa_adata[picasa_adata.obs['cluster'].isin(filtered_labels)]
+
+sc.pl.umap(picasa_adata,color=['batch','celltype','cluster'])
 plt.savefig('results/figure4_cancer_unique_noncancer_umap.png')
+
+sc.pl.umap(picasa_adata,color=['batch','celltype','disease'])
+plt.savefig('results/figure4_cancer_unique_noncancer_umap_disease.png')
