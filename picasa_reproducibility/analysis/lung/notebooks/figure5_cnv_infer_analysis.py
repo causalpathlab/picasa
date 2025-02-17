@@ -3,6 +3,7 @@ import infercnvpy as cnv
 import anndata as ad
 import matplotlib.pyplot as plt
 import pandas as pd 
+import numpy as np
 from plotnine import * 
 import sys
 
@@ -34,6 +35,8 @@ def cnv_analysis(df_expr,df_gene,df_obs,tag):
 	df_expr = df_expr.loc[:,present_genes]
 	df_obs = df_obs.loc[df_expr.index.values]
 	
+	# df_obs = df_obs[df_obs['celltype']!='Malignant']
+ 
 	n=2500
 	sample = df_obs.groupby('celltype', group_keys=False).apply(sample_or_take_all,n)
 
@@ -53,28 +56,32 @@ def cnv_analysis(df_expr,df_gene,df_obs,tag):
 		adata,
 		reference_key="batch",
 		reference_cat = cats,
-		window_size=250,
-	)
+    	window_size=250,
+    	step=1	
+     )
 
 
 
 	plt.xlabel("chr", fontsize=14)
 	plt.ylabel("patient", fontsize=14)
-	plt.rcParams.update({'font.size': 14})	
+	plt.rcParams.update({'font.size': 14})
+ 	
+	adata.obsm['X_cnv'].data = np.clip(adata.obsm['X_cnv'].data, -0.25, 0.25)
+
 	cnv.pl.chromosome_heatmap(adata, 
 		figsize=(25, 20),
 		groupby="batch")
 		
-	plt.savefig('results/figure5_cnv_'+tag+'.pdf')
+	plt.savefig('results/figure5_cnv_'+tag+'_cancer.pdf')
 
 
-	cnv.tl.pca(adata)
-	cnv.pp.neighbors(adata,n_neighbors=30)
-	cnv.tl.leiden(adata,resolution=0.5)
-	cnv.tl.umap(adata,min_dist=1)
-	cnv.pl.umap(adata, color=['cnv_leiden','celltype','batch'])
+	# cnv.tl.pca(adata)
+	# cnv.pp.neighbors(adata,n_neighbors=30)
+	# cnv.tl.leiden(adata,resolution=0.5)
+	# cnv.tl.umap(adata,min_dist=1)
+	# cnv.pl.umap(adata, color=['cnv_leiden','celltype','batch'])
 
-	plt.savefig('results/figure5_cnv_umap_'+tag+'.png')
+	# plt.savefig('results/figure5_cnv_umap_'+tag+'_cancer.png')
 
 	# df_cnv = pd.DataFrame(adata.obsm['X_cnv'].todense())
 	# df_cnv.to_csv('results/cnv_'+tag+'.csv.gz',compression='gzip')

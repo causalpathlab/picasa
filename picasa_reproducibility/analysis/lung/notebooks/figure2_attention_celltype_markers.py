@@ -21,7 +21,7 @@ dfl.drop(0,axis=1,inplace=True)
 dfl.reset_index(inplace=True)
 
 marker = {
-    'Malignant': ['EPCAM', 'SFTPA1', 'KRT6A', 'KRT5', 'NAPSA', 'EGFR', 'SOX2', 'MYC', 'TP63', 'DSG3', 'MUC16', 'PAX8', 'CLDN3'],
+    'Malignant': ['EPCAM', 'SFTPA1', 'KRT6A', 'KRT5', 'NAPSA', 'EGFR', 'SOX2', 'MYC', 'TP63', 'DSG3', 'MUC16', 'PAX8', 'CLDN3','NKX2','NKX1'],
     
     'Mono/Macro': ['CD14', 'CD68', 'LYZ', 'FCGR3A', 'FCGR1A', 'CD163', 'MRC1', 'FCN1','APOE','CD1C','CD207','S100A9','S100A8','S100A12','CXCL9','CXCL10','CXCL11','GBP5','MARCO','CXCL5','MCEMP1','MMP12','IL7R','MT1G'],
     
@@ -51,7 +51,7 @@ marker = {
 
 unique_celltypes = dfl['celltype'].unique()
 
-fig, axes = plt.subplots(4, 2, figsize=(10, 12))
+fig, axes = plt.subplots(6, 2, figsize=(10, 20))
 
 for idx, ct in enumerate(unique_celltypes):
     
@@ -85,5 +85,5 @@ for idx, ct in enumerate(unique_celltypes):
     axes[row, col].set_title(ct)
     
 plt.tight_layout()
-plt.savefig('results/figure2_attention_celltype_markers.png')
+plt.savefig('results/figure2_attention_celltype_markers.pdf')
 plt.close()

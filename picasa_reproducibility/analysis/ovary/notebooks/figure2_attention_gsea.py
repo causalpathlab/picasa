@@ -18,6 +18,24 @@ dfl['gene'] = [x.split('_')[1] for x in dfl[0]]
 dfl.drop(0,axis=1,inplace=True)
 dfl.reset_index(inplace=True)
 
+######## fix cell type
+cmap = {
+'EOC':'Malignant',
+'Macrophages':'Monocyte', 
+'Plasma':'Plasma',
+'CAF':'Fibroblasts', 
+'Endothelial':'Endothelial',
+'T':'T', 
+'B':'B',
+'DC':'DC',
+'NK':'NK', 
+'Mast':'Mast'
+}
+
+dfl['celltype'] = [cmap[x] for x in dfl['celltype']]
+
+dfl = dfl[dfl['celltype']!='Epithelial']
+
 ##################
 
 unique_celltypes = dfl['celltype'].unique()
@@ -25,7 +43,7 @@ num_celltypes = len(unique_celltypes)
 
 
 ranked_gene_list = {}
-top_n = 1000
+top_n = 2000 ## this is ok as total gene is 2k so all ranked
 for idx, ct in enumerate(unique_celltypes):
 	ct_ylabel = dfl[dfl['celltype'] == ct].index.values
 	df_attn = df.iloc[ct_ylabel,:].copy()
@@ -41,10 +59,10 @@ for idx, ct in enumerate(unique_celltypes):
 	df_attn = df_attn.iloc[:top_n,:]
 
 	df_attn = pd.melt(df_attn, 
-                    id_vars=['Score'], 
-                    value_vars=['Gene1', 'Gene2'], 
-                    var_name='Gene_Type', 
-                    value_name='Gene')
+					id_vars=['Score'], 
+					value_vars=['Gene1', 'Gene2'], 
+					var_name='Gene_Type', 
+					value_name='Gene')
 
 	df_attn = df_attn[['Gene','Score']]
 	df_attn = df_attn.drop_duplicates(subset='Gene') 
@@ -54,104 +72,107 @@ for idx, ct in enumerate(unique_celltypes):
 	
 
 import gseapy as gp
+from scipy.cluster.hierarchy import linkage, dendrogram, leaves_list
+from plotnine import *
 
 available_libraries = gp.get_library_name(organism="Human")
 
 dbs = [
-# 'Azimuth_2023',
-# 'Azimuth_Cell_Types_2021',
-# 'BioPlanet_2019',
-# 'CellMarker_Augmented_2021',
-# 'GO_Biological_Process_2023',
-# 'GO_Cellular_Component_2023',
-# 'GO_Molecular_Function_2023',
-# 'GTEx_Tissues_V8_2023',
-# 'GWAS_Catalog_2023',
-# 'KEGG_2021_Human',
-# 'MSigDB_Hallmark_2020',
-'PanglaoDB_Augmented_2021',
-# 'Reactome_2022',
-# 'WikiPathways_2024_Human'
- 
-]
+	'PanglaoDB_Augmented_2021' 
+	]
 
-score_col = 'NES'
+pval_col = 'FDR q-val' 
+nes_col = 'NES'  
+min_size, max_size = 10, 500  
+top_n_pathways = 5
+
+all_pathway_results = {}
+
 for db in dbs:
 	try:
-		print(db)
+		print(f"Running GSEA for {db}")
 		gene_set_library = gp.get_library(name=db, organism="Human")
 
-
-		top_n_pathways = 5
-		top_pathways = []
-		for factor in unique_celltypes:
-			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-								gene_sets=gene_set_library,
-								min_size=10,  
-								max_size=100,  
-								permutation_num=1000,
-								outdir=None)  
-			
-			top_pathways.append(gsea_res.res2d.sort_values(by=score_col, ascending=False).head(top_n_pathways)['Term'].values)
-
-
-		tps = []
-		for tp in np.concatenate(top_pathways): 
-			if tp not in tps: 
-				tps.append(tp)
-		top_pathways = np.array(tps)
-
-
-
-		results = {}
-		results['pathways'] = top_pathways
+		all_pathways = []
 
 		for factor in unique_celltypes:
-			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-								gene_sets=gene_set_library,
-								min_size=15,  
-								max_size=100,  
-								permutation_num=1000,
-								outdir=None)  
-			
-			df_gsea = pd.DataFrame(gsea_res.res2d)
-			
-			no_pathways =  np.setdiff1d(df_gsea['Term'].values, results['pathways']).tolist() + np.setdiff1d(results['pathways'], df_gsea['Term'].values).tolist()
+			gsea_res = gp.prerank(
+				rnk=ranked_gene_list[factor],
+				gene_sets=gene_set_library,
+				min_size=min_size,
+				max_size=max_size,
+				permutation_num=1000,
+				outdir=None,
+			)
+
+			all_pathway_results[factor] = gsea_res.res2d
+
+			top_paths = (
+				gsea_res.res2d.sort_values(by=nes_col, ascending=False)
+				.head(top_n_pathways)["Term"]
+				.values
+			)
+			all_pathways.extend(top_paths)
+
+		selected_pathways = np.unique(all_pathways)
+
+		df_result = pd.DataFrame()
+
+		for factor in unique_celltypes:
+			df_gsea = all_pathway_results[factor].set_index("Term")
+
+			df_gsea = df_gsea.reindex(selected_pathways)
+			## 1 for pval	
+			df_gsea[pval_col] = df_gsea[pval_col].fillna(1.0)
+			## 0 for nes
+			df_gsea[nes_col] = df_gsea[nes_col].fillna(0.0)  
+
+			df_gsea = df_gsea[[pval_col, nes_col]]
+
+			df_gsea["ct"] = factor
+			df_result = pd.concat([df_result, df_gsea], axis=0)
+
+		df_result[pval_col] = pd.to_numeric(df_result[pval_col], errors='coerce')
+		df_result[nes_col] = pd.to_numeric(df_result[nes_col], errors='coerce')
+		df_result[pval_col] = -np.log10(df_result[pval_col]+1e-8)
+		df_result[pval_col] = df_result[pval_col].clip(lower=0, upper=4)
+		df_result[nes_col] = df_result[nes_col].clip(lower=-2, upper=2)
+		df_result.reset_index(inplace=True)
 		
-			df_gsea.set_index('Term',inplace=True)
-
-			df_gsea = df_gsea[[score_col]]
-		
-			for pathway in no_pathways:
-				df_gsea.loc[pathway] = 0.0
-		
-			results[factor] = df_gsea.loc[results['pathways']][score_col].values
-
-		df_result = pd.DataFrame(results)
-		df_result.set_index('pathways',inplace=True)
-		df_result = df_result.astype(float)
+		pivot_df = df_result.pivot(index="Term", columns="ct", values="FDR q-val")
+		row_linkage = linkage(pivot_df, method="ward")
+		col_linkage = linkage(pivot_df.T, method="ward")
+		row_order = leaves_list(row_linkage)
+		col_order = leaves_list(col_linkage)
+  
+		df_result["Term"] = pd.Categorical(df_result["Term"], categories=pivot_df.index[row_order], ordered=True)
+		df_result["ct"] = pd.Categorical(df_result["ct"], categories=pivot_df.columns[col_order], ordered=True)
 
 
-		from matplotlib.colors import LinearSegmentedColormap
-		colors = ['darkblue', 'lightblue', 'white', 'lightcoral', 'darkred']
-		plt.rcParams.update({'font.size': 10})
-		plt.figure(figsize=(35, 15))
-		custom_cmap = LinearSegmentedColormap.from_list('custom_vlag', colors)
+		df_result['Term'] = [x.replace('Cells','') for x in df_result['Term']]
 
-		if (df_result < 0).any().any():
-			col_p = sns.color_palette("viridis", as_cmap=True)
-		else:
-			col_p= sns.color_palette("Blues", as_cmap=True)
-		
-		sns.clustermap(df_result, 
-			yticklabels=df_result.index,  
-			xticklabels=df_result.columns,
-			annot=False, cmap=col_p),# cbar_kws={'label': score_col+' Score'})
-		plt.title(score_col+" score")
+		plt.figure(figsize=(15, 10))
+		p = (ggplot(df_result, aes(x='ct', y='Term', color='NES', size='FDR q-val')) 
+				# + geom_point()
+				+ geom_point(shape='s')
+				+ scale_color_gradient(low="blue", high="red")
+				+ scale_size_continuous(range=(0, 4))
+				+ theme(panel_grid=element_blank(),  
+						panel_background=element_blank(),
+						axis_line=element_blank(),  
+						axis_ticks=element_blank(),  
+						axis_text_x=element_text(rotation=45, hjust=1),
+						plot_background=element_rect(fill='white', color='white',
+						)  
+						)  
+		)
+
+		p.save(f'results/figure2_attention_gsea_{db}.pdf')
+		plt.title(f'{pval_col} Score')
 		plt.xticks(rotation=90)
-		plt.savefig('results/figure2_attention_gsea_'+db+'.png')
 		plt.close()
 
 	except Exception as e:  
 		print(f"An unexpected error occurred: {e}")
-		print('Failed.....'+db)
+		print(f'Failed.....{db}')
+

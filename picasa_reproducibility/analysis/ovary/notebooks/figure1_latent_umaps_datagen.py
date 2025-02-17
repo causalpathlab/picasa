@@ -12,6 +12,23 @@ wdir = wdir + '/notebooks/'
 
 ####################################
 
+cmap = {
+'EOC':'Malignant',
+'Macrophages':'Monocyte', 
+'Plasma':'Plasma',
+'CAF':'Fibroblasts', 
+'Endothelial':'Endothelial',
+'T':'T', 
+'B':'B',
+'DC':'DC',
+'NK':'NK', 
+'Mast':'Mast'
+}
+
+
+picasa_adata.obs['celltype']= [cmap[x] for x in picasa_adata.obs['celltype']]
+
+
 df = pd.DataFrame(index=picasa_adata.obs.index)
 
 sc.pp.neighbors(picasa_adata,use_rep='common')
@@ -28,5 +45,6 @@ df[['b_umap1','b_umap2']] = picasa_adata.obsm['X_umap']
 
 df['batch']=picasa_adata.obs['batch']
 df['celltype']=picasa_adata.obs['celltype']
+df['treatment_phase']=picasa_adata.obs['treatment_phase']
 
 df.to_csv(wdir+'/data/figure1_umap_coordinates.csv.gz',compression='gzip')

@@ -59,6 +59,32 @@ colors_28 = [
     "#336600",
 ]
 
+colors_24 = [
+    "#e41a1c",  # Red
+    "#377eb8",  # Blue
+    "#4daf4a",  # Green
+    "#984ea3",  # Purple
+    "#ff7f00",  # Orange
+    "#a65628",  # Brown
+    "#f781bf",  # Pink
+    "#999999",  # Grey
+    "#66c2a5",  # Teal
+    "#fc8d62",  # Salmon
+    "#8da0cb",  # Light Blue
+    "#e78ac3",  # Light Purple
+    "#a6d854",  # Lime Green
+    "#ffd92f",  # Light Yellow
+    "#e5c494",  # Light Brown
+    "#b3b3b3",  # Silver
+    "#8dd3c7",  # Aqua
+    "#bebada",  # Lavender
+    "#fb8072",  # Coral
+    "#80b1d3",  # Sky Blue
+    "#fdb462",  # Peach
+    "#b3de69",  # Mint
+    "#fccde5",  # Pale Pink
+    "#d9d9d9"   # Light Grey
+]
 
 # from https://godsnotwheregodsnot.blogspot.com/2012/09/color-distribution-methodology.html
 colors_100 = [

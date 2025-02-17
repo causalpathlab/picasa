@@ -46,7 +46,7 @@ seq_marker = []
 for m in marker.keys(): 
     for x in marker[m]: seq_marker.append(x)
 
-fig, axes = plt.subplots(4, 2, figsize=(10, 12))
+fig, axes = plt.subplots(4, 2, figsize=(10, 20))
 
 for idx, ct in enumerate(unique_celltypes):
     
@@ -74,5 +74,5 @@ for idx, ct in enumerate(unique_celltypes):
     axes[row, col].set_title(ct)
     
 plt.tight_layout()
-plt.savefig('results/figure2_attention_all_genes.png')
+plt.savefig('results/figure2_attention_all_genes.pdf')
 plt.close()

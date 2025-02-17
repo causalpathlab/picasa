@@ -22,14 +22,14 @@ def generate_gene_ranking(df,n_gene):
 		h_gtab.columns = ['gene','val']
 		h_genes = h_gtab['gene'].values
   
-		l_gtab = df.T.loc[:,x].sort_values(ascending=True)[:n_gene].reset_index()
-		l_gtab.columns = ['gene','val']
-		l_genes = l_gtab['gene'].values
-		l_genes = l_genes[::-1]
+		# l_gtab = df.T.loc[:,x].sort_values(ascending=True)[:n_gene].reset_index()
+		# l_gtab.columns = ['gene','val']
+		# l_genes = l_gtab['gene'].values
+		# l_genes = l_genes[::-1]
 
-		genes = np.concatenate([h_genes,l_genes])
-  
-		gene_ranking[x] = genes
+		# genes = np.concatenate([h_genes,l_genes])
+  		# gene_ranking[x] = genes
+		gene_ranking[x] = h_genes
 
 	return gene_ranking
 
@@ -38,7 +38,7 @@ def generate_gene_ranking(df,n_gene):
 
 print(df_w.shape)
 
-n_gene = 1000
+n_gene = 2000
 gene_ranking = generate_gene_ranking(df_w,n_gene)
 
 ranked_gene_list={}
@@ -58,6 +58,7 @@ dbs = [
 # 'Azimuth_2023',
 # 'Azimuth_Cell_Types_2021',
 # 'BioPlanet_2019',
+# 'BioCarta_2016',
 # 'CellMarker_Augmented_2021',
 # 'GO_Biological_Process_2023',
 # 'GO_Cellular_Component_2023',
@@ -69,13 +70,13 @@ dbs = [
 # 'MSigDB_Oncogenic_Signatures',
 # 'PanglaoDB_Augmented_2021',
 'Reactome_Pathways_2024',
-'WikiPathways_2024_Human'
+'WikiPathways_2024_Human'#not that good
 ]
 
 df_main = pd.DataFrame()
 
 unique_celltypes = list(ranked_gene_list.keys())
-score_col = 'NES'
+score_col = 'NES' ## adjusted p value - log10
 for db in dbs:
 	try:
 		print(db)
@@ -130,28 +131,6 @@ for db in dbs:
 		df_result = pd.DataFrame(results)
 		df_result.set_index('pathways',inplace=True)
 		df_result = df_result.astype(float)
-
-
-		from matplotlib.colors import LinearSegmentedColormap
-		colors = ['darkblue', 'lightblue', 'white', 'lightcoral', 'darkred']
-		plt.rcParams.update({'font.size': 10})
-		plt.figure(figsize=(35, 15))
-		custom_cmap = LinearSegmentedColormap.from_list('custom_vlag', colors)
-
-		if (df_result < 0).any().any():
-			col_p = sns.color_palette("viridis", as_cmap=True)
-		else:
-			col_p= sns.color_palette("Blues", as_cmap=True)
-		
-		sns.clustermap(df_result, 
-			yticklabels=df_result.index,  
-			xticklabels=df_result.columns,
-			annot=False, cmap=col_p),# cbar_kws={'label': score_col+' Score'})
-		plt.title(score_col+" score")
-		plt.xticks(rotation=90)
-		plt.savefig('results/figure6_unique_add_gsea_'+db+'.png')
-		plt.close()
-
 		df_result.index = [x+'('+db.split('_')[0]+')' for x in df_result.index]
   
 		df_main = pd.concat([df_main,df_result],axis=0)
@@ -159,15 +138,16 @@ for db in dbs:
 	except Exception as e:  
 		print(f"An unexpected error occurred: {e}")
 		print('Failed.....'+db)
-  
-th = 2
-df_main[df_main>th] = th
-df_main[df_main<-th] = -th
+
+df_main = df_main[df_main.sum(1)>1]
+max_thresh = -1 * df_main.min().min()
+df_main[df_main>max_thresh] = max_thresh
+df_main[df_main<-max_thresh] = -max_thresh
 sns.clustermap(df_main, 
 	yticklabels=df_main.index,  
 	xticklabels=df_main.columns,
-	annot=False, cmap=col_p,
+	annot=False,cmap='RdBu_r',
  	figsize=(15, 25)),# cbar_kws={'label': score_col+' Score'})
 plt.xticks(rotation=90)
-plt.savefig('results/figure6_unique_add_gsea_all.png')
+plt.savefig('results/figure6_unique_add_gsea_all.pdf')
 plt.close()

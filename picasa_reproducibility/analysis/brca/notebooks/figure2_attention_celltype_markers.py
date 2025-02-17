@@ -21,37 +21,27 @@ dfl.drop(0,axis=1,inplace=True)
 dfl.reset_index(inplace=True)
 
 marker = {
-    'Malignant': ['EPCAM', 'SFTPA1', 'KRT6A', 'KRT5', 'NAPSA', 'EGFR', 'SOX2', 'MYC', 'TP63', 'DSG3', 'MUC16', 'PAX8', 'CLDN3'],
+    'CD4Tconv': ['CD3D', 'CD3E', 'CD4', 'IL7R', 'CCR7','FOXP3','CD25','CXCL13', 'IL21','PDCD1'],
+    'CD8Tex': ['CD8A', 'CD8B', 'LAG3', 'PDCD1', 'TIGIT', 'EOMES', 'TBX21','IFNG','TNF','ZFP36'],
+    'Tprolif': ['MKI67', 'TOP2A', 'CD3D', 'CD3E', 'CD8A', 'CD8B'],
+    'B': ['IGKC','CD27','IGHD','IGLC2', 'CD19', 'MS4A1', 'CD79A', 'PAX5'],
+    'Mono/Macro': ['CD68', 'CD14', 'FCGR3A', 'CSF1R', 'MRC1','IL1B','S100A9','CD16'],
+    'DC': ['CD1C', 'CLEC9A', 'BATF3', 'ITGAX', 'HLA-DQB1', 'IRF7', 'LAMP3', 'XCR1', 'CCR7', 'HLA-DRA', 'FCER1A', 'IL3RA', 'CD86', 'CD80', 'FLT3'],
     
-    'Mono/Macro': ['CD14', 'CD68', 'LYZ', 'FCGR3A', 'FCGR1A', 'CD163', 'MRC1', 'FCN1','APOE','CD1C','CD207','S100A9','S100A8','S100A12','CXCL9','CXCL10','CXCL11','GBP5','MARCO','CXCL5','MCEMP1','MMP12','IL7R','MT1G'],
-    
-    'Fibroblasts': ['COL1A1', 'COL1A2', 'COL3A1', 'DCN', 'ACTA2', 'LUM', 'C1R', 'FAP','CCL2','CCL11','BMP4','MMP11','MMP12','MMP1','MMP9','IFIT1','ACGT2','MCAM','RGS5','MYH11'],
-    
-    'CD8T': ['CD2', 'CD3D', 'CD3E', 'CD3G', 'CD8A', 'TRAC', 'NKG7', 'GNLY', 'GZMA', 'GZMK', 'GZMB', 'GZMH','KLRC1','KLRD1','CCR7','LEF1','IL7R','SELL','LAG3'],
-    
-    'Tprolif': [
-    'MKI67', 'TOP2A', 'PCNA', 'CDK1', 'CDKN3', 'BIRC5', 'CCNB1', 
-    'CCNA2', 'TYMS', 'RRM2', 'UBE2C', 'NUSAP1', 'KIF11', 'TUBB', 
-    'E2F1', 'FOXP3'],
-    
-    'Endothelial': ['VWF', 'PECAM1', 'CLDN5', 'FLT1', 'KDR', 'CDH5', 'ANGPT2', 'ACKR1', 'GJA5', 'PROX1', 'PDPN', 'ESM1','APLN','CXCL12','NR2F2','MMRN1','GJA4','EFNB2','IFIT1','IFIT3','ISG20'],
-    
-    'Plasma': ['CD38', 'SDC1', 'MZB1', 'XBP1', 'IGHG1', 'IGHG3', 'PRDM1','JCHAIN'],
-    
-    'Basal': ['TP63', 'KRT5', 'KRT6A', 'KRT14', 'KRT17', 'SOX2', 'NGFR',  
-    'ITGA6', 'COL17A1', 'TRIM29', 'FOXI1', 'GATA3', 'P63',  
-    'SERPINB3', 'SERPINB4', 'LAMB3', 'LAMA3', 'SFN', 'KLF5',  
-    'CD44', 'VIM', 'NOTCH1', 'JAG1', 'DLL1'],
-    
-    'Epithelial ': ['EPCAM','CAPS','TFF3','SNTN','CDH1','CLDN18','AQP4','CAV1','AGER','SFTPC','SFTPA1','ABCA3','SCGB1A1','SCGB3A1','FOXJ1','TPPP3','PIFO'],
-    
-    'Alveolar': ['CLDN18','AQP4','CAV1','AGER','SFTPC','SFTPA1','ABCA3','SCGB1A1','SCGB3A1','FOXJ1','TPPP3','PIFO']
+    'Malignant': ['EPCAM', 'KRT8', 'KRT6B', 'KRT14', 'MKI67', 'TP53', 'SOX9',
+                  'CXCL13','S100A1','TRH','EMC3','PIP','HPD','HULC','MARCO','TFF1'
+                  ],
+    'Plasma': ['SDC1', 'CD38', 'IGHG1', 'MZB1', 'XBP1'],
+    'SMC': ['ACTA2', 'MYH11', 'TAGLN', 'CNN1', 'MYL9'],
+    'Endothelial': ['ACKR1', 'SELE', 'SELP','VWF', 'PECAM1', 'CDH5', 'FLT1', 'KDR','ICAM1' ,'VCAM1',
+                    'DLL4','RGS5','CXCL12','VEGFC'
+                    ],
+    'Fibroblasts': ['COL1A1', 'COL1A2', 'DCN', 'PDGFRB','PDGFRA', 'THY1'],
 }
-    
 
 unique_celltypes = dfl['celltype'].unique()
 
-fig, axes = plt.subplots(4, 2, figsize=(10, 12))
+fig, axes = plt.subplots(6, 2, figsize=(10, 20))
 
 for idx, ct in enumerate(unique_celltypes):
     
@@ -61,10 +51,6 @@ for idx, ct in enumerate(unique_celltypes):
     df_attn = df.iloc[ct_ylabel,:].copy()
     print(df_attn.shape)
     
-    if ct == 'Epithelial' or ct == 'CD8T':
-        df_attn[df_attn > .0001] = .0001
-    else:
-        df_attn[df_attn > .001] = .001
 
     sel_genes = [x for x in marker[ct] if x in df_attn.columns]
     df_attn = df_attn.loc[:,sel_genes]
@@ -75,15 +61,13 @@ for idx, ct in enumerate(unique_celltypes):
     
     df_attn = df_attn.loc[sel_genes,sel_genes]
     
-    df_attn.columns = [x.split('-')[0] for x in df_attn.columns]
-    df_attn.index = [x.split('-')[0] for x in df_attn.index]
     sns.heatmap(df_attn, ax=axes[row, col],
                 yticklabels=df_attn.index,  
                 xticklabels=df_attn.columns,  
-                cmap='viridis' 
+                cmap='viridis'
                 )
     axes[row, col].set_title(ct)
     
 plt.tight_layout()
-plt.savefig('results/figure2_attention_celltype_markers.png')
+plt.savefig('results/figure2_attention_celltype_markers.pdf')
 plt.close()

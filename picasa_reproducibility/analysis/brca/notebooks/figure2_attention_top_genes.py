@@ -46,7 +46,7 @@ marker = get_top_genes_per_group(df,dfl,unique_celltypes,top_n)
 # for m in marker.keys(): 
 #     for x in marker[m]: seq_marker.append(x)
 
-fig, axes = plt.subplots(6, 2, figsize=(30, 25))
+fig, axes = plt.subplots(6, 2, figsize=(20, 30))
 
 for idx, ct in enumerate(unique_celltypes):
     
@@ -75,5 +75,5 @@ for idx, ct in enumerate(unique_celltypes):
     axes[row, col].set_title(ct)
     
 plt.tight_layout()
-plt.savefig('results/figure2_attention_top_genes.png')
+plt.savefig('results/figure2_attention_top_genes.pdf')
 plt.close()

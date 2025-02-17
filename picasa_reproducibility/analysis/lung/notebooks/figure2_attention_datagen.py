@@ -57,8 +57,8 @@ df = pd.DataFrame()
 # 'P39':'LUAD',
 # 'P16':'LUAD',
 # }
-## select 5 from both groups 
-sel_patients = ['P10','P23','P1','P4','P37','P38','P21','P39','P16']
+## select 3 from both groups 
+sel_patients = ['P10','P23','P1','P38','P21','P39']
 
 
 for pairs in picasa_adata.uns['adata_pairs']:
@@ -89,7 +89,7 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
 			ct_yindxs = np.where(np.isin(main_y, ct_ylabel))[0]
 
-			min_cells = 25
+			min_cells = 1
 			if len(ct_yindxs) < min_cells:
 				continue
 

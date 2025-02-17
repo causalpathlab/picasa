@@ -23,20 +23,20 @@ dfl.reset_index(inplace=True)
 marker = {
     'EOC': ['EPCAM', 'WFDC2','SFTPA1', 'KRT6A', 'KRT5', 'NAPSA', 'EGFR', 'SOX2', 'MYC', 'TP63', 'DSG3', 'MUC16', 'PAX8', 'CLDN3','PAX8'],
     
-    'CAF': ['COL1A1', 'COL1A2', 'COL3A1', 'DCN', 'ACTA2', 'LUM', 'C1R', 'FAP','FGFR1'],
+    'CAF': ['COL1A1', 'COL1A2', 'COL3A1', 'DCN', 'ACTA2', 'LUM', 'C1R', 'FAP','FGFR1','PDPN','MMP1'],
     
-    'Endothelial': ['VWF', 'PECAM1', 'CLDN5', 'FLT1', 'KDR', 'CDH5', 'ANGPT2', 'ACKR1', 'GJA5', 'PROX1', 'PDPN', 'ESM1'],
+    'Endothelial': ['THBD','VWF', 'PECAM1', 'CLDN5', 'FLT1', 'KDR', 'CDH5', 'ANGPT2', 'ACKR1', 'GJA5', 'PROX1', 'PDPN', 'ESM1'],
     
     
-    'T': ['CD2', 'CD3D', 'CD3E', 'CD3G', 'CD8A', 'TRAC', 'NKG7', 'GNLY', 'GZMA', 'GZMK', 'GZMB', 'GZMH','CD79A', 'FCER1G', 'PTPRC'],
+    'T': ['CD2', 'CD3D', 'CD3E', 'CD3G','CD25','TRBC2', 'CD4','CD8A', 'TRAC', 'NKG7', 'GNLY', 'GZMA', 'GZMK', 'GZMB', 'GZMH','CD79A', 'FCER1G', 'PTPRC'],
     
     'Macrophages': ['CD14', 'CD68', 'LYZ', 'FCGR3A', 'FCGR1A', 'CD163', 'MRC1', 'FCN1','CD79A', 'FCER1G', 'PTPRC'],
     
     'B': ['CD19', 'MS4A1', 'CD79A', 'CD79B', 'IGKC', 'PAX5','CD79A', 'FCER1G', 'PTPRC'],
     
-    'NK': ['NCAM1', 'KLRD1', 'KLRC1', 'KIR2DL4', 'NKG2A', 'PRF1','CD79A', 'FCER1G', 'PTPRC'],
+    'NK': ['NCAM1', 'KLRD1', 'KLRB1', 'KIR2DL4', 'NKG2A', 'PRF1','CD79A', 'FCER1G', 'PTPRC'],
     
-    'DC': ['CD1C', 'CLEC9A', 'ITGAX', 'BATF3', 'HLA-DRA', 'CD86','CD79A', 'FCER1G', 'PTPRC'],
+    'DC': ['CD1C', 'CLEC10A', 'ITGAX', 'BATF3', 'HLA-DRA', 'CD86','CD79A', 'FCER1A', 'PTPRC'],
     
     'Mast': ['TPSAB1', 'TPSB2', 'CPA3', 'KIT', 'FCER1A', 'HDC','CD79A', 'FCER1G', 'PTPRC'],
     

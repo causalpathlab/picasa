@@ -46,12 +46,17 @@ patient_analyzed = []
 
 df = pd.DataFrame()
 
+selp = ['EOC1005','EOC540','EOC443','EOC136','EOC87']
+
 for pairs in picasa_adata.uns['adata_pairs']:
     
 	p1 = picasa_adata.uns['adata_keys'][pairs[0]]
 	p2 = picasa_adata.uns['adata_keys'][pairs[1]]
 
-	if p1 not in patient_analyzed:
+	if p1 not in patient_analyzed and  p1 in selp:
+     
+		patient_analyzed.append(p1)
+		
 		adata_p1 = picasa_data[p1]
 		adata_p2 = picasa_data[p2]
 		df_nbr = picasa_adata.uns['nbr_map']
@@ -74,7 +79,7 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
 			ct_yindxs = np.where(np.isin(main_y, ct_ylabel))[0]
    
-			if len(ct_yindxs) < 10:
+			if len(ct_yindxs) < 2:
 				continue
 
 			if len(ct_yindxs) > 100:
@@ -86,7 +91,8 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			df_attn.index = [p1+'@'+ct+'_'+x for x in df_attn.index]
 			df = pd.concat([df, df_attn], axis=0)
 			print(p1,ct,len(ct_yindxs),df.shape)
-			patient_analyzed.append(p1)
+   
+	
 	
 
 df.to_csv('data/figure2_attention_scores.csv.gz',compression='gzip')

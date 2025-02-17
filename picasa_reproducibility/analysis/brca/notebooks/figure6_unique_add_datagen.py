@@ -111,7 +111,7 @@ def row_col_order(dfm):
 
 ####################################
 
-top_n = 100
+top_n = 75
 df_top = get_topic_top_genes(df_w,top_n)
 
 #####################################
@@ -136,8 +136,8 @@ ro,co = row_col_order(df_w)
 df_w = df_w.loc[ro,co]
 
 df_w.index = topics
-max_thresh = 2
+max_thresh = df_w.max().max()
 df_w[df_w>max_thresh] = max_thresh
 df_w[df_w<-max_thresh] = -max_thresh
 sns.clustermap(df_w.T,cmap='viridis')
-plt.savefig( 'results/figure6_unique_add_hmap.png')
+plt.savefig( 'results/figure6_unique_add_hmap.pdf')

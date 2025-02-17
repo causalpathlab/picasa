@@ -14,7 +14,7 @@ wdir = wdir + '/notebooks/'
 
 cmap = {
 'Malignant':'Malignant',
-'Mono/Macro':'Mono/Macro', 
+'Mono/Macro':'Monocyte', 
 'Plasma':'Plasma',
 'Fibroblasts':'Fibroblasts', 
 'Endothelial':'Endothelial',
