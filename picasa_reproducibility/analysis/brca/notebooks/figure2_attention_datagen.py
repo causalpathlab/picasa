@@ -2,7 +2,8 @@ import anndata as ad
 import pandas as pd
 import os 
 import glob 
-from picasa import model,dutil
+from picasa import model,dutil,util
+from scipy.sparse import csr_matrix
 import torch
 import numpy as np
 
@@ -29,6 +30,69 @@ for file_name in file_names:
 
 picasa_data = batch_map
 
+########## add leiden label 
+
+dfleiden = pd.read_csv('data/figure1_umap_coordinates.csv.gz',index_col=0)
+
+
+dfg = dfleiden.groupby(['batch','celltype']).count()
+
+
+dfg = dfleiden.groupby(['c_leiden','celltype']).count()['c_umap1'].reset_index()
+celltype_sum = dict(dfg.groupby('c_leiden')['c_umap1'].sum())
+dfg['ncount'] = [x/celltype_sum[y] for x,y in zip(dfg['c_umap1'],dfg['c_leiden'])]
+dfg.sort_values(['c_leiden','ncount'],ascending=False,inplace=True)
+
+
+
+dfg[ (dfg.celltype=='DC')]  
+
+dfg.drop_duplicates(subset='c_leiden',inplace=True)
+
+dfg = dfg.reset_index(drop=True).copy()
+
+dfg[ (dfg.c_leiden==15)] 
+
+## fix issue of very low DC cells
+dfg.iloc[80,1] = 'DC'
+dfg.iloc[80,2] = 507
+
+
+dfg.drop_duplicates(subset='c_leiden',inplace=True)
+dfg['p_label'] = ['Common'+str(x)+'/'+y for x,y in zip (dfg['c_leiden'],dfg['celltype'])]
+
+dfg.sort_values(['c_umap1','celltype'],ascending=False,inplace=True)
+dfg.drop_duplicates(subset='celltype',inplace=True)
+
+
+dfleiden['p_label'] = ['Common'+str(x)+'/'+y for x,y in zip (dfleiden['c_leiden'],dfleiden['celltype'])]
+
+
+dfleiden = dfleiden[dfleiden['p_label'].isin(dfg['p_label'])]
+dfleiden['p_label'].value_counts()
+
+n= 10
+dfleiden = dfleiden.groupby(['batch', 'p_label'], group_keys=False).apply(lambda x: x.sample(min(len(x), n)))
+
+p_label_dict = {x.split('@')[0]:y for x,y in zip(dfleiden.index.values,dfleiden['p_label'])}
+
+#### now apply label to all data
+
+picasa_data_updated = {}
+for d in picasa_data:
+	c_cells = dfleiden[dfleiden['batch']==d].index.values
+	c_cells = [x.split('@')[0] for x in c_cells]
+	
+	df_x = picasa_data[d].to_df()
+	df_x = df_x.loc[c_cells]
+	obs_new = picasa_data[d].obs.loc[c_cells].copy()  
+	var_new = picasa_data[d].var.copy()  
+
+	c_adata = ad.AnnData(X=csr_matrix(df_x.values), obs=obs_new, var=var_new)
+	c_adata.obs['p_label'] = [p_label_dict[x] for x in c_adata.obs.index.values]
+	picasa_data_updated[d] = c_adata
+	
+
 
 ############ read model results as adata 
 wdir = pp+sample
@@ -46,43 +110,41 @@ patient_analyzed = []
 
 df = pd.DataFrame()
 
-## select 3 from both TNBC,ER,HER groups 
 sel_patients = [
-    'CID4495','CID44971','CID44991',
-    'CID4471','CID4290A','CID4535',
-    'CID3586','CID4066','CID3921'
+    'CID4515',
+    'CID4290A',
+    'CID4066'
     ]
 
-
 for pairs in picasa_adata.uns['adata_pairs']:
-    
+	
 	p1 = picasa_adata.uns['adata_keys'][pairs[0]]
 	p2 = picasa_adata.uns['adata_keys'][pairs[1]]
 
 	if p1 not in patient_analyzed and p1 in sel_patients:
-		adata_p1 = picasa_data[p1]
-		adata_p2 = picasa_data[p2]
-		df_nbr = picasa_adata.uns['nbr_map']
-		df_nbr = df_nbr[df_nbr['batch_pair']==p1+'_'+p2]
-		nbr_map = {x:(y,z) for x,y,z in zip(df_nbr['key'],df_nbr['neighbor'],df_nbr['score'])}
-
-		data_loader = dutil.nn_load_data_pairs(adata_p1, adata_p2, nbr_map,'cpu',batch_size=10)
-		eval_total_size=1000
+		adata_p1 = picasa_data_updated[p1]
+		adata_p2 = picasa_data_updated[p2]
+		nbr_map ={}
+		nbr_map[p1+'_'+p2] = util.generate_neighbours(adata_p2,adata_p1,p1+p2)
+ 
+		data_loader = dutil.nn_load_data_pairs(adata_p1, adata_p2, nbr_map[p1+'_'+p2],'cpu',batch_size=10)
+  
+		eval_total_size=adata_p1.shape[0]
 		main_attn,main_y = model.eval_attention_common(picasa_common_model,data_loader,eval_total_size)
 
 		##############################################
 
 
-		unique_celltypes = adata_p1.obs['celltype'].unique()
+		unique_celltypes = adata_p1.obs['p_label'].unique()
 		num_celltypes = len(unique_celltypes)
 
 
 		for idx, ct in enumerate(unique_celltypes):
 			
-			ct_ylabel = adata_p1.obs[adata_p1.obs['celltype'] == ct].index.values
+			ct_ylabel = adata_p1.obs[adata_p1.obs['p_label'] == ct].index.values
 			ct_yindxs = np.where(np.isin(main_y, ct_ylabel))[0]
 
-			min_cells = 25
+			min_cells = 1
 			if len(ct_yindxs) < min_cells:
 				continue
 
@@ -94,4 +156,4 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			print(p1,ct,len(ct_yindxs),df.shape)
 			patient_analyzed.append(p1)
 	
-df.to_csv(wdir+'/notebooks/data/figure2_attention_scores.csv.gz',compression='gzip')
+df.to_hdf('data/figure2_attention_scores.h5', key='df', mode='w', format='table', complevel=5, complib='blosc')

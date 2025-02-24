@@ -7,7 +7,7 @@ import seaborn as sns
 import numpy as np
 
 
-df = pd.read_csv('data/figure2_attention_scores.csv.gz',index_col=0)
+df = pd.read_hdf('data/figure2_attention_scores.h5', key='df')
 
 ##############################################
 
@@ -46,7 +46,7 @@ marker = get_top_genes_per_group(df,dfl,unique_celltypes,top_n)
 # for m in marker.keys(): 
 #     for x in marker[m]: seq_marker.append(x)
 
-fig, axes = plt.subplots(6, 2, figsize=(20, 30))
+fig, axes = plt.subplots(4, 2, figsize=(20, 30))
 
 for idx, ct in enumerate(unique_celltypes):
     

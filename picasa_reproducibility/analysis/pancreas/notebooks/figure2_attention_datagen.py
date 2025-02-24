@@ -45,7 +45,8 @@ patient_analyzed = []
 
 df = pd.DataFrame()
 
-sel_batch = ['indrop1','celseq','fluidigmc1','smartseq2']
+# sel_batch = ['indrop1','celseq','fluidigmc1','smartseq2']
+sel_batch = ['indrop1','indrop2','indrop3']
 for pairs in picasa_adata.uns['adata_pairs']:
     
 	p1 = picasa_adata.uns['adata_keys'][pairs[0]]
@@ -87,4 +88,5 @@ for pairs in picasa_adata.uns['adata_pairs']:
 			print(p1,ct,len(ct_yindxs),df.shape)
 			patient_analyzed.append(p1)
 	
-df.to_csv(wdir+'/notebooks/data/figure2_attention_scores.csv.gz',compression='gzip')
+df.to_hdf('data/figure2_attention_scores.h5', key='df', mode='w', format='table', complevel=5, complib='blosc')
+

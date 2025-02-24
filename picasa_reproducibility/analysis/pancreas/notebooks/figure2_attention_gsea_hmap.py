@@ -7,7 +7,7 @@ import seaborn as sns
 import numpy as np
 
 
-df = pd.read_csv('data/figure2_attention_scores.csv.gz',index_col=0)
+df = pd.read_hdf('data/figure2_attention_scores.h5', key='df')
 
 ##############################################
 
@@ -111,19 +111,22 @@ for db in dbs:
 			## 0 for nes
 			df_gsea[nes_col] = df_gsea[nes_col].fillna(0.0)  
 
-			df_gsea = df_gsea[[pval_col, nes_col]]
-
 			df_gsea["ct"] = factor
 			df_result = pd.concat([df_result, df_gsea], axis=0)
 
 		df_result[pval_col] = pd.to_numeric(df_result[pval_col], errors='coerce')
 		df_result[nes_col] = pd.to_numeric(df_result[nes_col], errors='coerce')
-		df_result[pval_col] = -np.log10(df_result[pval_col]+1e-8)
-		df_result[pval_col] = df_result[pval_col].clip(lower=0, upper=4)
+		pval_col_log = '-log10(padj)'
+		df_result[pval_col_log] = -np.log10(df_result[pval_col]+1e-8)
+		df_result[pval_col_log] = df_result[pval_col_log].clip(lower=0, upper=4)
 		df_result[nes_col] = df_result[nes_col].clip(lower=-2, upper=2)
+  
+		df_result.to_csv('results/figure2_attention_gsea_hmap.csv')
+  
+  
 		df_result.reset_index(inplace=True)
-		
-		pivot_df = df_result.pivot(index="Term", columns="ct", values="FDR q-val")
+		df_result = df_result[[pval_col_log, nes_col,"Term","ct"]]
+		pivot_df = df_result.pivot(index="Term", columns="ct", values=nes_col)
 		row_linkage = linkage(pivot_df, method="ward")
 		col_linkage = linkage(pivot_df.T, method="ward")
 		row_order = leaves_list(row_linkage)
@@ -133,10 +136,10 @@ for db in dbs:
 		df_result["ct"] = pd.Categorical(df_result["ct"], categories=pivot_df.columns[col_order], ordered=True)
 
 
-		df_result['Term'] = [x.replace('Cells','') for x in df_result['Term']]
-
-		plt.figure(figsize=(15, 10))
-		p = (ggplot(df_result, aes(x='ct', y='Term', color='NES', size='FDR q-val')) 
+		df_result['Term'] = [x.replace('Cells','') for x in df_result['Term']]		
+		##save before plot
+  
+		p = (ggplot(df_result, aes(x='ct', y='Term', color='NES', size=pval_col_log)) 
 				# + geom_point()
 				+ geom_point(shape='s')
 				+ scale_color_gradient(low="blue", high="red")
@@ -151,8 +154,8 @@ for db in dbs:
 						)  
 		)
 
-		p.save(f'results/figure2_attention_gsea_{db}.pdf')
-		plt.title(f'{pval_col} Score')
+		p.save(f'results/figure2_attention_gsea_'+db+'.pdf', height=10, width=6)
+		plt.title(f'{pval_col_log} Score')
 		plt.xticks(rotation=90)
 		plt.close()
 
@@ -160,3 +163,18 @@ for db in dbs:
 		print(f"An unexpected error occurred: {e}")
 		print(f'Failed.....{db}')
 
+
+###### get numbers for paper
+
+import pandas as pd
+df = pd.read_csv('results/figure2_attention_gsea_hmap.csv')
+col = 'NOM p-val'
+df.sort_values(col,ascending=True,inplace=True)
+
+for ct in df.ct.unique():
+    print('#############################')
+    print(ct)
+    print(df[df['ct']==ct][['Term',col]])
+    
+    
+    

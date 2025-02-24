@@ -86,6 +86,14 @@ colors_24 = [
     "#d9d9d9"   # Light Grey
 ]
 
+colors_36 = [
+    '#f28d1a', '#764dc8', '#dc143c', '#1f7a8c', '#57a34b', '#482173', '#c4a107', '#ff6600',
+    '#ffa07a', '#708090', '#9370db', '#5f9ea0', '#4682b4', '#dda0dd', '#778899', '#98fb98',
+    '#b8860b', '#cd5c5c', '#8b4513', '#fa8072', '#a52a2a', '#ff4500', '#daa520', '#8fbc8f',
+    '#6b8e23', '#4682b4', '#ff1493', '#7fffd4', '#00ff7f', '#006400', '#0000ff', '#9acd32',
+    '#1e90ff', '#800080', '#adff2f', '#ff69b4'
+]
+
 # from https://godsnotwheregodsnot.blogspot.com/2012/09/color-distribution-methodology.html
 colors_100 = [
     # "#000000",  # remove the black, as often, we have black colored annotation

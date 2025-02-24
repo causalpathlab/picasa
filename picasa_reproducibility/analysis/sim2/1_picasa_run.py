@@ -8,8 +8,8 @@ import glob
 import os
 
 
-sample = sys.argv[1] 
-wdir = sys.argv[2]
+sample = 'sim2'
+wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 common_epochs = 1
 common_meta_epoch = 15

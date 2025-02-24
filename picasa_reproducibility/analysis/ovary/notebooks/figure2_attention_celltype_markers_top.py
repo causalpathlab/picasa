@@ -22,23 +22,7 @@ dfl.reset_index(inplace=True)
 
 
 ######## fix cell type
-cmap = {
-'EOC':'Malignant',
-'Macrophages':'Monocyte', 
-'Plasma':'Plasma',
-'CAF':'Fibroblasts', 
-'Endothelial':'Endothelial',
-'T':'T', 
-'B':'B',
-'DC':'DC',
-'NK':'NK', 
-'Mast':'Mast'
-}
 
-
-dfl['celltype'] = [cmap[x] for x in dfl['celltype']]
-
-dfl = dfl[dfl['celltype']!='Epithelial']
 
 marker = [
     'THBD','ACKR1', 

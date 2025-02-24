@@ -70,14 +70,13 @@ def generate_gene_ranking(df,n_gene):
 
 ####################################
 
-selected_topics = ['k5', 'k11', 'k47']
-
+selected_topics = ['u5', 'u8','u11','u14', 'u47']
 
 df_w.reset_index(inplace=True)
-df_w['index'] = ['k'+str(x) for x in df_w['index']]
+df_w['index'] = ['u'+str(x) for x in df_w['index']]
 df_w = df_w.loc[df_w['index'].isin(selected_topics)]
-df_w.drop(columns={'index'},inplace=True)
-df_w.reset_index(drop=True,inplace=True)
+
+df_w.set_index('index',inplace=True)
 
 
 print(df_w.shape)
@@ -95,109 +94,175 @@ for k,v in gene_ranking.items():
     
 
 import gseapy as gp
+from scipy.cluster.hierarchy import linkage, dendrogram, leaves_list
+from plotnine import *
 
 available_libraries = gp.get_library_name(organism="Human")
 
 dbs = [
-# 'Azimuth_2023',
-# 'Azimuth_Cell_Types_2021',
-# 'BioPlanet_2019',
-# 'BioCarta_2016',
-# 'CellMarker_Augmented_2021',
-# 'GO_Biological_Process_2023',
-# 'GO_Cellular_Component_2023',
-# 'GO_Molecular_Function_2023',
-# 'GTEx_Tissues_V8_2023',
-# 'GWAS_Catalog_2023',
 'KEGG_2021_Human',
-# 'MSigDB_Hallmark_2020',
-# 'MSigDB_Oncogenic_Signatures',
-# 'PanglaoDB_Augmented_2021',
-'Reactome_Pathways_2024',
-# 'WikiPathways_2024_Human'
+'MSigDB_Hallmark_2020',
+# 'Reactome_2022',
+'Reactome_Pathways_2024'
 ]
+
+
+
+unique_celltypes = list(ranked_gene_list.keys())
+
+pval_col = 'FDR q-val' 
+nes_col = 'NES'  
+pval_col_log = '-log10(p-val)'
+min_size, max_size = 10, 500  
+top_n_pathways = 5
+
+all_pathway_results = {}
 
 df_main = pd.DataFrame()
 
-unique_celltypes = list(ranked_gene_list.keys())
-score_col = 'FDR q-val'
-score_col = 'NES'
 for db in dbs:
 	try:
-		print(db)
+		print(f"Running GSEA for {db}")
 		gene_set_library = gp.get_library(name=db, organism="Human")
 
-
-		top_n_pathways = 10
-		top_pathways = []
-		for factor in unique_celltypes:
-			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-								gene_sets=gene_set_library,
-								min_size=10,  
-								max_size=1000,  
-								permutation_num=1000,
-								outdir=None)  
-			
-			top_pathways.append(gsea_res.res2d.sort_values(by=score_col, ascending=False).head(top_n_pathways)['Term'].values)
-
-
-		tps = []
-		for tp in np.concatenate(top_pathways): 
-			if tp not in tps: 
-				tps.append(tp)
-		top_pathways = np.array(tps)
-
-
-
-		results = {}
-		results['pathways'] = top_pathways
+		all_pathways = []
 
 		for factor in unique_celltypes:
-			gsea_res = gp.prerank(rnk=ranked_gene_list[factor],  
-								gene_sets=gene_set_library,
-								min_size=3,  
-								max_size=1000,  
-								permutation_num=1000,
-								outdir=None)  
-			
-			df_gsea = pd.DataFrame(gsea_res.res2d)
-			
-			no_pathways =  np.setdiff1d(results['pathways'], df_gsea['Term'].values).tolist()
-		
-			df_gsea.set_index('Term',inplace=True)
+			gsea_res = gp.prerank(
+				rnk=ranked_gene_list[factor],
+				gene_sets=gene_set_library,
+				min_size=min_size,
+				max_size=max_size,
+				permutation_num=1000,
+				outdir=None,
+			)
 
-			df_gsea = df_gsea[[score_col]]
-		
-			for pathway in no_pathways:
-				df_gsea.loc[pathway] = 0.0
-		
-			results[factor] = df_gsea.loc[results['pathways']][score_col].values
+			all_pathway_results[factor] = gsea_res.res2d
 
-		df_result = pd.DataFrame(results)
-		
-		df_result.set_index('pathways',inplace=True)
-		df_result.columns = selected_topics
-		df_result = df_result.astype(float)
+			top_paths = (
+				gsea_res.res2d.sort_values(by=nes_col, ascending=False)
+				.head(top_n_pathways)["Term"]
+				.values
+			)
+			all_pathways.extend(top_paths)
 
-		df_result.index = [x+'('+db.split('_')[0]+')' for x in df_result.index]
+		selected_pathways = np.unique(all_pathways)
+
+		df_result = pd.DataFrame()
+
+		for factor in unique_celltypes:
+			df_gsea = all_pathway_results[factor].set_index("Term")
+
+			df_gsea = df_gsea.reindex(selected_pathways)
+			## 1 for pval	
+			df_gsea[pval_col] = df_gsea[pval_col].fillna(1.0)
+			## 0 for nes
+			df_gsea[nes_col] = df_gsea[nes_col].fillna(0.0)  
+
+			df_gsea["ct"] = factor
+			df_result = pd.concat([df_result, df_gsea], axis=0)
+
+		df_result[pval_col] = pd.to_numeric(df_result[pval_col], errors='coerce')
+		df_result[nes_col] = pd.to_numeric(df_result[nes_col], errors='coerce')
+		df_result[pval_col_log] = -np.log10(df_result[pval_col]+1e-8)
+		df_result[pval_col_log] = df_result[pval_col_log].clip(lower=0, upper=4)
+		df_result[nes_col] = df_result[nes_col].clip(lower=-2, upper=2)
   
+		# df_result.reset_index(inplace=True)
+		# pivot_df = df_result.pivot(index="Term", columns="ct", values=nes_col)
+		# row_linkage = linkage(pivot_df, method="ward")
+		# col_linkage = linkage(pivot_df.T, method="ward")
+		# row_order = leaves_list(row_linkage)
+		# col_order = leaves_list(col_linkage)
+  
+		# df_result["Term"] = pd.Categorical(df_result["Term"], categories=pivot_df.index[row_order], ordered=True)
+		# df_result["ct"] = pd.Categorical(df_result["ct"], categories=pivot_df.columns[col_order], ordered=True)
+
+
+		df_result['Term'] = [x.replace('Cells','') for x in df_result.index.values]
+		df_result['Term'] = [x[:50] for x in df_result['Term']]
+		df_result['Term'] = [db.split('_')[0]+'/'+x for x in df_result['Term']]
+
 		df_main = pd.concat([df_main,df_result],axis=0)
-  
+
+	# 	plt.figure(figsize=(25, 10))
+	# 	p = (ggplot(df_result, aes(x='ct', y='Term', color='NES', size=pval_col_log)) 
+	# 			# + geom_point()
+	# 			+ geom_point(shape='o')
+	# 			+ scale_color_gradient(low="skyblue", high="green")				+ scale_size_continuous(range=(0, 4))
+	# 			+ theme(panel_grid=element_blank(),  
+	# 					panel_background=element_blank(),
+	# 					axis_line=element_blank(),  
+	# 					axis_ticks=element_blank(),  
+	# 					axis_text_x=element_text(rotation=45, hjust=1),
+	# 					plot_background=element_rect(fill='white', color='white',
+	# 					)  
+	# 					)  
+	# 	)
+
+	# 	plt.title(f'{pval_col} Score')
+	# 	plt.xticks(rotation=90)
+	# 	plt.tight_layout()
+	# 	p.save(f'results/figure2_attention_gsea_{db}.pdf')
+	# 	plt.close()
+
 	except Exception as e:  
 		print(f"An unexpected error occurred: {e}")
-		print('Failed.....'+db)
-  
-# df_main = -np.log10(df_main+1e-8)
+		print(f'Failed.....{db}')
 
-# max_thresh = 2
-# df_main[df_main>max_thresh] = max_thresh
-# df_main[df_main<-max_thresh] = -max_thresh
-sns.clustermap(df_main, 
-	yticklabels=df_main.index,  
-	xticklabels=df_main.columns,
-	annot=False,cmap='RdBu_r',
- 	figsize=(15, 25)),# cbar_kws={'label': score_col+' Score'})
+
+df_main.to_csv('results/figure7_unique_patient_gsea.csv')
+
+pivot_df = df_main.pivot(index="Term", columns="ct", values=nes_col)
+def unique_max(row):
+    max_value = row.max()
+    return (row >= max_value).sum() == 1  
+
+pivot_df = pivot_df[pivot_df.apply(unique_max, axis=1)]
+
+
+row_linkage = linkage(pivot_df, method="ward")
+col_linkage = linkage(pivot_df.T, method="ward")
+row_order = leaves_list(row_linkage)
+col_order = leaves_list(col_linkage)
+
+df_main = df_main[df_main['Term'].isin(pivot_df.index.values)]
+
+df_main["Term"] = pd.Categorical(df_main["Term"], categories=pivot_df.index[row_order], ordered=True)
+df_main["ct"] = pd.Categorical(df_main["ct"], categories=pivot_df.columns[col_order], ordered=True)
+
+
+p = (ggplot(df_main, aes(x='ct', y='Term', color='NES', size=pval_col_log)) 
+		# + geom_point()
+		+ geom_point(shape='o')
+		+ scale_color_gradient(low="skyblue", high="green")				+ scale_size_continuous(range=(0, 4))
+		+ theme(panel_grid=element_blank(),  
+				panel_background=element_blank(),
+				axis_line=element_blank(),  
+				axis_ticks=element_blank(),  
+				axis_text_x=element_text(rotation=45, hjust=1),
+				plot_background=element_rect(fill='white', color='white',
+				)  
+				)  
+)
+
+plt.title(f'{pval_col} Score')
 plt.xticks(rotation=90)
-
-plt.savefig('results/figure7_unique_add_gsea_all.png')
+# plt.tight_layout()
+p.save(f'results/figure7_unique_patient_gsea.pdf',height=10,width=8,limitsize=False)
 plt.close()
+
+
+###### get numbers for paper
+
+import pandas as pd
+df = pd.read_csv('results/figure7_unique_patient_gsea.csv')
+col = 'NOM p-val'
+df.sort_values(col,ascending=True,inplace=True)
+
+for ct in df.ct.unique():
+    print('#############################')
+    print(ct)
+    print(df[df['ct']==ct][['Term.1',col,'NES']])
+    
+    

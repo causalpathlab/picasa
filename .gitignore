@@ -40,3 +40,5 @@ __pycache__/
 *.out
 *.model
 *.RDS
+*.parquet
+*.pdf

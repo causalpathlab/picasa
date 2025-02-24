@@ -1,0 +1,90 @@
+import picasa 
+import anndata as ad
+import scanpy as sc
+import pandas as pd
+import matplotlib.pylab as plt
+import seaborn as sns
+import numpy as np
+
+
+df = pd.read_csv('data/figure2_attention_scores.csv.gz',index_col=0)
+
+df.isna().any().any()
+
+##############################################
+
+dfl = pd.DataFrame(df.index.values)
+dfl['patient'] = [x.split('@')[0] for x in dfl[0]]
+dfl['celltype'] = [x.split('@')[1].split('_')[0] for x in dfl[0]]
+dfl['gene'] = [x.split('_')[1] for x in dfl[0]]
+dfl.drop(0,axis=1,inplace=True)
+dfl.reset_index(inplace=True)
+
+
+######## fix cell type
+cmap = {
+'Malignant':'Malignant',
+'Mono/Macro':'Monocyte', 
+'Plasma':'Plasma',
+'Fibroblasts':'Fibroblasts', 
+'Endothelial':'Endothelial',
+'Tprolif':'T', 
+'CD4Tconv':'T', 
+'CD8Tex':'T', 
+'DC':'DC', 
+'Epithelial':'Epithelial', 
+'B':'B',
+'SMC':'SMC'
+}
+
+
+dfl['celltype'] = [cmap[x] for x in dfl['celltype']]
+
+dfl = dfl[dfl['celltype']!='Epithelial']
+
+marker = [
+    'PECAM1','CD34', 
+    'PDGFRB', 'COL1A1', 
+    'EPCAM', 'MKI67', 
+    'CD68','CD14', 
+    'JCHAIN','IGKC',
+    'CD27','IGHD',
+    'CD3D', 'TIGIT'  
+]
+    
+
+unique_celltypes = dfl['celltype'].unique()
+
+fig, axes = plt.subplots(5, 2, figsize=(10, 20))
+
+for idx, ct in enumerate(unique_celltypes):
+    
+    row, col = idx // 2, idx % 2
+    
+    ct_ylabel = dfl[dfl['celltype'] == ct].index.values
+    df_attn = df.iloc[ct_ylabel,:].copy()
+    print(df_attn.shape)
+    
+    df_attn[df_attn > .0001] = .0001
+
+    sel_genes = [x for x in marker if x in df_attn.columns]
+    df_attn = df_attn.loc[:,sel_genes]
+    
+    df_attn['gene'] = [x.split('_')[1] for x in df_attn.index.values]
+    df_attn = df_attn[df_attn['gene'].isin(sel_genes)]
+    df_attn = df_attn.groupby('gene').mean()
+    
+    df_attn = df_attn.loc[sel_genes,sel_genes]
+    
+    df_attn.columns = [x.split('-')[0] for x in df_attn.columns]
+    df_attn.index = [x.split('-')[0] for x in df_attn.index]
+    sns.heatmap(df_attn, ax=axes[row, col],
+                yticklabels=df_attn.index,  
+                xticklabels=df_attn.columns,  
+                cmap='viridis' 
+                )
+    axes[row, col].set_title(ct)
+    
+plt.tight_layout()
+plt.savefig('results/figure2_attention_celltype_markers_top.pdf')
+plt.close()

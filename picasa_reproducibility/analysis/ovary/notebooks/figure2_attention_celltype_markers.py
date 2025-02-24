@@ -21,32 +21,32 @@ dfl.drop(0,axis=1,inplace=True)
 dfl.reset_index(inplace=True)
 
 marker = {
-    'EOC': ['EPCAM', 'WFDC2','SFTPA1', 'KRT6A', 'KRT5', 'NAPSA', 'EGFR', 'SOX2', 'MYC', 'TP63', 'DSG3', 'MUC16', 'PAX8', 'CLDN3','PAX8'],
+    'Common1/Malignant': ['EPCAM', 'WFDC2','SFTPA1', 'KRT6A', 'KRT5', 'NAPSA', 'EGFR', 'SOX2', 'MYC', 'TP63', 'DSG3', 'MUC16', 'PAX8', 'CLDN3','PAX8'],
     
-    'CAF': ['COL1A1', 'COL1A2', 'COL3A1', 'DCN', 'ACTA2', 'LUM', 'C1R', 'FAP','FGFR1','PDPN','MMP1'],
+    'Common10/Fibroblasts': ['COL1A1', 'COL1A2', 'COL3A1', 'DCN', 'ACTA2', 'LUM', 'C1R', 'FAP','FGFR1','PDPN','MMP1'],
     
-    'Endothelial': ['THBD','VWF', 'PECAM1', 'CLDN5', 'FLT1', 'KDR', 'CDH5', 'ANGPT2', 'ACKR1', 'GJA5', 'PROX1', 'PDPN', 'ESM1'],
+    'Common15/Endothelial': ['THBD','VWF', 'PECAM1', 'CLDN5', 'FLT1', 'KDR', 'CDH5', 'ANGPT2', 'ACKR1', 'GJA5', 'PROX1', 'PDPN', 'ESM1'],
     
     
-    'T': ['CD2', 'CD3D', 'CD3E', 'CD3G','CD25','TRBC2', 'CD4','CD8A', 'TRAC', 'NKG7', 'GNLY', 'GZMA', 'GZMK', 'GZMB', 'GZMH','CD79A', 'FCER1G', 'PTPRC'],
+    'Common0/T': ['CD2', 'CD3D', 'CD3E', 'CD3G','CD25','TRBC2', 'CD4','CD8A', 'TRAC', 'NKG7', 'GNLY', 'GZMA', 'GZMK', 'GZMB', 'GZMH','CD79A', 'FCER1G', 'PTPRC'],
     
-    'Macrophages': ['CD14', 'CD68', 'LYZ', 'FCGR3A', 'FCGR1A', 'CD163', 'MRC1', 'FCN1','CD79A', 'FCER1G', 'PTPRC'],
+    'Common7/Monocyte': ['CD14', 'CD68', 'LYZ', 'FCGR3A', 'FCGR1A', 'CD163', 'MRC1', 'FCN1','CD79A', 'FCER1G', 'PTPRC'],
     
-    'B': ['CD19', 'MS4A1', 'CD79A', 'CD79B', 'IGKC', 'PAX5','CD79A', 'FCER1G', 'PTPRC'],
+    'Common8/B': ['CD19', 'MS4A1', 'CD79A', 'CD79B', 'IGKC', 'PAX5','CD79A', 'FCER1G', 'PTPRC'],
     
-    'NK': ['NCAM1', 'KLRD1', 'KLRB1', 'KIR2DL4', 'NKG2A', 'PRF1','CD79A', 'FCER1G', 'PTPRC'],
+    'Common36/NK': ['NCAM1', 'KLRD1', 'KLRB1', 'KIR2DL4', 'NKG2A', 'PRF1','CD79A', 'FCER1G', 'PTPRC'],
     
-    'DC': ['CD1C', 'CLEC10A', 'ITGAX', 'BATF3', 'HLA-DRA', 'CD86','CD79A', 'FCER1A', 'PTPRC'],
+    'Common17/DC': ['CD1C', 'CLEC10A', 'ITGAX', 'BATF3', 'HLA-DRA', 'CD86','CD79A', 'FCER1A', 'PTPRC'],
     
-    'Mast': ['TPSAB1', 'TPSB2', 'CPA3', 'KIT', 'FCER1A', 'HDC','CD79A', 'FCER1G', 'PTPRC'],
+    'Common18/Mast': ['TPSAB1', 'TPSB2', 'CPA3', 'KIT', 'FCER1A', 'HDC','CD79A', 'FCER1G', 'PTPRC'],
     
-    'Plasma': ['CD38', 'SDC1', 'MZB1', 'XBP1', 'IGHG1', 'IGHG3', 'PRDM1','CD79A', 'FCER1G', 'PTPRC']
+    'Common19/Plasma': ['CD38', 'SDC1', 'MZB1', 'XBP1', 'IGHG1', 'IGHG3', 'PRDM1','CD79A', 'FCER1G', 'PTPRC']
 }
-
+ 
 
 unique_celltypes = dfl['celltype'].unique()
 
-fig, axes = plt.subplots(5, 2, figsize=(10, 12))
+fig, axes = plt.subplots(5, 2, figsize=(10, 20))
 
 for idx, ct in enumerate(unique_celltypes):
     
@@ -54,8 +54,12 @@ for idx, ct in enumerate(unique_celltypes):
     
     ct_ylabel = dfl[dfl['celltype'] == ct].index.values
     df_attn = df.iloc[ct_ylabel,:].copy()
+    print(df_attn.shape)
     
-    df_attn[df_attn > .001] = .001
+    if ct == 'Epithelial' or ct == 'CD8T':
+        df_attn[df_attn > .0001] = .0001
+    else:
+        df_attn[df_attn > .001] = .001
 
     sel_genes = [x for x in marker[ct] if x in df_attn.columns]
     df_attn = df_attn.loc[:,sel_genes]
@@ -76,5 +80,5 @@ for idx, ct in enumerate(unique_celltypes):
     axes[row, col].set_title(ct)
     
 plt.tight_layout()
-plt.savefig('results/figure2_attention_celltype_markers.png')
+plt.savefig('results/figure2_attention_celltype_markers.pdf')
 plt.close()

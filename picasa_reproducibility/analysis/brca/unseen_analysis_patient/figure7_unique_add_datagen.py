@@ -84,10 +84,11 @@ def row_col_order(dfm):
 
 ####################################
 
-selected_topics = ['k5','k22', 'k35', 'k48', 'k55', 'k96', 'k104']
+selected_topics = ['u5', 'u15','u22','u35', 'u48','u55','u96']
+
 
 df_w.reset_index(inplace=True)
-df_w['index'] = ['k'+str(x) for x in df_w['index']]
+df_w['index'] = ['u'+str(x) for x in df_w['index']]
 df_w = df_w.loc[df_w['index'].isin(selected_topics)]
 df_w.drop(columns={'index'},inplace=True)
 df_w.reset_index(drop=True,inplace=True)
@@ -103,7 +104,7 @@ df_w = df_w.loc[:,all_genes]
 ro,co = row_col_order(df_w)
 df_w = df_w.loc[ro,co]
 
-df_w.index = selected_topics
+df_w.index = np.array(selected_topics)[ro]
 max_thresh = 4
 df_w[df_w>max_thresh] = max_thresh
 df_w[df_w<-max_thresh] = -max_thresh

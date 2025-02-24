@@ -46,7 +46,7 @@ marker = get_top_genes_per_group(df,dfl,unique_celltypes,top_n)
 # for m in marker.keys(): 
 #     for x in marker[m]: seq_marker.append(x)
 
-fig, axes = plt.subplots(5, 2, figsize=(30, 25))
+fig, axes = plt.subplots(5, 2, figsize=(20, 30))
 
 for idx, ct in enumerate(unique_celltypes):
     
@@ -54,11 +54,7 @@ for idx, ct in enumerate(unique_celltypes):
     
     ct_ylabel = dfl[dfl['celltype'] == ct].index.values
     df_attn = df.iloc[ct_ylabel,:].copy()
-    
-    if ct == 'Macrophages' or ct == 'EOC' or ct == 'DC'or ct == 'CAF':    
-        df_attn[df_attn > .001] = .001
-    else:
-        df_attn[df_attn > .01] = .01
+    df_attn[df_attn > .001] = .001
 
     sel_genes = [x for x in marker[ct] if x in df_attn.columns]
     df_attn = df_attn.loc[:,sel_genes]
@@ -79,5 +75,5 @@ for idx, ct in enumerate(unique_celltypes):
     axes[row, col].set_title(ct)
     
 plt.tight_layout()
-plt.savefig('results/figure2_attention_top_genes.png')
+plt.savefig('results/figure2_attention_top_genes.pdf')
 plt.close()

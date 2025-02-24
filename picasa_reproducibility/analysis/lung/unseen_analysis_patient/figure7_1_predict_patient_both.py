@@ -47,14 +47,6 @@ df_w.columns = adata.var_names
 
 
 ####################################
-df_w_top_topics = pd.read_csv('../notebooks/data/figure6_unique_add_topic_gene.csv.gz',index_col=0)
-
-# selected_topics = df_w_top_topics['index'].values
-# df_w.reset_index(inplace=True)
-# df_w['index'] = ['k'+str(x) for x in df_w['index']]
-# df_w = df_w.loc[df_w['index'].isin(selected_topics)]
-# df_w.drop(columns={'index'},inplace=True)
-# df_w.reset_index(drop=True,inplace=True)
 
 
 ### patient data 

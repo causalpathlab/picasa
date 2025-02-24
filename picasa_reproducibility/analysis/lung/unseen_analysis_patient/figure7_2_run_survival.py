@@ -41,9 +41,9 @@ def surv_plot(tag):
     df_latent = pd.DataFrame(adata.obsm[tag], index=adata.obs_names)
     df_latent = df_latent.loc[:, df_latent.median() != 0]
 
-    df_latent.columns = ['k'+str(x)for x in df_latent.columns]
+    df_latent.columns = ['u'+str(x)for x in df_latent.columns]
     
-    selected_topics = ['k5', 'k11', 'k47']
+    selected_topics = ['u5', 'u8','u11','u14', 'u47']
     df_latent = df_latent.loc[:,selected_topics]
     
     df_latent = df_latent.loc[df_pmeta.index,:]
@@ -52,9 +52,9 @@ def surv_plot(tag):
     factors = df_latent.columns
     num_factors = len(factors)
 
-    rows = (num_factors + 2) // 3 
-    cols = 3
-    fig, axes = plt.subplots(rows, cols, figsize=(15, 5 * rows))  
+    rows = 1
+    cols = 5
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 3 * rows))  
     axes = axes.flatten()  
     kmf = KaplanMeierFitter()
 
@@ -71,14 +71,15 @@ def surv_plot(tag):
         )
         p_value = logrank_result.p_value
 
-        if p_value > 0.01:
+        if p_value > 0.05:
             continue
         selected_topics.append(factor)
+        print(factor,p_value)
         
         for group, label in zip([0, 1], ['Low', 'High']):
             group_data = df[df['group'] == group]
             kmf.fit(group_data['time'], group_data['event'], label=label)
-            kmf.plot_survival_function(ax=axes[idx],ci_show=False, linewidth=1,marker='o',markersize=5)
+            kmf.plot_survival_function(ax=axes[idx],ci_show=False, linewidth=5,marker='+',markeredgecolor='black',markersize=0.2)
 
         axes[idx].set_title(f"Survival Curve for {factor}\nP-value: {p_value:.4e}")
         axes[idx].set_xlabel("Time (days)")

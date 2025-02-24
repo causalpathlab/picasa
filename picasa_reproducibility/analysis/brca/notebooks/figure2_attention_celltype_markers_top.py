@@ -7,7 +7,7 @@ import seaborn as sns
 import numpy as np
 
 
-df = pd.read_csv('data/figure2_attention_scores.csv.gz',index_col=0)
+df = pd.read_hdf('data/figure2_attention_scores.h5', key='df')
 
 df.isna().any().any()
 
@@ -22,25 +22,7 @@ dfl.reset_index(inplace=True)
 
 
 ######## fix cell type
-cmap = {
-'Malignant':'Malignant',
-'Mono/Macro':'Monocyte', 
-'Plasma':'Plasma',
-'Fibroblasts':'Fibroblasts', 
-'Endothelial':'Endothelial',
-'Tprolif':'T', 
-'CD4Tconv':'T', 
-'CD8Tex':'T', 
-'DC':'DC', 
-'Epithelial':'Epithelial', 
-'B':'B',
-'SMC':'SMC'
-}
 
-
-dfl['celltype'] = [cmap[x] for x in dfl['celltype']]
-
-dfl = dfl[dfl['celltype']!='Epithelial']
 
 marker = [
     'PECAM1','CD34', 
@@ -55,7 +37,16 @@ marker = [
 
 unique_celltypes = dfl['celltype'].unique()
 
-fig, axes = plt.subplots(5, 2, figsize=(10, 20))
+unique_celltypes = [
+    'Common8/Endothelial',
+    'Common10/Fibroblasts',
+    'Common0/Malignant',
+    'Common1/Monocyte',
+    'Common18/Plasma',
+    'Common11/B',
+    'Common4/T'    
+]
+fig, axes = plt.subplots(4, 2, figsize=(10, 20))
 
 for idx, ct in enumerate(unique_celltypes):
     
