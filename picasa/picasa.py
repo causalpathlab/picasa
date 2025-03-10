@@ -38,7 +38,7 @@ class picasa(object):
      
         self.data = data
         self.sample = sample
-        self.wdir = wdir+sample
+        self.wdir = wdir
         
         # dutil.data.create_model_directories(self.wdir,['results'])
         
@@ -139,12 +139,14 @@ class picasa(object):
     def create_model_adata(self,latent):
     
         batches = latent.keys()
-        df = pd.DataFrame()
-
+        
+        frames = []        
         for b in batches:
             c_df = latent[b]
             c_df.index = [x+'@'+b for x in c_df.index.values]
-            df = pd.concat([df,c_df])
+            frames.append(c_df)
+        
+        df = pd.concat(frames)
 
         df.columns = ['common_'+str(x) for x in df.columns]
         
@@ -199,11 +201,13 @@ class picasa(object):
         
     def set_metadata(self):
         
-        df_meta = pd.DataFrame()
+        frames = []
         for ad_name in self.data.adata_list:
             ad = self.data.adata_list[ad_name]
-            df_meta = pd.concat([df_meta,ad.obs])
-        
+            frames.append(ad.obs)
+            
+        df_meta = pd.concat(frames)
+
         df_meta.index = [x+'@'+y for x,y in zip(df_meta.index.values,df_meta['batch'])]
         sel_col = [ x for x in df_meta.columns if x not in ['batch','batch_id']]
         

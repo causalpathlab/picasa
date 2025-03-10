@@ -89,14 +89,6 @@ present_genes = [ x for x in df_expr.columns if x  in df_gene.index.values]
 df_gene = df_gene.loc[present_genes]
 df_expr = df_expr.loc[:,present_genes]
 df_obs = df_obs.loc[df_expr.index.values]
-
-
-### sample 1000 cells
-n=1000
-sample = df_obs.groupby('batch', group_keys=False).apply(sample_or_take_all,n)
-df_obs = df_obs.loc[sample.index.values]
-df_expr = df_expr.loc[sample.index.values]
-
 cnv_analysis(df_expr,df_gene,df_obs,tag)
 
 
@@ -105,5 +97,4 @@ tag='recons'
 adata_recons = ad.read_h5ad('data/figure3_unique_recons.h5ad')
 df_expr = adata_recons.to_df()
 df_expr = df_expr.loc[:,present_genes]
-df_expr = df_expr.loc[sample.index.values]
 cnv_analysis(df_expr,df_gene,df_obs,tag)

@@ -3,11 +3,11 @@ import shutil
 onsuccess:
     shutil.rmtree(".snakemake")
 
-SAMPLE='lung'
+SAMPLE='brca'
 
-WDIR='/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
+WDIR='/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
-OUTDIR=WDIR+SAMPLE+'/results/'
+OUTDIR=WDIR+SAMPLE+'/benchmark_results/'
 
 rule all:
     input:

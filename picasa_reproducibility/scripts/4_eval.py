@@ -16,21 +16,22 @@ import constants
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-SAMPLE = sys.argv[1] 
+# SAMPLE = sys.argv[1] 
 # WDIR = sys.argv[2]
-WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
+SAMPLE = 'brca' 
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
-RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_results')
+RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
 def get_meta_data():
-	picasa_adata = an.read_h5ad(os.path.join(RESULTS_DIR, 'picasa.h5ad'))
+	picasa_adata = an.read_h5ad(os.path.join(DATA_DIR, 'picasa.h5ad'))
 	df_meta = picasa_adata.obs.copy()
-	# df_meta.index = [x.split('@')[0] for x in df_meta.index.values]
-	df_meta.index = ['@'.join(x.split('@')[:2]) for x in df_meta.index.values]
+	df_meta.index = [x.split('@')[0] for x in df_meta.index.values]
+	# df_meta.index = ['@'.join(x.split('@')[:2]) for x in df_meta.index.values]
 	return df_meta
 
 
@@ -137,109 +138,6 @@ def get_metrics(method,df,df_meta,batch_key=constants.BATCH,group_key=constants.
 	return df_res
 
 
-from plotnine import *
-
-def plot_lisi(df_lisi):
-	
-	df_summary = df_lisi.copy()
-	df_summary["method"] = pd.Categorical(df_summary["method"], categories=['pca','combat','harmony', 'scanorama','liger','scvi','dml','picasa'], ordered=True)
-
-	df_summary = pd.melt(df_summary,id_vars='method')
-	
-	custom_colors = {
-		"scvi": "#1f77b4",  # Blue
-		"combat": "#ff7f0e",     # Orange
-		"picasa": "#2ca02c",    # Green
-		"liger": "#d62728",      # Red
-		"pca": "#9467bd",        # Purple
-		"harmony": "#8c564b",     # Brown
-		"scanorama": "#e377c2",  # Pink
-		"dml": "#17becf"         # Cyan
-	}
-	
-	plot_pairs = ['nmi:ari','clisi_score:csil_score']
- 
-	for pair in plot_pairs:
-		m1 = pair.split(':')[0]
-		m2 = pair.split(':')[1]
-  
-		df_filtered = df_summary.loc[df_summary['variable'].isin([m1,m2]),:]
-	
-		plot = (
-		ggplot(df_filtered, aes(x="method", y="value", group="variable", fill="method",shape='variable'))
-		+ geom_point(size=7.5) 
-		+ geom_line(color='gray')
-		+ scale_fill_manual(values=custom_colors)  
-		+ labs(
-			x="Method",
-			y="Value",
-			fill="Method",
-			title="BioConservation - "+m1 +" and "+ m2
-		)
-		+ theme_minimal()  
-		+ theme(
-		figure_size=(10, 6),
-		panel_background=element_rect(fill="white", color=None),  
-		plot_background=element_rect(fill="white", color=None),
-        axis_text=element_text(size=12, weight="bold",color='black'),
-        axis_title=element_text(size=12, weight="bold"),
-        legend_text=element_text(size=12, weight="bold"),
-        legend_title=element_text(size=12, weight="bold"),
-        plot_title=element_text(size=12, weight="bold", ha='center'),
-        axis_text_x=element_text(size=12, weight="bold", angle=45, ha='right')  
-		)
-		)
-		ggsave(plot, os.path.join(RESULTS_DIR,'benchmark_plot_'+pair+'.png'), dpi=300)
-		plt.close()
-		
-
-	plot_pairs = ['graph_mean:graph_std', 'ilisi_mean:ilisi_std', 'isil_mean:isil_std']
- 
-	for pair in plot_pairs:
-		m1, m2 = pair.split(':')  # Split into mean and std components
-
-		# Filter and pivot data
-		df_filtered = df_summary[df_summary['variable'].isin([m1, m2])]
-		df_pivot = df_filtered.pivot(index="method", columns="variable", values="value").reset_index()
-		df_pivot['method'] = df_pivot['method'].astype('category')
-  
-		# Calculate ymin and ymax for error bars
-		df_pivot['ymin'] = df_pivot[m1] - df_pivot[m2]
-		df_pivot['ymax'] = df_pivot[m1] + df_pivot[m2]
-
-		# Create the plot
-		plot = (
-			ggplot(df_pivot, aes(x="method", y=m1,color="method"))
-			+ geom_point(aes(fill="method"), size=7.5, color="black", stroke=0.5)
-			+ geom_errorbar(
-				aes(ymin="ymin", ymax="ymax"),
-				width=0.25,
-				color="black",
-				size=1.0       
-			)
-			+ scale_color_manual(values=custom_colors)
-   			+ scale_fill_manual(values=custom_colors)  
-			+ theme_minimal()
-			+ labs(
-				x="Method",
-				title="BatchCorrection - "+ m1.split('_')[0]
-			)
-		+ theme(
-		figure_size=(10, 6),
-		panel_background=element_rect(fill="white", color=None),  
-		plot_background=element_rect(fill="white", color=None),
-        axis_text=element_text(size=12, weight="bold",color='black'),
-        axis_title=element_text(size=12, weight="bold"),
-        legend_text=element_text(size=12, weight="bold"),
-        legend_title=element_text(size=12, weight="bold"),
-        plot_title=element_text(size=12, weight="bold", ha='center'),
-        axis_text_x=element_text(size=12, weight="bold", angle=45, ha='right')  
-		)
-		)
-		print(pair)
-		ggsave(plot, os.path.join(RESULTS_DIR,'benchmark_plot_'+pair+'.png'), dpi=300)
-		plt.close()
-  
 ############## eval 
 
 def eval():
@@ -262,24 +160,16 @@ def eval():
 
 
 	### add picasa
-	picasa_adata = an.read_h5ad(os.path.join(RESULTS_DIR, 'picasa.h5ad'))
+	picasa_adata = an.read_h5ad(os.path.join(DATA_DIR, 'picasa.h5ad'))
 	df_p = picasa_adata.obsm['common'].copy()
-	# df_p.index = [x.split('@')[0] for x in df_p.index.values]
-	df_p.index = ['@'.join(x.split('@')[:2]) for x in df_p.index.values]
+	df_p.index = [x.split('@')[0] for x in df_p.index.values]
+	# df_p.index = ['@'.join(x.split('@')[:2]) for x in df_p.index.values]
 
 	df_picasa_lisi = get_metrics('picasa',df_p,df_meta)
 	df_lisi = pd.concat([df_lisi,df_picasa_lisi],axis=0)
 
 	df_lisi.to_csv(os.path.join(RESULTS_DIR,'benchmark_all_scores.csv'))
 
-def eval_plot():
-	df_lisi = pd.read_csv(os.path.join(RESULTS_DIR,'benchmark_all_scores.csv'))
-	df_lisi = df_lisi.drop(columns=['Unnamed: 0'])
-	
-	df_lisi.rename(columns={'csil_res':'csil_score'},inplace=True)
-	plot_lisi(df_lisi)
-
 
 
 eval()
-eval_plot()

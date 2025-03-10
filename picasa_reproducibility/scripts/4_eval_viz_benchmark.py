@@ -17,11 +17,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 SAMPLE = sys.argv[1] 
-WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
-RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'benchmark_results')
+RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
@@ -30,10 +30,11 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-methods = ['graph_mean:graph_std','ilisi_mean:ilisi_std','isil_mean:isil_std',
-           'nmi:ari','clisi_score:csil_score',]
+methods = ['ilisi_mean:ilisi_std','nmi:ari']
+# methods = ['graph_mean:graph_std','ilisi_mean:ilisi_std','isil_mean:isil_std',
+        #    'nmi:ari','clisi_score:csil_score',]
 
-fig, axes = plt.subplots(1, 5, figsize=(20, 10))
+fig, axes = plt.subplots(1, 2)
 axes = axes.flatten()
 
 for ax, label in zip(axes, methods):
@@ -52,7 +53,8 @@ for ax in axes[len(methods):]:
     ax.axis('off')  # Ensure the remaining axes are blank
 
 plt.tight_layout()
-output_path = os.path.join(RESULTS_DIR, "benchmark_plot_all.png")
+output_path = os.path.join(RESULTS_DIR, "benchmark_plot_all_two.pdf")
+# output_path = os.path.join(RESULTS_DIR, "benchmark_plot_all.png")
 plt.savefig(output_path, dpi=600, bbox_inches='tight')
 plt.close()
 

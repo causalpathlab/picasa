@@ -19,8 +19,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 SAMPLE = sys.argv[1] 
 WDIR = sys.argv[2]
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
-RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
+RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 PATTERN = f'{SAMPLE}_*.h5ad'
 

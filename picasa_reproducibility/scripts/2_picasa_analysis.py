@@ -6,21 +6,20 @@ sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/')
 
 
 ############################
-# sample = sys.argv[1] 
-sample = 'brca' 
+sample = sys.argv[1] 
+# sample = 'brca' 
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'+sample
 
 ############ read model results as adata 
-picasa_adata = ad.read_h5ad(wdir+'/results/picasa.h5ad')
+picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
 
 ####################################
 
 sc.pp.neighbors(picasa_adata,use_rep='common')
 sc.tl.umap(picasa_adata)
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
+sc.pl.umap(picasa_adata,color=['batch','celltype'],legend_loc=None)
 plt.tight_layout()
-plt.savefig(wdir+'/results/picasa_common_umap.png')
-
+plt.savefig(wdir+'/benchmark_results/picasa_umap_batch.png')
 
 
 # for b in picasa_adata.obs['batch'].unique():
@@ -32,9 +31,9 @@ plt.savefig(wdir+'/results/picasa_common_umap.png')
 
 sc.pp.neighbors(picasa_adata,use_rep='unique')
 sc.tl.umap(picasa_adata)
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
+sc.pl.umap(picasa_adata,color=['batch','celltype'],legend_loc=None)
 plt.tight_layout()
-plt.savefig(wdir+'/results/picasa_unique_umap.png')
+plt.savefig(wdir+'/benchmark_results/picasa_unique_umap.png')
 
 
 # for b in picasa_adata.obs['batch'].unique():
@@ -47,9 +46,9 @@ plt.savefig(wdir+'/results/picasa_unique_umap.png')
 
 sc.pp.neighbors(picasa_adata,use_rep='base')
 sc.tl.umap(picasa_adata)
-sc.pl.umap(picasa_adata,color=['batch','celltype'])
+sc.pl.umap(picasa_adata,color=['batch','celltype'],legend_loc=None)
 plt.tight_layout()
-plt.savefig(wdir+'/results/picasa_base_umap.png')
+plt.savefig(wdir+'/benchmark_results/picasa_base_umap.png')
 
 
 

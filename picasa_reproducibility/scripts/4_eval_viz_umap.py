@@ -16,12 +16,12 @@ import constants
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-SAMPLE = sys.argv[1] 
-WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/figures/'
+SAMPLE = sys.argv[1]
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
-RESULTS_DIR = os.path.join(WDIR, SAMPLE,'results')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_results')
+RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 
@@ -40,13 +40,8 @@ for ax, label in zip(axes, methods):
     if os.path.exists(img_path):
         img = mpimg.imread(img_path)
         ax.imshow(img)
-        ax.set_title(label)
-    else:
-        # ax.set_title(f"{label}\n[Missing]")
         ax.axis('off')
-        ax.set_xticks([])
-        ax.set_yticks([])
-    ax.axis('off')
+        ax.set_frame_on(False)
 
 plt.tight_layout()
 output_path = os.path.join(RESULTS_DIR, "benchmark_plot_umap_"+constants.BATCH+".png")

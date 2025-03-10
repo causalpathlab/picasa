@@ -66,18 +66,13 @@ def cnv_analysis(df_expr,df_gene,df_obs,tag):
 	plt.savefig('results/figure3_cnv_'+tag+'.pdf')
 
 
-	# cnv.tl.pca(adata)
-	# cnv.pp.neighbors(adata,n_neighbors=30)
-	# cnv.tl.leiden(adata,resolution=0.5)
-	# cnv.tl.umap(adata,min_dist=1)
-	# cnv.pl.umap(adata, color=['cnv_leiden','celltype','batch'])
+	cnv.tl.pca(adata)
+	cnv.pp.neighbors(adata,n_neighbors=30)
+	cnv.tl.leiden(adata,resolution=0.5)
+	cnv.tl.umap(adata,min_dist=1)
+	cnv.pl.umap(adata, color=['cnv_leiden','celltype','batch'])
 
-	# plt.savefig('results/figure3_cnv_umap_'+tag+'.png')
-
-	# df_cnv = pd.DataFrame(adata.obsm['X_cnv'].todense())
-	# df_cnv.to_csv('results/cnv_'+tag+'.csv.gz',compression='gzip')
-
-	# plot_prop(adata.obs.copy(),tag)
+	plt.savefig('results/figure3_cnv_umap_'+tag+'.png')
 
 
 tag = 'orig'
@@ -91,13 +86,6 @@ df_gene = df_gene.loc[present_genes]
 df_expr = df_expr.loc[:,present_genes]
 df_obs = df_obs.loc[df_expr.index.values]
 
-
-### sample 100 cells
-n=1000
-sample = df_obs.groupby('batch', group_keys=False).apply(sample_or_take_all,n)
-df_obs = df_obs.loc[sample.index.values]
-df_expr = df_expr.loc[sample.index.values]
-
 cnv_analysis(df_expr,df_gene,df_obs,tag)
 
 
@@ -106,5 +94,4 @@ tag='recons'
 adata_recons = ad.read_h5ad('data/figure3_unique_recons.h5ad')
 df_expr = adata_recons.to_df()
 df_expr = df_expr.loc[:,present_genes]
-df_expr = df_expr.loc[sample.index.values]
 cnv_analysis(df_expr,df_gene,df_obs,tag)
