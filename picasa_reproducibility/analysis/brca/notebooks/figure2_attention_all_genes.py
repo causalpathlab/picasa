@@ -40,7 +40,16 @@ def get_top_genes_per_group(df,dfl,unique_celltypes):
 marker = get_top_genes_per_group(df,dfl,unique_celltypes)
 seq_marker = marker['Common0/Malignant']
 
-fig, axes = plt.subplots(5, 2, figsize=(10, 12))
+
+unique_celltypes =[
+    'Common0/Malignant',
+    'Common4/T',
+    'Common10/Fibroblasts',
+    'Common8/Endothelial',
+    'Common1/Monocyte',
+    'Common17/SMC'
+]
+fig, axes = plt.subplots(3, 2, figsize=(10, 12))
 
 for idx, ct in enumerate(unique_celltypes):
     

@@ -70,7 +70,7 @@ def generate_gene_ranking(df,n_gene):
 
 ####################################
 
-selected_topics = ['u5', 'u8','u11','u14', 'u47']
+selected_topics = ['u15', 'u40', 'u47', 'u49', 'u88', 'u99']
 
 df_w.reset_index(inplace=True)
 df_w['index'] = ['u'+str(x) for x in df_w['index']]

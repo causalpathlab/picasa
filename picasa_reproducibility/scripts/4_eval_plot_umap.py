@@ -1,12 +1,6 @@
 import os
-import glob
 import logging
 import matplotlib.pyplot as plt
-import seaborn as sn
-import anndata as an
-import pandas as pd
-import scanpy as sc
-import harmonypy as hm
 
 import sys 
 sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/scripts/')
@@ -30,7 +24,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-methods = ['pca','combat','bbknn','harmony', 'scanorama','liger','scvi','cellanova','dml','picasa']
+methods = ['pca','bbknn','combat','harmony', 'scanorama','liger','scvi','picasac','picasau','picasab']
 
 fig, axes = plt.subplots(2, 5, figsize=(15, 8))
 axes = axes.flatten()

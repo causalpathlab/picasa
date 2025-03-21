@@ -65,7 +65,7 @@ class picasa(object):
             adata_pairs.append((adata_pairs[len(adata_pairs)-1][1],adata_pairs[0][0]))
             self.adata_pairs = adata_pairs
             
-        elif 'approx' in pair_mode:
+        elif pair_mode == 'dist':
             
             from sklearn.decomposition import TruncatedSVD
             from sklearn.metrics.pairwise import euclidean_distances
@@ -90,7 +90,7 @@ class picasa(object):
 
             self.adata_pairs = list(unique_pairs)
 
-        else:
+        elif pair_mode == 'all':
 
             indices = list(range(len(self.data.adata_list)))
             self.adata_pairs = list(itertools.combinations(indices, 2))

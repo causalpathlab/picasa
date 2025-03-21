@@ -2,23 +2,17 @@ import os
 import glob
 import logging
 import matplotlib.pyplot as plt
-import seaborn as sn
 import anndata as an
 import pandas as pd
 import scanpy as sc
-import harmonypy as hm
 
 import sys 
 sys.path.append('/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/scripts/')
 
 import constants 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
 SAMPLE = sys.argv[1] 
-WDIR = sys.argv[2]
-
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
@@ -48,30 +42,33 @@ def run_scanpy_external_analysis(adata, method, save_path, batch_key=constants.B
     if method == 'bbknn':
         import bbknn
         sc.pp.pca(adata)
-        bbknn.bbknn(adata, batch_key=batch_key)        
+        bbknn.bbknn(adata, batch_key=batch_key)
+        sc.tl.umap(adata)
+        pd.DataFrame(adata.obsm['X_umap'],index=adata.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_bbknn.csv.gz'),compression='gzip')        
     elif method == 'combat':
         sc.pp.combat(adata)
         sc.pp.pca(adata)
         sc.pp.neighbors(adata)
         pd.DataFrame(adata.obsm['X_pca'],index=adata.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_combat.csv.gz'),compression='gzip')
+        sc.tl.umap(adata)
     elif method == 'harmony':
         sc.pp.pca(adata)
         sc.external.pp.harmony_integrate(adata, batch_key)
         sc.pp.neighbors(adata, use_rep='X_pca_harmony')
         pd.DataFrame(adata.obsm['X_pca_harmony'],index=adata.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_harmony.csv.gz'),compression='gzip')
+        sc.tl.umap(adata)
     elif method == 'scanorama':
         sc.pp.pca(adata)
         sc.external.pp.scanorama_integrate(adata, batch_key)
         sc.pp.neighbors(adata, use_rep='X_scanorama')
         pd.DataFrame(adata.obsm['X_scanorama'],index=adata.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_scanorama.csv.gz'),compression='gzip')
+        sc.tl.umap(adata)
     else:
         sc.pp.pca(adata)
         sc.pp.neighbors(adata)
-        res = hm.compute_lisi(adata.obsm['X_pca'],adata.obs,[batch_key,group_key])
         pd.DataFrame(adata.obsm['X_pca'],index=adata.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_pca.csv.gz'),compression='gzip')
-    
-    sc.tl.umap(adata)
-    
+        sc.tl.umap(adata)
+        
     sc.pl.umap(adata, color=[batch_key],legend_loc=None)
     plt.savefig(os.path.join(save_path+'_'+batch_key+'.png'))
     plt.close()
@@ -82,8 +79,6 @@ def run_scanpy_external_analysis(adata, method, save_path, batch_key=constants.B
     plt.close()
 
     logging.info(f"UMAP saved to {save_path}")
-
-    logging.info(f"LISI score {method}")
 
 
     

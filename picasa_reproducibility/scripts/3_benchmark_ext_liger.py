@@ -2,7 +2,6 @@ import os
 import glob
 import logging
 import matplotlib.pyplot as plt
-import seaborn as sn
 import numpy as np
 import anndata as an
 import pandas as pd
@@ -19,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 SAMPLE = sys.argv[1] 
-WDIR = sys.argv[2]
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
@@ -57,6 +56,8 @@ for batch, adata in batch_map.items():
     adata.uns['sample_name'] = batch
     adata_list.append(adata)
 
+picasa_adata = an.read_h5ad(WDIR+SAMPLE+'/model_results/picasa.h5ad')
+K=picasa_adata.obsm['common'].shape[1]
 
 
 ifnb_liger = pyliger.create_liger(adata_list,remove_missing=False)
@@ -65,7 +66,6 @@ pyliger.normalize(ifnb_liger)
 pyliger.select_genes(ifnb_liger)
 
 gene_use = 2000
-K=15
 result = []
 for i in range(len(ifnb_liger.adata_list)):
     ifnb_liger.adata_list[i].uns['var_gene_idx'] = ifnb_liger.adata_list[i].var['norm_var'].sort_values(ascending=False).index.values[:gene_use]

@@ -42,38 +42,10 @@ unique_celltypes = dfl['celltype'].unique()
 top_n = 10
 marker = get_top_genes_per_group(df,dfl,unique_celltypes,top_n)
 
-# seq_marker = []
-# for m in marker.keys(): 
-#     for x in marker[m]: seq_marker.append(x)
+dftop = pd.DataFrame.from_dict(marker, orient='index')
 
-fig, axes = plt.subplots(5, 2, figsize=(20, 30))
+dftop['Top genes'] = dftop.astype(str).agg(lambda x: ','.join(x), axis=1)
 
-for idx, ct in enumerate(unique_celltypes):
-    
-    row, col = idx // 2, idx % 2
-    
-    ct_ylabel = dfl[dfl['celltype'] == ct].index.values
-    df_attn = df.iloc[ct_ylabel,:].copy()
-    df_attn[df_attn > .001] = .001
+dftop = dftop[['Top genes']]
 
-    sel_genes = [x for x in marker[ct] if x in df_attn.columns]
-    df_attn = df_attn.loc[:,sel_genes]
-    
-    df_attn['gene'] = [x.split('_')[1] for x in df_attn.index.values]
-    df_attn = df_attn[df_attn['gene'].isin(sel_genes)]
-    df_attn = df_attn.groupby('gene').mean()
-
-    df_attn = df_attn.loc[sel_genes,sel_genes]
-    
-    df_attn.columns = [x.split('-')[0] for x in df_attn.columns]
-    df_attn.index = [x.split('-')[0] for x in df_attn.index]
-    sns.heatmap(df_attn, ax=axes[row, col],
-                yticklabels=df_attn.index,  
-                xticklabels=df_attn.columns,  
-                cmap='viridis' 
-                )
-    axes[row, col].set_title(ct)
-    
-plt.tight_layout()
-plt.savefig('results/figure2_attention_top_genes.pdf')
-plt.close()
+dftop.to_csv('results/figure2_attention_top_genes.csv')

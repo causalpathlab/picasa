@@ -2,7 +2,6 @@ import os
 import glob
 import logging
 import matplotlib.pyplot as plt
-import seaborn as sn
 import anndata as an
 import pandas as pd
 import scanpy as sc
@@ -17,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 SAMPLE = sys.argv[1] 
-WDIR = sys.argv[2]
+WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
@@ -37,15 +36,17 @@ def load_batches(data_dir, pattern, max_batches=25):
     return batch_map
 
 
-    
+picasa_adata = an.read_h5ad(WDIR+SAMPLE+'/model_results/picasa.h5ad')
+n_latent=picasa_adata.obsm['common'].shape[1]
+
 
 batch_map = load_batches(DATA_DIR, PATTERN)
 
 adata_combined = sc.concat(batch_map, join="outer", label="batch")
 
 scvi.model.SCVI.setup_anndata(adata_combined, batch_key="batch") 
-model = scvi.model.SCVI(adata_combined)
-model.train(max_epochs=400)
+model = scvi.model.SCVI(adata_combined,n_latent=n_latent)
+model.train()
 
 adata_combined.obsm["X_scVI"] = model.get_latent_representation()
 pd.DataFrame(adata_combined.obsm['X_scVI'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_scvi.csv.gz'),compression='gzip')

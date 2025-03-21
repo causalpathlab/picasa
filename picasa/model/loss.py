@@ -48,23 +48,6 @@ def compute_weights(z, k=15):
     weights = inverse_density / torch.mean(inverse_density)
     return weights
 
-def pcl_loss_with_weighted_nbr(z_i, z_j, temperature=1.0, k=15):
-    batch_size = z_i.size(0)
-    z = torch.cat([z_i, z_j], dim=0)
-    similarity = F.cosine_similarity(z.unsqueeze(1), z.unsqueeze(0), dim=2)
-    sim_ij = torch.diag(similarity, batch_size)
-    sim_ji = torch.diag(similarity, -batch_size)
-    positives = torch.cat([sim_ij, sim_ji], dim=0)
-    mask = (~torch.eye(batch_size * 2, batch_size * 2, dtype=torch.bool, device=z_i.device)).float()
-    numerator = torch.exp(positives / temperature)
-    denominator = mask * torch.exp(similarity / temperature)
-    weights = compute_weights(torch.cat([z_i, z_j], dim=0), k)
-    numerator = numerator * weights
-    denominator = denominator * weights.unsqueeze(0)
-    all_losses = -torch.log(numerator / torch.sum(denominator, dim=1))
-    loss = torch.sum(all_losses) / (2 * batch_size)
-    return loss
-
 
 def identify_rare_groups(latent_space, num_clusters=5, rare_group_threshold=0.1):
     kmeans = KMeans(n_clusters=num_clusters)
@@ -226,14 +209,12 @@ def pcl_loss(z_i, z_j,mode):
     
     loss = None 
     
-    if mode == 'weighted':
+    if mode == 'wclust':
         loss = pcl_loss_with_weighted_cluster(z_i,z_j)
     elif mode == 'rare':
         loss = pcl_loss_with_rare_cluster(z_i,z_j)
     elif mode == 'margin':
         loss = pcl_loss_with_margin(z_i,z_j)
-    elif mode == 'wnbr':
-        loss = pcl_loss_with_weighted_nbr(z_i,z_j)
     else:
         loss = pcl_loss_base(z_i,z_j)
     
