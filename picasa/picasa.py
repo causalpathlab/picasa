@@ -31,8 +31,8 @@ class picasa(object):
     def __init__(self, 
         data: dutil.data.Dataset, 
         sample: str,
-        pair_mode: str,
-        wdir: str
+        wdir: str,
+        pair_mode: str
         ):
      
      
@@ -528,7 +528,7 @@ class picasa(object):
 def create_picasa_object(
     adata_list:an.AnnData,
     sample:str, 
-    pair_mode:str,
-    wdir:str
+    wdir:str,
+    pair_mode:str = 'seq'
     ):
-    return picasa(dutil.data.Dataset(adata_list),sample,pair_mode,wdir)
+    return picasa(dutil.data.Dataset(adata_list),sample,wdir,pair_mode)

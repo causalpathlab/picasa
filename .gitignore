@@ -9,9 +9,14 @@ Makefile
 .vscode/
 .snakemake/
 
-/picasa_reproducibility/figures/*/data
-/picasa_reproducibility/figures/*/results
+/picasa_reproducibility/analysis/*/*/*/*.png
+/picasa_reproducibility/analysis/*/*/*/.pdf
 
+/picasa_reproducibility/analysis/*/*/*.png
+/picasa_reproducibility/analysis/*/*/.pdf
+
+test/results/*.png
+test/results/*.pdf
 
 
 io.py
@@ -35,7 +40,6 @@ __pycache__/
 *.txt
 *.txt.gz
 *.h5*
-*.png
 *.log
 *.out
 *.model

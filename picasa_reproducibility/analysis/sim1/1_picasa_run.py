@@ -81,15 +81,19 @@ unique_latent_dim = 15
 common_latent_dim = picasa_object.result.obsm['common'].shape[1]
 dec_layers = [128,128]
 
-picasa_object.train_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=unique_epoch,batch_size=128,device='cuda')
+
+adata_combined = an.concat(picasa_object.data.adata_list, axis=0, join="outer")
+
+
+picasa_object.train_unique(adata_combined, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=unique_epoch,batch_size=128,device='cuda')
 picasa_object.plot_loss(tag='unq')
 eval_batch_size = 10
-picasa_object.eval_unique(input_dim, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size,device='cuda')
+picasa_object.eval_unique(adata_combined, enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size,device='cuda')
 
-latent_dim=15
-picasa_object.train_base(input_dim, enc_layers,latent_dim,dec_layers,l_rate=0.001,epochs=base_epoch,batch_size=128,device='cuda')
+latent_dim=picasa_object.result.obsm['common'].shape[1]
+picasa_object.train_base(adata_combined, enc_layers,latent_dim,dec_layers,l_rate=0.001,epochs=base_epoch,batch_size=128,device='cuda')
 picasa_object.plot_loss(tag='base')
 eval_batch_size = 10
-picasa_object.eval_base(input_dim, enc_layers,latent_dim,dec_layers,eval_batch_size,device='cuda')
+picasa_object.eval_base(adata_combined, enc_layers,latent_dim,dec_layers,eval_batch_size,device='cuda')
 picasa_object.save_model()
 
