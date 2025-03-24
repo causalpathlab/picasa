@@ -262,7 +262,7 @@ class picasa(object):
      
         picasa_model = model.PICASACommonNet(self.nn_params['input_dim'], self.nn_params['embedding_dim'],self.nn_params['attention_dim'], self.nn_params['latent_dim'], self.nn_params['encoder_layers'], self.nn_params['projection_layers'],self.nn_params['corruption_tol'],self.nn_params['pair_importance_weight']).to(self.nn_params['device'])
   
-        picasa_model.load_state_dict(torch.load(self.wdir+'/results/picasa_common.model', map_location=torch.device(device)))
+        picasa_model.load_state_dict(torch.load(self.wdir+'/results/picasa_common.model', weights_only=True, map_location=torch.device(device)))
   
         picasa_model.eval()
     
@@ -370,7 +370,7 @@ class picasa(object):
         picasa_unq_model = model.PICASAUniqueNet(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(device)
     
     
-        picasa_unq_model.load_state_dict(torch.load(self.wdir+'/results/picasa_unique.model', map_location=torch.device(device)))
+        picasa_unq_model.load_state_dict(torch.load(self.wdir+'/results/picasa_unique.model', weights_only=True, map_location=torch.device(device)))
 
         picasa_unq_model.eval()
   
@@ -472,7 +472,7 @@ class picasa(object):
         input_dim = input_adata.shape[1]
         picasa_base_model = model.PICASABaseNet(input_dim,latent_dim,enc_layers,dec_layers,num_batches).to(device)
     
-        picasa_base_model.load_state_dict(torch.load(self.wdir+'/results/picasa_base.model', map_location=torch.device(device)))
+        picasa_base_model.load_state_dict(torch.load(self.wdir+'/results/picasa_base.model',weights_only=True, map_location=torch.device(device)))
 
         picasa_base_model.eval()
   
