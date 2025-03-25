@@ -63,13 +63,7 @@ for idx, ct in enumerate(unique_celltypes):
     
     df_attn[df_attn > 0.0001] = 0.0001
 
-    # df_attn = zscore(df_attn, axis=0)
-    # th = 4
-    # df_attn[df_attn > th] = th
-    # df_attn[df_attn < -th] = -th
     sns.heatmap(df_attn, ax=axes[row, col],
-                # yticklabels=df_attn.index,  
-                # xticklabels=df_attn.columns,  
                 cmap='viridis' 
                 )
     axes[row, col].set_title(ct)
