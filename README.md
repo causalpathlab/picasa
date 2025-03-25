@@ -24,3 +24,12 @@ Plotting all three latent representations learned by the model.</a>
 
 - Tutorial 3. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/3_attention_matrix_analysis.ipynb">
 Analysis of the cross attention matrix estimated by the model.</a>
+
+- Tutorial 4. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/4_cancer_common_representation_analysis.ipynb">
+Cancer common representation analysis.</a>
+
+- Tutorial 5. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/5_cancer_unique_representation_analysis.ipynb">
+Cancer unique representation analysis.</a>
+
+- Tutorial 6. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/4_cancer_patient_outcome_analysis.ipynb">
+Cancer patient outcome analysis.</a>
