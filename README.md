@@ -19,7 +19,7 @@ notebooks </a>:
 - Tutorial 1. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/1_training_picasa_model.ipynb">
  Training PICASA model using simulated datasets.</a>
 
-- Tutorial 2. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/2_plotting _all_three_latent_umaps.ipynb">
+- Tutorial 2. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/2_plotting_all_three_latent_umaps.ipynb">
 Plotting all three latent representations learned by the model.</a>
 
 - Tutorial 3. <a href="https://github.com/causalpathlab/picasa/tree/main/picasa_reproducibility/analysis/tutorial/3_attention_matrix_analysis.ipynb">

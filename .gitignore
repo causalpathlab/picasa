@@ -46,3 +46,7 @@ __pycache__/
 *.RDS
 *.parquet
 *.pdf
+
+
+!/picasa_reproducibility/analysis/tutorial/
+!/picasa_reproducibility/analysis/tutorial/**

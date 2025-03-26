@@ -1,0 +1,1419 @@
+2025-03-22 18:20:33 INFO     Batch pair mode is - seq
+2025-03-22 18:20:42 INFO     Batch pair mode is - seq
+2025-03-22 18:20:53 INFO     Batch pair mode is - seq
+2025-03-22 18:22:24 INFO     Pair search method - approx_50
+2025-03-22 18:22:24 INFO     Generating neighbour using approximate method - ANNOY...
+patient3_((2800, 1000)) >patient2_((2900, 1000))
+2025-03-22 18:22:25 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-22 18:22:25 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient3_((2800, 1000))
+2025-03-22 18:22:26 INFO     Pair search estimate is complete.
+2025-03-22 18:22:26 INFO     Starting PICASA common training...
+2025-03-22 18:22:26 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-22 18:22:27 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-22 18:22:27 INFO     meta_epochs : 1/5
+2025-03-22 18:22:27 INFO     Training pair - patient3_patient2
+2025-03-22 18:22:28 INFO     ====> Epoch: 1 Average loss: 5.2581
+2025-03-22 18:22:28 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:22:29 INFO     ====> Epoch: 1 Average loss: 5.0993
+2025-03-22 18:22:29 INFO     Training pair - patient2_patient1
+2025-03-22 18:22:31 INFO     ====> Epoch: 1 Average loss: 4.9015
+2025-03-22 18:22:31 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:22:32 INFO     ====> Epoch: 1 Average loss: 4.7964
+2025-03-22 18:22:32 INFO     Training pair - patient1_patient3
+2025-03-22 18:22:33 INFO     ====> Epoch: 1 Average loss: 4.7386
+2025-03-22 18:22:33 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:22:34 INFO     ====> Epoch: 1 Average loss: 4.7122
+2025-03-22 18:22:34 INFO     meta_epochs : 2/5
+2025-03-22 18:22:34 INFO     Training pair - patient3_patient2
+2025-03-22 18:22:36 INFO     ====> Epoch: 1 Average loss: 4.6996
+2025-03-22 18:22:36 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:22:37 INFO     ====> Epoch: 1 Average loss: 4.6942
+2025-03-22 18:22:37 INFO     Training pair - patient2_patient1
+2025-03-22 18:22:38 INFO     ====> Epoch: 1 Average loss: 4.6866
+2025-03-22 18:22:38 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:22:39 INFO     ====> Epoch: 1 Average loss: 4.6810
+2025-03-22 18:22:39 INFO     Training pair - patient1_patient3
+2025-03-22 18:22:41 INFO     ====> Epoch: 1 Average loss: 4.6791
+2025-03-22 18:22:41 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:22:42 INFO     ====> Epoch: 1 Average loss: 4.6756
+2025-03-22 18:22:42 INFO     meta_epochs : 3/5
+2025-03-22 18:22:42 INFO     Training pair - patient3_patient2
+2025-03-22 18:22:43 INFO     ====> Epoch: 1 Average loss: 4.6735
+2025-03-22 18:22:43 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:22:44 INFO     ====> Epoch: 1 Average loss: 4.6704
+2025-03-22 18:22:44 INFO     Training pair - patient2_patient1
+2025-03-22 18:22:45 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-22 18:22:45 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:22:47 INFO     ====> Epoch: 1 Average loss: 4.6704
+2025-03-22 18:22:47 INFO     Training pair - patient1_patient3
+2025-03-22 18:22:48 INFO     ====> Epoch: 1 Average loss: 4.6722
+2025-03-22 18:22:48 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:22:49 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-22 18:22:49 INFO     meta_epochs : 4/5
+2025-03-22 18:22:49 INFO     Training pair - patient3_patient2
+2025-03-22 18:22:50 INFO     ====> Epoch: 1 Average loss: 4.6713
+2025-03-22 18:22:50 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:22:52 INFO     ====> Epoch: 1 Average loss: 4.6713
+2025-03-22 18:22:52 INFO     Training pair - patient2_patient1
+2025-03-22 18:23:11 INFO     Batch pair mode is - seq
+2025-03-22 18:23:16 INFO     Pair search method - approx_50
+2025-03-22 18:23:16 INFO     Generating neighbour using approximate method - ANNOY...
+patient3_((2800, 1000)) >patient2_((2900, 1000))
+2025-03-22 18:23:16 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-22 18:23:17 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient3_((2800, 1000))
+2025-03-22 18:23:18 INFO     Pair search estimate is complete.
+2025-03-22 18:23:18 INFO     Starting PICASA common training...
+2025-03-22 18:23:18 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-22 18:23:18 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-22 18:23:18 INFO     meta_epochs : 1/5
+2025-03-22 18:23:18 INFO     Training pair - patient3_patient2
+2025-03-22 18:23:20 INFO     ====> Epoch: 1 Average loss: 5.2581
+2025-03-22 18:23:20 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:23:21 INFO     ====> Epoch: 1 Average loss: 5.0993
+2025-03-22 18:23:21 INFO     Training pair - patient2_patient1
+2025-03-22 18:23:22 INFO     ====> Epoch: 1 Average loss: 4.9015
+2025-03-22 18:23:22 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:23:24 INFO     ====> Epoch: 1 Average loss: 4.7964
+2025-03-22 18:23:24 INFO     Training pair - patient1_patient3
+2025-03-22 18:23:25 INFO     ====> Epoch: 1 Average loss: 4.7386
+2025-03-22 18:23:25 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:23:26 INFO     ====> Epoch: 1 Average loss: 4.7122
+2025-03-22 18:23:26 INFO     meta_epochs : 2/5
+2025-03-22 18:23:26 INFO     Training pair - patient3_patient2
+2025-03-22 18:23:27 INFO     ====> Epoch: 1 Average loss: 4.6996
+2025-03-22 18:23:27 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:23:28 INFO     ====> Epoch: 1 Average loss: 4.6942
+2025-03-22 18:23:28 INFO     Training pair - patient2_patient1
+2025-03-22 18:23:30 INFO     ====> Epoch: 1 Average loss: 4.6866
+2025-03-22 18:23:30 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:23:31 INFO     ====> Epoch: 1 Average loss: 4.6810
+2025-03-22 18:23:31 INFO     Training pair - patient1_patient3
+2025-03-22 18:23:32 INFO     ====> Epoch: 1 Average loss: 4.6791
+2025-03-22 18:23:32 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:23:33 INFO     ====> Epoch: 1 Average loss: 4.6756
+2025-03-22 18:23:33 INFO     meta_epochs : 3/5
+2025-03-22 18:23:33 INFO     Training pair - patient3_patient2
+2025-03-22 18:23:35 INFO     ====> Epoch: 1 Average loss: 4.6735
+2025-03-22 18:23:35 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:23:36 INFO     ====> Epoch: 1 Average loss: 4.6704
+2025-03-22 18:23:36 INFO     Training pair - patient2_patient1
+2025-03-22 18:23:37 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-22 18:23:37 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:23:38 INFO     ====> Epoch: 1 Average loss: 4.6704
+2025-03-22 18:23:38 INFO     Training pair - patient1_patient3
+2025-03-22 18:23:40 INFO     ====> Epoch: 1 Average loss: 4.6722
+2025-03-22 18:23:40 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:23:41 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-22 18:23:41 INFO     meta_epochs : 4/5
+2025-03-22 18:23:41 INFO     Training pair - patient3_patient2
+2025-03-22 18:23:42 INFO     ====> Epoch: 1 Average loss: 4.6713
+2025-03-22 18:23:42 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:23:43 INFO     ====> Epoch: 1 Average loss: 4.6713
+2025-03-22 18:23:43 INFO     Training pair - patient2_patient1
+2025-03-22 18:23:45 INFO     ====> Epoch: 1 Average loss: 4.6668
+2025-03-22 18:23:45 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:23:46 INFO     ====> Epoch: 1 Average loss: 4.6666
+2025-03-22 18:23:46 INFO     Training pair - patient1_patient3
+2025-03-22 18:23:47 INFO     ====> Epoch: 1 Average loss: 4.6695
+2025-03-22 18:23:47 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:23:48 INFO     ====> Epoch: 1 Average loss: 4.6611
+2025-03-22 18:23:48 INFO     meta_epochs : 5/5
+2025-03-22 18:23:48 INFO     Training pair - patient3_patient2
+2025-03-22 18:23:50 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-22 18:23:50 INFO     Training pair switch - patient2_patient3
+2025-03-22 18:23:51 INFO     ====> Epoch: 1 Average loss: 4.6732
+2025-03-22 18:23:51 INFO     Training pair - patient2_patient1
+2025-03-22 18:23:52 INFO     ====> Epoch: 1 Average loss: 4.6671
+2025-03-22 18:23:52 INFO     Training pair switch - patient1_patient2
+2025-03-22 18:23:53 INFO     ====> Epoch: 1 Average loss: 4.6664
+2025-03-22 18:23:53 INFO     Training pair - patient1_patient3
+2025-03-22 18:23:55 INFO     ====> Epoch: 1 Average loss: 4.6617
+2025-03-22 18:23:55 INFO     Training pair switch - patient3_patient1
+2025-03-22 18:23:56 INFO     ====> Epoch: 1 Average loss: 4.6677
+2025-03-22 18:23:56 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-22 21:50:06 INFO     Batch pair mode is - seq
+2025-03-22 21:50:18 INFO     Pair search method - approx_50
+2025-03-22 21:50:18 INFO     Generating neighbour using approximate method - ANNOY...
+patient3_((2800, 1000)) >patient2_((2900, 1000))
+2025-03-22 21:50:19 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-22 21:50:19 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient3_((2800, 1000))
+2025-03-22 21:50:20 INFO     Pair search estimate is complete.
+2025-03-22 21:50:20 INFO     Starting PICASA common training...
+2025-03-22 21:50:20 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-22 21:50:20 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-22 21:50:20 INFO     meta_epochs : 1/5
+2025-03-22 21:50:20 INFO     Training pair - patient3_patient2
+2025-03-22 21:50:22 INFO     ====> Epoch: 1 Average loss: 5.2581
+2025-03-22 21:50:22 INFO     Training pair switch - patient2_patient3
+2025-03-22 21:50:23 INFO     ====> Epoch: 1 Average loss: 5.0993
+2025-03-22 21:50:23 INFO     Training pair - patient2_patient1
+2025-03-22 21:50:24 INFO     ====> Epoch: 1 Average loss: 4.9015
+2025-03-22 21:50:24 INFO     Training pair switch - patient1_patient2
+2025-03-22 21:50:26 INFO     ====> Epoch: 1 Average loss: 4.7964
+2025-03-22 21:50:26 INFO     Training pair - patient1_patient3
+2025-03-22 21:50:27 INFO     ====> Epoch: 1 Average loss: 4.7386
+2025-03-22 21:50:27 INFO     Training pair switch - patient3_patient1
+2025-03-22 21:50:28 INFO     ====> Epoch: 1 Average loss: 4.7122
+2025-03-22 21:50:28 INFO     meta_epochs : 2/5
+2025-03-22 21:50:28 INFO     Training pair - patient3_patient2
+2025-03-22 21:50:29 INFO     ====> Epoch: 1 Average loss: 4.6996
+2025-03-22 21:50:29 INFO     Training pair switch - patient2_patient3
+2025-03-22 21:50:31 INFO     ====> Epoch: 1 Average loss: 4.6942
+2025-03-22 21:50:31 INFO     Training pair - patient2_patient1
+2025-03-22 21:50:32 INFO     ====> Epoch: 1 Average loss: 4.6866
+2025-03-22 21:50:32 INFO     Training pair switch - patient1_patient2
+2025-03-22 21:50:33 INFO     ====> Epoch: 1 Average loss: 4.6810
+2025-03-22 21:50:33 INFO     Training pair - patient1_patient3
+2025-03-22 21:50:34 INFO     ====> Epoch: 1 Average loss: 4.6791
+2025-03-22 21:50:34 INFO     Training pair switch - patient3_patient1
+2025-03-22 21:50:36 INFO     ====> Epoch: 1 Average loss: 4.6756
+2025-03-22 21:50:36 INFO     meta_epochs : 3/5
+2025-03-22 21:50:36 INFO     Training pair - patient3_patient2
+2025-03-22 21:50:37 INFO     ====> Epoch: 1 Average loss: 4.6735
+2025-03-22 21:50:37 INFO     Training pair switch - patient2_patient3
+2025-03-22 21:50:38 INFO     ====> Epoch: 1 Average loss: 4.6704
+2025-03-22 21:50:38 INFO     Training pair - patient2_patient1
+2025-03-22 21:50:39 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-22 21:50:39 INFO     Training pair switch - patient1_patient2
+2025-03-22 21:50:41 INFO     ====> Epoch: 1 Average loss: 4.6704
+2025-03-22 21:50:41 INFO     Training pair - patient1_patient3
+2025-03-22 21:50:42 INFO     ====> Epoch: 1 Average loss: 4.6722
+2025-03-22 21:50:42 INFO     Training pair switch - patient3_patient1
+2025-03-22 21:50:43 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-22 21:50:43 INFO     meta_epochs : 4/5
+2025-03-22 21:50:43 INFO     Training pair - patient3_patient2
+2025-03-22 21:50:44 INFO     ====> Epoch: 1 Average loss: 4.6713
+2025-03-22 21:50:44 INFO     Training pair switch - patient2_patient3
+2025-03-22 21:50:45 INFO     ====> Epoch: 1 Average loss: 4.6713
+2025-03-22 21:50:45 INFO     Training pair - patient2_patient1
+2025-03-22 21:50:47 INFO     ====> Epoch: 1 Average loss: 4.6668
+2025-03-22 21:50:47 INFO     Training pair switch - patient1_patient2
+2025-03-22 21:50:48 INFO     ====> Epoch: 1 Average loss: 4.6666
+2025-03-22 21:50:48 INFO     Training pair - patient1_patient3
+2025-03-22 21:50:49 INFO     ====> Epoch: 1 Average loss: 4.6695
+2025-03-22 21:50:49 INFO     Training pair switch - patient3_patient1
+2025-03-22 21:50:50 INFO     ====> Epoch: 1 Average loss: 4.6611
+2025-03-22 21:50:50 INFO     meta_epochs : 5/5
+2025-03-22 21:50:50 INFO     Training pair - patient3_patient2
+2025-03-22 21:50:52 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-22 21:50:52 INFO     Training pair switch - patient2_patient3
+2025-03-22 21:50:53 INFO     ====> Epoch: 1 Average loss: 4.6732
+2025-03-22 21:50:53 INFO     Training pair - patient2_patient1
+2025-03-22 21:50:54 INFO     ====> Epoch: 1 Average loss: 4.6671
+2025-03-22 21:50:54 INFO     Training pair switch - patient1_patient2
+2025-03-22 21:50:55 INFO     ====> Epoch: 1 Average loss: 4.6664
+2025-03-22 21:50:55 INFO     Training pair - patient1_patient3
+2025-03-22 21:50:57 INFO     ====> Epoch: 1 Average loss: 4.6617
+2025-03-22 21:50:57 INFO     Training pair switch - patient3_patient1
+2025-03-22 21:50:58 INFO     ====> Epoch: 1 Average loss: 4.6677
+2025-03-22 21:50:58 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-22 21:52:05 INFO     eval :patient3_patient2
+2025-03-22 21:52:14 INFO     eval :patient2_patient3
+2025-03-22 21:52:22 INFO     eval :patient1_patient2
+2025-03-22 21:59:29 INFO     Batch pair mode is - seq
+2025-03-22 22:01:57 INFO     Batch pair mode is - seq
+2025-03-22 22:02:13 INFO     Batch pair mode is - seq
+2025-03-22 22:02:21 INFO     Pair search method - approx_50
+2025-03-22 22:02:21 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient2_((2900, 1000))
+2025-03-22 22:02:22 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-22 22:02:23 INFO     Pair search estimate is complete.
+2025-03-22 22:02:23 INFO     Starting PICASA common training...
+2025-03-22 22:02:23 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-22 22:02:23 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-22 22:02:23 INFO     meta_epochs : 1/5
+2025-03-22 22:02:23 INFO     Training pair - patient1_patient2
+2025-03-22 22:02:25 INFO     ====> Epoch: 1 Average loss: 5.2790
+2025-03-22 22:02:25 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:02:26 INFO     ====> Epoch: 1 Average loss: 5.1601
+2025-03-22 22:02:26 INFO     Training pair - patient2_patient1
+2025-03-22 22:02:27 INFO     ====> Epoch: 1 Average loss: 4.9409
+2025-03-22 22:02:27 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:02:29 INFO     ====> Epoch: 1 Average loss: 4.8535
+2025-03-22 22:02:29 INFO     meta_epochs : 2/5
+2025-03-22 22:02:29 INFO     Training pair - patient1_patient2
+2025-03-22 22:02:30 INFO     ====> Epoch: 1 Average loss: 4.7782
+2025-03-22 22:02:30 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:02:31 INFO     ====> Epoch: 1 Average loss: 4.7316
+2025-03-22 22:02:31 INFO     Training pair - patient2_patient1
+2025-03-22 22:02:32 INFO     ====> Epoch: 1 Average loss: 4.7103
+2025-03-22 22:02:32 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:02:34 INFO     ====> Epoch: 1 Average loss: 4.6910
+2025-03-22 22:02:34 INFO     meta_epochs : 3/5
+2025-03-22 22:02:34 INFO     Training pair - patient1_patient2
+2025-03-22 22:02:35 INFO     ====> Epoch: 1 Average loss: 4.6777
+2025-03-22 22:02:35 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:02:36 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-22 22:02:36 INFO     Training pair - patient2_patient1
+2025-03-22 22:02:37 INFO     ====> Epoch: 1 Average loss: 4.6739
+2025-03-22 22:02:37 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:02:39 INFO     ====> Epoch: 1 Average loss: 4.6698
+2025-03-22 22:02:39 INFO     meta_epochs : 4/5
+2025-03-22 22:02:39 INFO     Training pair - patient1_patient2
+2025-03-22 22:02:40 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-22 22:02:40 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:02:41 INFO     ====> Epoch: 1 Average loss: 4.6720
+2025-03-22 22:02:41 INFO     Training pair - patient2_patient1
+2025-03-22 22:02:42 INFO     ====> Epoch: 1 Average loss: 4.6750
+2025-03-22 22:02:42 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:02:44 INFO     ====> Epoch: 1 Average loss: 4.6651
+2025-03-22 22:02:44 INFO     meta_epochs : 5/5
+2025-03-22 22:02:44 INFO     Training pair - patient1_patient2
+2025-03-22 22:02:45 INFO     ====> Epoch: 1 Average loss: 4.6665
+2025-03-22 22:02:45 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:02:46 INFO     ====> Epoch: 1 Average loss: 4.6691
+2025-03-22 22:02:46 INFO     Training pair - patient2_patient1
+2025-03-22 22:02:48 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-22 22:02:48 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:02:49 INFO     ====> Epoch: 1 Average loss: 4.6688
+2025-03-22 22:02:49 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-22 22:02:53 INFO     eval :patient1_patient2
+2025-03-22 22:03:02 INFO     eval :patient2_patient1
+2025-03-22 22:08:31 INFO     PICASAUniqueNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=30, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-22 22:08:31 INFO     Creating dataloader for training PICASA unique model.
+2025-03-22 22:08:31 INFO     Training... PICASE unique model.
+2025-03-22 22:08:31 INFO     ====> Epoch: 0 Average loss: 1257.0936
+2025-03-22 22:08:34 INFO     ====> Epoch: 10 Average loss: 964.8452
+2025-03-22 22:08:36 INFO     ====> Epoch: 20 Average loss: 910.4597
+2025-03-22 22:08:39 INFO     ====> Epoch: 30 Average loss: 870.9267
+2025-03-22 22:08:41 INFO     ====> Epoch: 40 Average loss: 841.1781
+2025-03-22 22:08:44 INFO     ====> Epoch: 50 Average loss: 819.1198
+2025-03-22 22:08:46 INFO     ====> Epoch: 60 Average loss: 802.1423
+2025-03-22 22:08:49 INFO     ====> Epoch: 70 Average loss: 789.0384
+2025-03-22 22:08:51 INFO     ====> Epoch: 80 Average loss: 779.2230
+2025-03-22 22:08:53 INFO     ====> Epoch: 90 Average loss: 771.4095
+2025-03-22 22:08:56 INFO     ====> Epoch: 100 Average loss: 765.5521
+2025-03-22 22:08:58 INFO     ====> Epoch: 110 Average loss: 760.6812
+2025-03-22 22:09:00 INFO     ====> Epoch: 120 Average loss: 756.7449
+2025-03-22 22:09:02 INFO     ====> Epoch: 130 Average loss: 753.6050
+2025-03-22 22:09:04 INFO     ====> Epoch: 140 Average loss: 751.2367
+2025-03-22 22:09:07 INFO     ====> Epoch: 150 Average loss: 749.2876
+2025-03-22 22:09:09 INFO     ====> Epoch: 160 Average loss: 747.4220
+2025-03-22 22:09:12 INFO     ====> Epoch: 170 Average loss: 746.2559
+2025-03-22 22:09:14 INFO     ====> Epoch: 180 Average loss: 745.3207
+2025-03-22 22:09:17 INFO     ====> Epoch: 190 Average loss: 744.4906
+2025-03-22 22:09:19 INFO     ====> Epoch: 200 Average loss: 743.4150
+2025-03-22 22:09:22 INFO     ====> Epoch: 210 Average loss: 742.9610
+2025-03-22 22:09:24 INFO     ====> Epoch: 220 Average loss: 742.4893
+2025-03-22 22:09:27 INFO     ====> Epoch: 230 Average loss: 742.1227
+2025-03-22 22:09:30 INFO     ====> Epoch: 240 Average loss: 741.6528
+2025-03-22 22:09:32 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_unique.model
+2025-03-22 22:09:32 INFO     Creating dataloader for evaluating PICASA unique model.
+2025-03-22 22:11:12 INFO     PICASABaseNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-22 22:11:12 INFO     Creating dataloader for training PICASA base model.
+2025-03-22 22:11:12 INFO     Training... PICASE base model.
+2025-03-22 22:11:12 INFO     ====> Epoch: 0 Average loss: 1242.1732
+2025-03-22 22:11:14 INFO     ====> Epoch: 10 Average loss: 952.9188
+2025-03-22 22:11:16 INFO     ====> Epoch: 20 Average loss: 899.2815
+2025-03-22 22:11:18 INFO     ====> Epoch: 30 Average loss: 862.0857
+2025-03-22 22:11:20 INFO     ====> Epoch: 40 Average loss: 834.1956
+2025-03-22 22:11:22 INFO     ====> Epoch: 50 Average loss: 813.5227
+2025-03-22 22:11:23 INFO     ====> Epoch: 60 Average loss: 798.0534
+2025-03-22 22:11:25 INFO     ====> Epoch: 70 Average loss: 786.3500
+2025-03-22 22:11:27 INFO     ====> Epoch: 80 Average loss: 777.2464
+2025-03-22 22:11:29 INFO     ====> Epoch: 90 Average loss: 770.0042
+2025-03-22 22:11:31 INFO     ====> Epoch: 100 Average loss: 764.6457
+2025-03-22 22:11:33 INFO     ====> Epoch: 110 Average loss: 760.4532
+2025-03-22 22:11:35 INFO     ====> Epoch: 120 Average loss: 756.8137
+2025-03-22 22:11:37 INFO     ====> Epoch: 130 Average loss: 754.1629
+2025-03-22 22:11:39 INFO     ====> Epoch: 140 Average loss: 751.8015
+2025-03-22 22:11:41 INFO     ====> Epoch: 150 Average loss: 750.1665
+2025-03-22 22:11:43 INFO     ====> Epoch: 160 Average loss: 748.6415
+2025-03-22 22:11:45 INFO     ====> Epoch: 170 Average loss: 747.3134
+2025-03-22 22:11:46 INFO     ====> Epoch: 180 Average loss: 746.3733
+2025-03-22 22:11:48 INFO     ====> Epoch: 190 Average loss: 745.6047
+2025-03-22 22:11:50 INFO     ====> Epoch: 200 Average loss: 745.1378
+2025-03-22 22:11:52 INFO     ====> Epoch: 210 Average loss: 744.2123
+2025-03-22 22:11:54 INFO     ====> Epoch: 220 Average loss: 743.9255
+2025-03-22 22:11:56 INFO     ====> Epoch: 230 Average loss: 743.3313
+2025-03-22 22:11:58 INFO     ====> Epoch: 240 Average loss: 743.1946
+2025-03-22 22:12:00 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_base.model
+2025-03-22 22:12:00 INFO     Creating dataloader for evaluating PICASA base model.
+2025-03-22 22:53:27 INFO     Batch pair mode is - seq
+2025-03-22 22:53:27 INFO     Pair search method - approx_50
+2025-03-22 22:53:27 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient2_((2900, 1000))
+2025-03-22 22:53:27 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-22 22:53:28 INFO     Pair search estimate is complete.
+2025-03-22 22:53:28 INFO     Starting PICASA common training...
+2025-03-22 22:53:28 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-22 22:53:29 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-22 22:53:29 INFO     meta_epochs : 1/5
+2025-03-22 22:53:29 INFO     Training pair - patient1_patient2
+2025-03-22 22:53:30 INFO     ====> Epoch: 1 Average loss: 5.2790
+2025-03-22 22:53:30 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:53:31 INFO     ====> Epoch: 1 Average loss: 5.1601
+2025-03-22 22:53:31 INFO     Training pair - patient2_patient1
+2025-03-22 22:53:33 INFO     ====> Epoch: 1 Average loss: 4.9409
+2025-03-22 22:53:33 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:53:34 INFO     ====> Epoch: 1 Average loss: 4.8535
+2025-03-22 22:53:34 INFO     meta_epochs : 2/5
+2025-03-22 22:53:34 INFO     Training pair - patient1_patient2
+2025-03-22 22:53:35 INFO     ====> Epoch: 1 Average loss: 4.7782
+2025-03-22 22:53:35 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:53:36 INFO     ====> Epoch: 1 Average loss: 4.7316
+2025-03-22 22:53:36 INFO     Training pair - patient2_patient1
+2025-03-22 22:53:38 INFO     ====> Epoch: 1 Average loss: 4.7103
+2025-03-22 22:53:38 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:53:39 INFO     ====> Epoch: 1 Average loss: 4.6910
+2025-03-22 22:53:39 INFO     meta_epochs : 3/5
+2025-03-22 22:53:39 INFO     Training pair - patient1_patient2
+2025-03-22 22:53:40 INFO     ====> Epoch: 1 Average loss: 4.6777
+2025-03-22 22:53:40 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:53:41 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-22 22:53:41 INFO     Training pair - patient2_patient1
+2025-03-22 22:53:43 INFO     ====> Epoch: 1 Average loss: 4.6739
+2025-03-22 22:53:43 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:53:44 INFO     ====> Epoch: 1 Average loss: 4.6698
+2025-03-22 22:53:44 INFO     meta_epochs : 4/5
+2025-03-22 22:53:44 INFO     Training pair - patient1_patient2
+2025-03-22 22:53:45 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-22 22:53:45 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:53:47 INFO     ====> Epoch: 1 Average loss: 4.6720
+2025-03-22 22:53:47 INFO     Training pair - patient2_patient1
+2025-03-22 22:53:48 INFO     ====> Epoch: 1 Average loss: 4.6750
+2025-03-22 22:53:48 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:53:49 INFO     ====> Epoch: 1 Average loss: 4.6651
+2025-03-22 22:53:49 INFO     meta_epochs : 5/5
+2025-03-22 22:53:49 INFO     Training pair - patient1_patient2
+2025-03-22 22:53:50 INFO     ====> Epoch: 1 Average loss: 4.6665
+2025-03-22 22:53:50 INFO     Training pair switch - patient2_patient1
+2025-03-22 22:53:52 INFO     ====> Epoch: 1 Average loss: 4.6691
+2025-03-22 22:53:52 INFO     Training pair - patient2_patient1
+2025-03-22 22:53:53 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-22 22:53:53 INFO     Training pair switch - patient1_patient2
+2025-03-22 22:53:54 INFO     ====> Epoch: 1 Average loss: 4.6688
+2025-03-22 22:53:54 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-22 22:53:54 INFO     eval :patient1_patient2
+2025-03-22 22:54:04 INFO     eval :patient2_patient1
+2025-03-22 22:54:13 INFO     PICASAUniqueNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=30, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-22 22:54:13 INFO     Creating dataloader for training PICASA unique model.
+2025-03-22 22:54:13 INFO     Training... PICASE unique model.
+2025-03-22 22:54:14 INFO     ====> Epoch: 0 Average loss: 1257.0936
+2025-03-22 22:54:16 INFO     ====> Epoch: 10 Average loss: 964.8452
+2025-03-22 22:54:19 INFO     ====> Epoch: 20 Average loss: 910.4597
+2025-03-22 22:54:21 INFO     ====> Epoch: 30 Average loss: 870.9267
+2025-03-22 22:54:24 INFO     ====> Epoch: 40 Average loss: 841.1781
+2025-03-22 22:54:26 INFO     ====> Epoch: 50 Average loss: 819.1198
+2025-03-22 22:54:29 INFO     ====> Epoch: 60 Average loss: 802.1423
+2025-03-22 22:54:31 INFO     ====> Epoch: 70 Average loss: 789.0384
+2025-03-22 22:54:33 INFO     ====> Epoch: 80 Average loss: 779.2230
+2025-03-22 22:54:36 INFO     ====> Epoch: 90 Average loss: 771.4095
+2025-03-22 22:54:39 INFO     ====> Epoch: 100 Average loss: 765.5521
+2025-03-22 22:54:41 INFO     ====> Epoch: 110 Average loss: 760.6812
+2025-03-22 22:54:44 INFO     ====> Epoch: 120 Average loss: 756.7449
+2025-03-22 22:54:46 INFO     ====> Epoch: 130 Average loss: 753.6050
+2025-03-22 22:54:49 INFO     ====> Epoch: 140 Average loss: 751.2367
+2025-03-22 22:54:51 INFO     ====> Epoch: 150 Average loss: 749.2876
+2025-03-22 22:54:54 INFO     ====> Epoch: 160 Average loss: 747.4220
+2025-03-22 22:54:57 INFO     ====> Epoch: 170 Average loss: 746.2559
+2025-03-22 22:54:59 INFO     ====> Epoch: 180 Average loss: 745.3207
+2025-03-22 22:55:02 INFO     ====> Epoch: 190 Average loss: 744.4906
+2025-03-22 22:55:04 INFO     ====> Epoch: 200 Average loss: 743.4150
+2025-03-22 22:55:07 INFO     ====> Epoch: 210 Average loss: 742.9610
+2025-03-22 22:55:10 INFO     ====> Epoch: 220 Average loss: 742.4893
+2025-03-22 22:55:12 INFO     ====> Epoch: 230 Average loss: 742.1227
+2025-03-22 22:55:15 INFO     ====> Epoch: 240 Average loss: 741.6528
+2025-03-22 22:55:17 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_unique.model
+2025-03-22 22:55:17 INFO     Creating dataloader for evaluating PICASA unique model.
+2025-03-22 22:55:18 INFO     PICASABaseNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-22 22:55:18 INFO     Creating dataloader for training PICASA base model.
+2025-03-22 22:55:18 INFO     Training... PICASE base model.
+2025-03-22 22:55:18 INFO     ====> Epoch: 0 Average loss: 1242.1732
+2025-03-22 22:55:20 INFO     ====> Epoch: 10 Average loss: 952.9188
+2025-03-22 22:55:22 INFO     ====> Epoch: 20 Average loss: 899.2815
+2025-03-22 22:55:24 INFO     ====> Epoch: 30 Average loss: 862.0857
+2025-03-22 22:55:26 INFO     ====> Epoch: 40 Average loss: 834.1956
+2025-03-22 22:55:28 INFO     ====> Epoch: 50 Average loss: 813.5227
+2025-03-22 22:55:30 INFO     ====> Epoch: 60 Average loss: 798.0534
+2025-03-22 22:55:32 INFO     ====> Epoch: 70 Average loss: 786.3500
+2025-03-22 22:55:34 INFO     ====> Epoch: 80 Average loss: 777.2464
+2025-03-22 22:55:36 INFO     ====> Epoch: 90 Average loss: 770.0042
+2025-03-22 22:55:38 INFO     ====> Epoch: 100 Average loss: 764.6457
+2025-03-22 22:55:40 INFO     ====> Epoch: 110 Average loss: 760.4532
+2025-03-22 22:55:42 INFO     ====> Epoch: 120 Average loss: 756.8137
+2025-03-22 22:55:44 INFO     ====> Epoch: 130 Average loss: 754.1629
+2025-03-22 22:55:46 INFO     ====> Epoch: 140 Average loss: 751.8015
+2025-03-22 22:55:48 INFO     ====> Epoch: 150 Average loss: 750.1665
+2025-03-22 22:55:49 INFO     ====> Epoch: 160 Average loss: 748.6415
+2025-03-22 22:55:51 INFO     ====> Epoch: 170 Average loss: 747.3134
+2025-03-22 22:55:53 INFO     ====> Epoch: 180 Average loss: 746.3733
+2025-03-22 22:55:55 INFO     ====> Epoch: 190 Average loss: 745.6047
+2025-03-22 22:55:57 INFO     ====> Epoch: 200 Average loss: 745.1378
+2025-03-22 22:55:59 INFO     ====> Epoch: 210 Average loss: 744.2123
+2025-03-22 22:56:01 INFO     ====> Epoch: 220 Average loss: 743.9255
+2025-03-22 22:56:02 INFO     ====> Epoch: 230 Average loss: 743.3313
+2025-03-22 22:56:04 INFO     ====> Epoch: 240 Average loss: 743.1946
+2025-03-22 22:56:06 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_base.model
+2025-03-22 22:56:06 INFO     Creating dataloader for evaluating PICASA base model.
+2025-03-24 12:16:01 INFO     Batch pair mode is - seq
+2025-03-24 12:16:10 INFO     Pair search method - approx_50
+2025-03-24 12:16:10 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient2_((2900, 1000))
+2025-03-24 12:16:11 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-24 12:16:12 INFO     Pair search estimate is complete.
+2025-03-24 12:16:12 INFO     Starting PICASA common training...
+2025-03-24 12:16:12 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-24 12:16:12 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-24 12:16:12 INFO     meta_epochs : 1/5
+2025-03-24 12:16:12 INFO     Training pair - patient1_patient2
+2025-03-24 12:16:14 INFO     ====> Epoch: 1 Average loss: 5.2790
+2025-03-24 12:16:14 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:16:15 INFO     ====> Epoch: 1 Average loss: 5.1601
+2025-03-24 12:16:15 INFO     Training pair - patient2_patient1
+2025-03-24 12:16:16 INFO     ====> Epoch: 1 Average loss: 4.9409
+2025-03-24 12:16:16 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:16:18 INFO     ====> Epoch: 1 Average loss: 4.8535
+2025-03-24 12:16:18 INFO     meta_epochs : 2/5
+2025-03-24 12:16:18 INFO     Training pair - patient1_patient2
+2025-03-24 12:16:19 INFO     ====> Epoch: 1 Average loss: 4.7782
+2025-03-24 12:16:19 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:16:20 INFO     ====> Epoch: 1 Average loss: 4.7316
+2025-03-24 12:16:20 INFO     Training pair - patient2_patient1
+2025-03-24 12:16:21 INFO     ====> Epoch: 1 Average loss: 4.7103
+2025-03-24 12:16:21 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:16:23 INFO     ====> Epoch: 1 Average loss: 4.6910
+2025-03-24 12:16:23 INFO     meta_epochs : 3/5
+2025-03-24 12:16:23 INFO     Training pair - patient1_patient2
+2025-03-24 12:16:24 INFO     ====> Epoch: 1 Average loss: 4.6777
+2025-03-24 12:16:24 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:16:25 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-24 12:16:25 INFO     Training pair - patient2_patient1
+2025-03-24 12:16:26 INFO     ====> Epoch: 1 Average loss: 4.6739
+2025-03-24 12:16:26 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:16:28 INFO     ====> Epoch: 1 Average loss: 4.6698
+2025-03-24 12:16:28 INFO     meta_epochs : 4/5
+2025-03-24 12:16:28 INFO     Training pair - patient1_patient2
+2025-03-24 12:16:29 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-24 12:16:29 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:16:30 INFO     ====> Epoch: 1 Average loss: 4.6720
+2025-03-24 12:16:30 INFO     Training pair - patient2_patient1
+2025-03-24 12:16:31 INFO     ====> Epoch: 1 Average loss: 4.6750
+2025-03-24 12:16:31 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:16:33 INFO     ====> Epoch: 1 Average loss: 4.6651
+2025-03-24 12:16:33 INFO     meta_epochs : 5/5
+2025-03-24 12:16:33 INFO     Training pair - patient1_patient2
+2025-03-24 12:16:34 INFO     ====> Epoch: 1 Average loss: 4.6665
+2025-03-24 12:16:34 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:16:35 INFO     ====> Epoch: 1 Average loss: 4.6691
+2025-03-24 12:16:35 INFO     Training pair - patient2_patient1
+2025-03-24 12:16:36 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-24 12:16:36 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:16:38 INFO     ====> Epoch: 1 Average loss: 4.6688
+2025-03-24 12:16:38 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-24 12:22:05 INFO     Batch pair mode is - seq
+2025-03-24 12:22:10 INFO     Pair search method - approx_50
+2025-03-24 12:22:10 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient2_((2900, 1000))
+2025-03-24 12:22:10 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-24 12:22:11 INFO     Pair search estimate is complete.
+2025-03-24 12:22:11 INFO     Starting PICASA common training...
+2025-03-24 12:22:11 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-24 12:22:12 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-24 12:22:12 INFO     meta_epochs : 1/5
+2025-03-24 12:22:12 INFO     Training pair - patient1_patient2
+2025-03-24 12:22:13 INFO     ====> Epoch: 1 Average loss: 5.2790
+2025-03-24 12:22:13 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:22:14 INFO     ====> Epoch: 1 Average loss: 5.1601
+2025-03-24 12:22:14 INFO     Training pair - patient2_patient1
+2025-03-24 12:22:16 INFO     ====> Epoch: 1 Average loss: 4.9409
+2025-03-24 12:22:16 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:22:17 INFO     ====> Epoch: 1 Average loss: 4.8535
+2025-03-24 12:22:17 INFO     meta_epochs : 2/5
+2025-03-24 12:22:17 INFO     Training pair - patient1_patient2
+2025-03-24 12:22:18 INFO     ====> Epoch: 1 Average loss: 4.7782
+2025-03-24 12:22:18 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:22:19 INFO     ====> Epoch: 1 Average loss: 4.7316
+2025-03-24 12:22:19 INFO     Training pair - patient2_patient1
+2025-03-24 12:22:21 INFO     ====> Epoch: 1 Average loss: 4.7103
+2025-03-24 12:22:21 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:22:22 INFO     ====> Epoch: 1 Average loss: 4.6910
+2025-03-24 12:22:22 INFO     meta_epochs : 3/5
+2025-03-24 12:22:22 INFO     Training pair - patient1_patient2
+2025-03-24 12:22:23 INFO     ====> Epoch: 1 Average loss: 4.6777
+2025-03-24 12:22:23 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:22:24 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-24 12:22:24 INFO     Training pair - patient2_patient1
+2025-03-24 12:22:26 INFO     ====> Epoch: 1 Average loss: 4.6739
+2025-03-24 12:22:26 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:22:27 INFO     ====> Epoch: 1 Average loss: 4.6698
+2025-03-24 12:22:27 INFO     meta_epochs : 4/5
+2025-03-24 12:22:27 INFO     Training pair - patient1_patient2
+2025-03-24 12:22:28 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-24 12:22:28 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:22:29 INFO     ====> Epoch: 1 Average loss: 4.6720
+2025-03-24 12:22:29 INFO     Training pair - patient2_patient1
+2025-03-24 12:22:31 INFO     ====> Epoch: 1 Average loss: 4.6750
+2025-03-24 12:22:31 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:22:32 INFO     ====> Epoch: 1 Average loss: 4.6651
+2025-03-24 12:22:32 INFO     meta_epochs : 5/5
+2025-03-24 12:22:32 INFO     Training pair - patient1_patient2
+2025-03-24 12:22:33 INFO     ====> Epoch: 1 Average loss: 4.6665
+2025-03-24 12:22:33 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:22:34 INFO     ====> Epoch: 1 Average loss: 4.6691
+2025-03-24 12:22:34 INFO     Training pair - patient2_patient1
+2025-03-24 12:22:36 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-24 12:22:36 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:22:37 INFO     ====> Epoch: 1 Average loss: 4.6688
+2025-03-24 12:22:37 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-24 12:22:47 INFO     eval :patient1_patient2
+2025-03-24 12:22:57 INFO     eval :patient2_patient1
+2025-03-24 12:24:31 INFO     Batch pair mode is - seq
+2025-03-24 12:24:31 INFO     Pair search method - approx_50
+2025-03-24 12:24:31 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient2_((2900, 1000))
+2025-03-24 12:24:32 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-24 12:24:32 INFO     Pair search estimate is complete.
+2025-03-24 12:24:32 INFO     Starting PICASA common training...
+2025-03-24 12:24:32 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-24 12:24:33 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-24 12:24:33 INFO     meta_epochs : 1/5
+2025-03-24 12:24:33 INFO     Training pair - patient1_patient2
+2025-03-24 12:24:34 INFO     ====> Epoch: 1 Average loss: 5.2790
+2025-03-24 12:24:34 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:24:36 INFO     ====> Epoch: 1 Average loss: 5.1601
+2025-03-24 12:24:36 INFO     Training pair - patient2_patient1
+2025-03-24 12:24:37 INFO     ====> Epoch: 1 Average loss: 4.9409
+2025-03-24 12:24:37 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:24:38 INFO     ====> Epoch: 1 Average loss: 4.8535
+2025-03-24 12:24:38 INFO     meta_epochs : 2/5
+2025-03-24 12:24:38 INFO     Training pair - patient1_patient2
+2025-03-24 12:24:40 INFO     ====> Epoch: 1 Average loss: 4.7782
+2025-03-24 12:24:40 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:24:41 INFO     ====> Epoch: 1 Average loss: 4.7316
+2025-03-24 12:24:41 INFO     Training pair - patient2_patient1
+2025-03-24 12:24:42 INFO     ====> Epoch: 1 Average loss: 4.7103
+2025-03-24 12:24:42 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:24:43 INFO     ====> Epoch: 1 Average loss: 4.6910
+2025-03-24 12:24:43 INFO     meta_epochs : 3/5
+2025-03-24 12:24:43 INFO     Training pair - patient1_patient2
+2025-03-24 12:24:45 INFO     ====> Epoch: 1 Average loss: 4.6777
+2025-03-24 12:24:45 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:24:46 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-24 12:24:46 INFO     Training pair - patient2_patient1
+2025-03-24 12:24:47 INFO     ====> Epoch: 1 Average loss: 4.6739
+2025-03-24 12:24:47 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:24:48 INFO     ====> Epoch: 1 Average loss: 4.6698
+2025-03-24 12:24:48 INFO     meta_epochs : 4/5
+2025-03-24 12:24:48 INFO     Training pair - patient1_patient2
+2025-03-24 12:24:50 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-24 12:24:50 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:24:51 INFO     ====> Epoch: 1 Average loss: 4.6720
+2025-03-24 12:24:51 INFO     Training pair - patient2_patient1
+2025-03-24 12:24:52 INFO     ====> Epoch: 1 Average loss: 4.6750
+2025-03-24 12:24:52 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:24:53 INFO     ====> Epoch: 1 Average loss: 4.6651
+2025-03-24 12:24:53 INFO     meta_epochs : 5/5
+2025-03-24 12:24:53 INFO     Training pair - patient1_patient2
+2025-03-24 12:24:55 INFO     ====> Epoch: 1 Average loss: 4.6665
+2025-03-24 12:24:55 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:24:56 INFO     ====> Epoch: 1 Average loss: 4.6691
+2025-03-24 12:24:56 INFO     Training pair - patient2_patient1
+2025-03-24 12:24:57 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-24 12:24:57 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:24:58 INFO     ====> Epoch: 1 Average loss: 4.6688
+2025-03-24 12:24:58 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-24 12:24:58 INFO     eval :patient1_patient2
+2025-03-24 12:25:08 INFO     eval :patient2_patient1
+2025-03-24 12:25:17 INFO     PICASAUniqueNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=30, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-24 12:25:17 INFO     Creating dataloader for training PICASA unique model.
+2025-03-24 12:25:17 INFO     Training... PICASE unique model.
+2025-03-24 12:25:18 INFO     ====> Epoch: 0 Average loss: 1257.0936
+2025-03-24 12:25:20 INFO     ====> Epoch: 10 Average loss: 964.8452
+2025-03-24 12:25:23 INFO     ====> Epoch: 20 Average loss: 910.4597
+2025-03-24 12:25:25 INFO     ====> Epoch: 30 Average loss: 870.9267
+2025-03-24 12:25:28 INFO     ====> Epoch: 40 Average loss: 841.1781
+2025-03-24 12:25:30 INFO     ====> Epoch: 50 Average loss: 819.1198
+2025-03-24 12:25:33 INFO     ====> Epoch: 60 Average loss: 802.1423
+2025-03-24 12:25:35 INFO     ====> Epoch: 70 Average loss: 789.0384
+2025-03-24 12:25:38 INFO     ====> Epoch: 80 Average loss: 779.2230
+2025-03-24 12:25:40 INFO     ====> Epoch: 90 Average loss: 771.4095
+2025-03-24 12:25:43 INFO     ====> Epoch: 100 Average loss: 765.5521
+2025-03-24 12:25:45 INFO     ====> Epoch: 110 Average loss: 760.6812
+2025-03-24 12:25:47 INFO     ====> Epoch: 120 Average loss: 756.7449
+2025-03-24 12:25:50 INFO     ====> Epoch: 130 Average loss: 753.6050
+2025-03-24 12:25:52 INFO     ====> Epoch: 140 Average loss: 751.2367
+2025-03-24 12:25:55 INFO     ====> Epoch: 150 Average loss: 749.2876
+2025-03-24 12:25:58 INFO     ====> Epoch: 160 Average loss: 747.4220
+2025-03-24 12:26:00 INFO     ====> Epoch: 170 Average loss: 746.2559
+2025-03-24 12:26:03 INFO     ====> Epoch: 180 Average loss: 745.3207
+2025-03-24 12:26:05 INFO     ====> Epoch: 190 Average loss: 744.4906
+2025-03-24 12:26:08 INFO     ====> Epoch: 200 Average loss: 743.4150
+2025-03-24 12:26:10 INFO     ====> Epoch: 210 Average loss: 742.9610
+2025-03-24 12:26:13 INFO     ====> Epoch: 220 Average loss: 742.4893
+2025-03-24 12:26:15 INFO     ====> Epoch: 230 Average loss: 742.1227
+2025-03-24 12:26:18 INFO     ====> Epoch: 240 Average loss: 741.6528
+2025-03-24 12:26:20 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_unique.model
+2025-03-24 12:26:21 INFO     Creating dataloader for evaluating PICASA unique model.
+2025-03-24 12:26:21 INFO     PICASABaseNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-24 12:26:21 INFO     Creating dataloader for training PICASA base model.
+2025-03-24 12:26:21 INFO     Training... PICASE base model.
+2025-03-24 12:26:21 INFO     ====> Epoch: 0 Average loss: 1242.1732
+2025-03-24 12:26:23 INFO     ====> Epoch: 10 Average loss: 952.9188
+2025-03-24 12:26:25 INFO     ====> Epoch: 20 Average loss: 899.2815
+2025-03-24 12:26:27 INFO     ====> Epoch: 30 Average loss: 862.0857
+2025-03-24 12:26:29 INFO     ====> Epoch: 40 Average loss: 834.1956
+2025-03-24 12:26:31 INFO     ====> Epoch: 50 Average loss: 813.5227
+2025-03-24 12:26:33 INFO     ====> Epoch: 60 Average loss: 798.0534
+2025-03-24 12:26:35 INFO     ====> Epoch: 70 Average loss: 786.3500
+2025-03-24 12:26:37 INFO     ====> Epoch: 80 Average loss: 777.2464
+2025-03-24 12:26:39 INFO     ====> Epoch: 90 Average loss: 770.0042
+2025-03-24 12:26:41 INFO     ====> Epoch: 100 Average loss: 764.6457
+2025-03-24 12:26:43 INFO     ====> Epoch: 110 Average loss: 760.4532
+2025-03-24 12:26:45 INFO     ====> Epoch: 120 Average loss: 756.8137
+2025-03-24 12:26:47 INFO     ====> Epoch: 130 Average loss: 754.1629
+2025-03-24 12:26:49 INFO     ====> Epoch: 140 Average loss: 751.8015
+2025-03-24 12:26:51 INFO     ====> Epoch: 150 Average loss: 750.1665
+2025-03-24 12:26:53 INFO     ====> Epoch: 160 Average loss: 748.6415
+2025-03-24 12:26:55 INFO     ====> Epoch: 170 Average loss: 747.3134
+2025-03-24 12:26:57 INFO     ====> Epoch: 180 Average loss: 746.3733
+2025-03-24 12:26:59 INFO     ====> Epoch: 190 Average loss: 745.6047
+2025-03-24 12:27:01 INFO     ====> Epoch: 200 Average loss: 745.1378
+2025-03-24 12:27:03 INFO     ====> Epoch: 210 Average loss: 744.2123
+2025-03-24 12:27:05 INFO     ====> Epoch: 220 Average loss: 743.9255
+2025-03-24 12:27:07 INFO     ====> Epoch: 230 Average loss: 743.3313
+2025-03-24 12:27:09 INFO     ====> Epoch: 240 Average loss: 743.1946
+2025-03-24 12:27:10 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_base.model
+2025-03-24 12:27:11 INFO     Creating dataloader for evaluating PICASA base model.
+2025-03-24 12:28:14 INFO     PICASABaseNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-24 12:28:14 INFO     Creating dataloader for training PICASA base model.
+2025-03-24 12:28:14 INFO     Training... PICASE base model.
+2025-03-24 12:28:15 INFO     ====> Epoch: 0 Average loss: 1266.8809
+2025-03-24 12:28:16 INFO     ====> Epoch: 10 Average loss: 971.6076
+2025-03-24 12:28:18 INFO     ====> Epoch: 20 Average loss: 914.9004
+2025-03-24 12:28:20 INFO     ====> Epoch: 30 Average loss: 874.0761
+2025-03-24 12:28:22 INFO     ====> Epoch: 40 Average loss: 843.7026
+2025-03-24 12:28:24 INFO     ====> Epoch: 50 Average loss: 820.9151
+2025-03-24 12:29:03 INFO     Batch pair mode is - seq
+2025-03-24 12:29:36 INFO     Batch pair mode is - seq
+2025-03-24 12:29:36 INFO     Pair search method - approx_50
+2025-03-24 12:29:36 INFO     Generating neighbour using approximate method - ANNOY...
+patient1_((3000, 1000)) >patient2_((2900, 1000))
+2025-03-24 12:29:36 INFO     Generating neighbour using approximate method - ANNOY...
+patient2_((2900, 1000)) >patient1_((3000, 1000))
+2025-03-24 12:29:37 INFO     Pair search estimate is complete.
+2025-03-24 12:29:37 INFO     Starting PICASA common training...
+2025-03-24 12:29:37 INFO     {'device': 'cuda', 'batch_size': 100, 'input_dim': 1000, 'embedding_dim': 1000, 'attention_dim': 15, 'latent_dim': 15, 'encoder_layers': [100, 15], 'projection_layers': [25, 25], 'learning_rate': 0.001, 'pair_search_method': 'approx_50', 'pair_importance_weight': 0.1, 'corruption_tol': 10.0, 'cl_loss_mode': 'none', 'epochs': 1, 'meta_epochs': 5}
+2025-03-24 12:29:38 INFO     PICASACommonNet(
+  (embedding): GeneEmbedor(
+    (embedding): Embedding(1000, 15)
+    (emb_norm): LayerNorm((15,), eps=1e-05, elementwise_affine=True)
+  )
+  (attention): ScaledDotAttention()
+  (pooling): AttentionPooling()
+  (encoder): ENCODER(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=100, bias=True)
+        (1): BatchNorm1d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=100, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (projector_cl): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=25, bias=True)
+        (1): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=25, out_features=25, bias=True)
+        (5): BatchNorm1d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+)
+2025-03-24 12:29:38 INFO     meta_epochs : 1/5
+2025-03-24 12:29:38 INFO     Training pair - patient1_patient2
+2025-03-24 12:29:39 INFO     ====> Epoch: 1 Average loss: 5.2790
+2025-03-24 12:29:39 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:29:40 INFO     ====> Epoch: 1 Average loss: 5.1601
+2025-03-24 12:29:40 INFO     Training pair - patient2_patient1
+2025-03-24 12:29:42 INFO     ====> Epoch: 1 Average loss: 4.9409
+2025-03-24 12:29:42 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:29:43 INFO     ====> Epoch: 1 Average loss: 4.8535
+2025-03-24 12:29:43 INFO     meta_epochs : 2/5
+2025-03-24 12:29:43 INFO     Training pair - patient1_patient2
+2025-03-24 12:29:44 INFO     ====> Epoch: 1 Average loss: 4.7782
+2025-03-24 12:29:44 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:29:45 INFO     ====> Epoch: 1 Average loss: 4.7316
+2025-03-24 12:29:45 INFO     Training pair - patient2_patient1
+2025-03-24 12:29:47 INFO     ====> Epoch: 1 Average loss: 4.7103
+2025-03-24 12:29:47 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:29:48 INFO     ====> Epoch: 1 Average loss: 4.6910
+2025-03-24 12:29:48 INFO     meta_epochs : 3/5
+2025-03-24 12:29:48 INFO     Training pair - patient1_patient2
+2025-03-24 12:29:49 INFO     ====> Epoch: 1 Average loss: 4.6777
+2025-03-24 12:29:49 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:29:50 INFO     ====> Epoch: 1 Average loss: 4.6748
+2025-03-24 12:29:50 INFO     Training pair - patient2_patient1
+2025-03-24 12:29:52 INFO     ====> Epoch: 1 Average loss: 4.6739
+2025-03-24 12:29:52 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:29:53 INFO     ====> Epoch: 1 Average loss: 4.6698
+2025-03-24 12:29:53 INFO     meta_epochs : 4/5
+2025-03-24 12:29:53 INFO     Training pair - patient1_patient2
+2025-03-24 12:29:54 INFO     ====> Epoch: 1 Average loss: 4.6686
+2025-03-24 12:29:54 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:29:56 INFO     ====> Epoch: 1 Average loss: 4.6720
+2025-03-24 12:29:56 INFO     Training pair - patient2_patient1
+2025-03-24 12:29:57 INFO     ====> Epoch: 1 Average loss: 4.6750
+2025-03-24 12:29:57 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:29:58 INFO     ====> Epoch: 1 Average loss: 4.6651
+2025-03-24 12:29:58 INFO     meta_epochs : 5/5
+2025-03-24 12:29:58 INFO     Training pair - patient1_patient2
+2025-03-24 12:29:59 INFO     ====> Epoch: 1 Average loss: 4.6665
+2025-03-24 12:29:59 INFO     Training pair switch - patient2_patient1
+2025-03-24 12:30:01 INFO     ====> Epoch: 1 Average loss: 4.6691
+2025-03-24 12:30:01 INFO     Training pair - patient2_patient1
+2025-03-24 12:30:02 INFO     ====> Epoch: 1 Average loss: 4.6685
+2025-03-24 12:30:02 INFO     Training pair switch - patient1_patient2
+2025-03-24 12:30:03 INFO     ====> Epoch: 1 Average loss: 4.6688
+2025-03-24 12:30:03 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_common.model
+2025-03-24 12:30:03 INFO     eval :patient1_patient2
+2025-03-24 12:30:13 INFO     eval :patient2_patient1
+2025-03-24 12:30:22 INFO     PICASAUniqueNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=30, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-24 12:30:22 INFO     Creating dataloader for training PICASA unique model.
+2025-03-24 12:30:22 INFO     Training... PICASE unique model.
+2025-03-24 12:30:23 INFO     ====> Epoch: 0 Average loss: 1257.0936
+2025-03-24 12:30:25 INFO     ====> Epoch: 10 Average loss: 964.8452
+2025-03-24 12:30:27 INFO     ====> Epoch: 20 Average loss: 910.4597
+2025-03-24 12:30:30 INFO     ====> Epoch: 30 Average loss: 870.9267
+2025-03-24 12:30:32 INFO     ====> Epoch: 40 Average loss: 841.1781
+2025-03-24 12:30:35 INFO     ====> Epoch: 50 Average loss: 819.1198
+2025-03-24 12:30:37 INFO     ====> Epoch: 60 Average loss: 802.1423
+2025-03-24 12:30:40 INFO     ====> Epoch: 70 Average loss: 789.0384
+2025-03-24 12:30:42 INFO     ====> Epoch: 80 Average loss: 779.2230
+2025-03-24 12:30:45 INFO     ====> Epoch: 90 Average loss: 771.4095
+2025-03-24 12:30:48 INFO     ====> Epoch: 100 Average loss: 765.5521
+2025-03-24 12:30:50 INFO     ====> Epoch: 110 Average loss: 760.6812
+2025-03-24 12:30:53 INFO     ====> Epoch: 120 Average loss: 756.7449
+2025-03-24 12:30:55 INFO     ====> Epoch: 130 Average loss: 753.6050
+2025-03-24 12:30:58 INFO     ====> Epoch: 140 Average loss: 751.2367
+2025-03-24 12:31:00 INFO     ====> Epoch: 150 Average loss: 749.2876
+2025-03-24 12:31:03 INFO     ====> Epoch: 160 Average loss: 747.4220
+2025-03-24 12:31:05 INFO     ====> Epoch: 170 Average loss: 746.2559
+2025-03-24 12:31:08 INFO     ====> Epoch: 180 Average loss: 745.3207
+2025-03-24 12:31:10 INFO     ====> Epoch: 190 Average loss: 744.4906
+2025-03-24 12:31:13 INFO     ====> Epoch: 200 Average loss: 743.4150
+2025-03-24 12:31:15 INFO     ====> Epoch: 210 Average loss: 742.9610
+2025-03-24 12:31:18 INFO     ====> Epoch: 220 Average loss: 742.4893
+2025-03-24 12:31:20 INFO     ====> Epoch: 230 Average loss: 742.1227
+2025-03-24 12:31:23 INFO     ====> Epoch: 240 Average loss: 741.6528
+2025-03-24 12:31:25 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_unique.model
+2025-03-24 12:31:25 INFO     Creating dataloader for evaluating PICASA unique model.
+2025-03-24 12:31:26 INFO     PICASABaseNet(
+  (u_encoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=1000, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=15, bias=True)
+        (5): BatchNorm1d(15, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (u_decoder): MLP(
+    (fc): Stacklayers(
+      (layers): ModuleList(
+        (0): Linear(in_features=15, out_features=128, bias=True)
+        (1): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU()
+        (3): Dropout(p=0.1, inplace=False)
+        (4): Linear(in_features=128, out_features=128, bias=True)
+        (5): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (6): ReLU()
+        (7): Dropout(p=0.1, inplace=False)
+      )
+    )
+  )
+  (zinb_scale): Linear(in_features=128, out_features=1000, bias=True)
+  (zinb_dropout): Linear(in_features=128, out_features=1000, bias=True)
+  (batch_discriminator): Linear(in_features=15, out_features=2, bias=True)
+)
+2025-03-24 12:31:26 INFO     Creating dataloader for training PICASA base model.
+2025-03-24 12:31:26 INFO     Training... PICASE base model.
+2025-03-24 12:31:26 INFO     ====> Epoch: 0 Average loss: 1242.1732
+2025-03-24 12:31:28 INFO     ====> Epoch: 10 Average loss: 952.9188
+2025-03-24 12:31:30 INFO     ====> Epoch: 20 Average loss: 899.2815
+2025-03-24 12:31:32 INFO     ====> Epoch: 30 Average loss: 862.0857
+2025-03-24 12:31:34 INFO     ====> Epoch: 40 Average loss: 834.1956
+2025-03-24 12:31:36 INFO     ====> Epoch: 50 Average loss: 813.5227
+2025-03-24 12:31:38 INFO     ====> Epoch: 60 Average loss: 798.0534
+2025-03-24 12:31:40 INFO     ====> Epoch: 70 Average loss: 786.3500
+2025-03-24 12:31:42 INFO     ====> Epoch: 80 Average loss: 777.2464
+2025-03-24 12:31:44 INFO     ====> Epoch: 90 Average loss: 770.0042
+2025-03-24 12:31:46 INFO     ====> Epoch: 100 Average loss: 764.6457
+2025-03-24 12:31:48 INFO     ====> Epoch: 110 Average loss: 760.4532
+2025-03-24 12:31:50 INFO     ====> Epoch: 120 Average loss: 756.8137
+2025-03-24 12:31:52 INFO     ====> Epoch: 130 Average loss: 754.1629
+2025-03-24 12:31:54 INFO     ====> Epoch: 140 Average loss: 751.8015
+2025-03-24 12:31:56 INFO     ====> Epoch: 150 Average loss: 750.1665
+2025-03-24 12:31:58 INFO     ====> Epoch: 160 Average loss: 748.6415
+2025-03-24 12:32:00 INFO     ====> Epoch: 170 Average loss: 747.3134
+2025-03-24 12:32:02 INFO     ====> Epoch: 180 Average loss: 746.3733
+2025-03-24 12:32:04 INFO     ====> Epoch: 190 Average loss: 745.6047
+2025-03-24 12:32:06 INFO     ====> Epoch: 200 Average loss: 745.1378
+2025-03-24 12:32:08 INFO     ====> Epoch: 210 Average loss: 744.2123
+2025-03-24 12:32:10 INFO     ====> Epoch: 220 Average loss: 743.9255
+2025-03-24 12:32:12 INFO     ====> Epoch: 230 Average loss: 743.3313
+2025-03-24 12:32:13 INFO     ====> Epoch: 240 Average loss: 743.1946
+2025-03-24 12:32:15 INFO     Completed training...model saved in /home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/tutorial/results/picasa_base.model
+2025-03-24 12:32:15 INFO     Creating dataloader for evaluating PICASA base model.
