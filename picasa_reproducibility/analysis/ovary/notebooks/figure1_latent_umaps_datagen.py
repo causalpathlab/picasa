@@ -7,9 +7,7 @@ sample = 'ovary'
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'+sample
 
 ############ read model results as adata 
-picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
-wdir = wdir + '/notebooks/'
-
+picasa_adata = ad.read_h5ad(wdir+'/results/picasa.h5ad')
 #########
 
 cmap = {
@@ -54,5 +52,5 @@ df['batch']=picasa_adata.obs['batch']
 df['celltype']=picasa_adata.obs['celltype']
 df['treatment_phase']=picasa_adata.obs['treatment_phase']
 
-df.to_csv(wdir+'/data/figure1_umap_coordinates.csv.gz',compression='gzip')
+df.to_csv('data/figure1_umap_coordinates.csv.gz',compression='gzip')
 

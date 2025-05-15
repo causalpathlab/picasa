@@ -35,8 +35,7 @@ for file_name in file_names:
 picasa_object = picasa.create_picasa_object(
 	batch_map,
     sample,
-	'seq',
-	wdir
+	wdir+sample
  	)
 
 
@@ -57,22 +56,22 @@ params = {'device' : 'cuda',
 		'epochs': common_epochs,
 		'meta_epochs': common_meta_epoch
 		}   
-  
-
 
 picasa_object.estimate_neighbour(params['pair_search_method'])
-
 
 picasa_object.set_nn_params(params)
 
 
-picasa_object.train_common()
-picasa_object.plot_loss(tag='common')
+# picasa_object.train_common()
+# picasa_object.plot_loss(tag='common')
+# device = 'cpu'
+# picasa_object.nn_params['device'] = device
+# eval_batch_size = 500
+# picasa_object.eval_common(eval_batch_size,device)
 
-device = 'cpu'
-picasa_object.nn_params['device'] = device
-eval_batch_size = 500
-picasa_object.eval_common(eval_batch_size,device)
+
+picasa_adata = an.read_h5ad(wdir+sample+'/results/picasa_bkup.h5ad')
+picasa_object.create_model_adata_prev_common(picasa_adata.obsm['common'])
 
 
 input_dim = picasa_object.data.adata_list['Batch1'].X.shape[1]

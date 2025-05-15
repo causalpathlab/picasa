@@ -57,9 +57,10 @@ def picasa_train_unique(model,data,l_rate,epochs=100):
 		epoch_l,el_z,el_recon,el_batch = (0,)*4
 		for x_c1,y,x_zc,batch in data:
 			opt.zero_grad()
-			z_u,px_s,px_r,px_d,batch_pred = model(x_c1,x_zc)
+			x_c1_raw_approx = torch.expm1(x_c1).round().to(torch.int)
+			z_u,px_s,px_r,px_d,batch_pred = model(x_c1_raw_approx,x_zc)
 			train_loss_z = minimal_overlap_loss(x_zc,z_u)
-			train_loss_recon = get_zinb_reconstruction_loss(x_c1,px_s, px_r, px_d)
+			train_loss_recon = get_zinb_reconstruction_loss(x_c1_raw_approx, px_s, px_r, px_d)
 			train_loss_batch = criterion(batch_pred, batch)
 			train_loss = train_loss_z + train_loss_recon + train_loss_batch
 			train_loss.backward()
@@ -86,8 +87,9 @@ def picasa_train_base(model,data,l_rate,epochs=100):
 		epoch_l,el_recon,el_batch = (0,)*3
 		for x_c1,y,batch in data:
 			opt.zero_grad()
-			z,px_s,px_r,px_d,batch_pred = model(x_c1)
-			train_loss_recon = get_zinb_reconstruction_loss(x_c1,px_s, px_r, px_d)
+			x_c1_raw_approx = torch.expm1(x_c1).round().to(torch.int)
+			z,px_s,px_r,px_d,batch_pred = model(x_c1_raw_approx)
+			train_loss_recon = get_zinb_reconstruction_loss(x_c1_raw_approx, px_s, px_r, px_d)
 			train_loss_batch = criterion(batch_pred, batch)
 			train_loss = train_loss_recon + train_loss_batch
 			train_loss.backward()

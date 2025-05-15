@@ -11,14 +11,14 @@ sample = 'ovary'
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'+sample
 
 ############ read model results as adata 
-picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
-
+picasa_adata = ad.read_h5ad(wdir+'/results/picasa.h5ad')
+#########
 ####################################
 
 ############ read original data as adata list
 
 
-ddir = wdir+'/model_data/'
+ddir = wdir+'/data/'
 pattern = sample+'_*.h5ad'
 
 file_paths = glob.glob(os.path.join(ddir, pattern))
@@ -108,4 +108,3 @@ sc.pp.neighbors(picasa_adata_c,use_rep='unique')
 sc.tl.umap(picasa_adata_c)
 sc.pl.umap(picasa_adata_c,color=['batch','celltype','treatment_phase'])
 plt.savefig('results/figure4_unique_umap_subtype_cancer.png')
-plt.savefig('results/figure4_unique_umap_subtype_cancer.pdf')

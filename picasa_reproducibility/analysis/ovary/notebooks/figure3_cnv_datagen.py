@@ -12,7 +12,7 @@ pp = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/
 
 ############ read original data as adata list
 
-ddir = pp+sample+'/model_data/'
+ddir = pp+sample+'/data/'
 pattern = sample+'_*.h5ad'
 
 file_paths = glob.glob(os.path.join(ddir, pattern))
@@ -32,9 +32,9 @@ picasa_data = batch_map
 
 ############ read model results as adata 
 wdir = pp+sample
-picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
+picasa_adata = ad.read_h5ad(wdir+'/results/picasa.h5ad')
 
-adata = ad.read_h5ad(wdir+'/model_data/all_ovary.h5ad')
+adata = ad.read_h5ad(wdir+'/data/all_ovary.h5ad')
 
 from scvi.distributions import ZeroInflatedNegativeBinomial
 import scanpy as sc
@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 from picasa import model
 import torch 
 
-def get_zinb_reconstruction(x, px_s, px_r, px_d):
+def get_zinb_reconstruction( px_s, px_r, px_d):
 	zinb_dist = ZeroInflatedNegativeBinomial(mu=px_s, theta=px_r, zi_logits=px_d)
 	reconstructed_x = zinb_dist.sample()
 	return reconstructed_x
@@ -59,7 +59,8 @@ nn_params['device'] = 'cpu'
 
 
 picasa_unique_model = model.PICASAUniqueNet(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(nn_params['device'])
-picasa_unique_model.load_state_dict(torch.load(wdir+'/model_results/picasa_unique.model', map_location=torch.device(nn_params['device'])))
+picasa_unique_model.load_state_dict(torch.load(wdir+'/results/picasa_unique.model', map_location=torch.device(nn_params['device'])))
+        
 
 picasa_unique_model.eval()
 
@@ -85,8 +86,7 @@ for p1 in adata.obs['batch'].unique():
 	batch_pred = z[4]
 
 
-
-	x_recons = get_zinb_reconstruction(x_c1,px_scale,px_rate,px_dropout)
+	x_recons = get_zinb_reconstruction(px_scale,px_rate,px_dropout)
 	df_recons_current = pd.DataFrame(x_recons.detach().numpy(),index=df.index.values,columns = df.columns)
 	df_recons = pd.concat([df_recons,df_recons_current])
 

@@ -15,7 +15,7 @@ import pandas as pd
 
 
 sample ='ovary'
-adata = an.read_h5ad('results/picasa.h5ad')
+df_latent = pd.read_csv('results/picasa_parameters_patient_by_factor.csv.gz',index_col=0)
 
 ####### get patient data #####################
 
@@ -36,63 +36,48 @@ from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 import matplotlib.pyplot as plt
 
-selected_topics = []
-def surv_plot(tag):
-    df_latent = pd.DataFrame(adata.obsm[tag], index=adata.obs_names)
-    df_latent = df_latent.loc[:, df_latent.median() != 0]
 
-    df_latent.columns = ['u'+str(x)for x in df_latent.columns]
+res_lrank = []    
+res_kmf = []
+df_latent = df_latent.loc[df_pmeta.index,:]
+df = pd.concat([df_pmeta[['time', 'event']], df_latent], axis=1)
+
+factors = df_latent.columns
+num_factors = len(factors)
+
+kmf = KaplanMeierFitter()
+
+for idx, factor in enumerate(factors):
+    median_value = df[factor].median()
+    df['group'] = (df[factor] > median_value).astype(int)
+
+    group_low = df[df['group'] == 0]
+    group_high = df[df['group'] == 1]
+    logrank_result = logrank_test(
+        group_low['time'], group_high['time'], 
+        event_observed_A=group_low['event'], 
+        event_observed_B=group_high['event']
+    )
+    p_value = logrank_result.p_value
+    chisq_stat = logrank_result.test_statistic
+    group_high_mtime =  group_high['time'].mean()
+    group_high_stdtime =  group_high['time'].std()
+    group_low_mtime =  group_low['time'].mean()
+    group_low_stdtime =  group_low['time'].std()
+    res_lrank.append([factor,chisq_stat,p_value,
+                group_high_mtime,
+                group_high_stdtime,
+                group_low_mtime,
+                group_low_stdtime])
     
-    selected_topics = ['u15', 'u40', 'u47', 'u49', 'u88', 'u99']
-    df_latent = df_latent.loc[:,selected_topics]
-    
-    df_latent = df_latent.loc[df_pmeta.index,:]
-    df = pd.concat([df_pmeta[['time', 'event']], df_latent], axis=1)
-
-    factors = df_latent.columns
-    num_factors = len(factors)
-
-    rows = 2
-    cols = 3
-    fig, axes = plt.subplots(rows, cols, figsize=(15, 3 * rows))  
-    axes = axes.flatten()  
-    kmf = KaplanMeierFitter()
-
-    for idx, factor in enumerate(factors):
-        median_value = df[factor].median()
-        df['group'] = (df[factor] > median_value).astype(int)
-
-        group_low = df[df['group'] == 0]
-        group_high = df[df['group'] == 1]
-        logrank_result = logrank_test(
-            group_low['time'], group_high['time'], 
-            event_observed_A=group_low['event'], 
-            event_observed_B=group_high['event']
-        )
-        p_value = logrank_result.p_value
-
-        if p_value > 0.05:
-            continue
-        selected_topics.append(factor)
-        print(factor,p_value)
         
-        for group, label in zip([0, 1], ['Low', 'High']):
-            group_data = df[df['group'] == group]
-            kmf.fit(group_data['time'], group_data['event'], label=label)
-            kmf.plot_survival_function(ax=axes[idx],ci_show=False, linewidth=5,marker='+',markeredgecolor='black',markersize=0.2)
+    for group, label in zip([0, 1], ['Low', 'High']):
+        group_data = df[df['group'] == group]
+        kmf.fit(group_data['time'], group_data['event'], label=label)
+        for cdf_time,cdf in zip(kmf.cumulative_density_.index.values,kmf.cumulative_density_[label].values):
+            res_kmf.append([factor,cdf_time,cdf,label])
+            
+        
+pd.DataFrame(res_lrank,columns=['factor','chisq_stat','pval','group_high_mean_time','group_high_std_time','group_low_mean_time','group_low_std_time',]).to_csv('results/survival_analysis_logrank_result.csv.gz',compression='gzip')
 
-        axes[idx].set_title(f"Survival Curve for {factor}\nP-value: {p_value:.4e}")
-        axes[idx].set_xlabel("Time (days)")
-        axes[idx].set_ylabel("Survival Probability")
-        axes[idx].legend()
-
-    # remove empty plots
-    for ax in axes[len(factors):]:
-        ax.remove()
-
-    plt.tight_layout()
-    plt.savefig('results/survival_all_factors_' + tag + '.pdf')
-
-surv_plot('picasa')
-print(selected_topics)
-
+pd.DataFrame(res_kmf,columns=['factor','time','cdf','label']).to_csv('results/survival_analysis_kmf_result.csv.gz',compression='gzip')

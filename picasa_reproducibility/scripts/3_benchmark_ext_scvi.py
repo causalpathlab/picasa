@@ -16,9 +16,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 SAMPLE = sys.argv[1] 
+# SAMPLE = 'sim3' 
 WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 PATTERN = f'{SAMPLE}_*.h5ad'
@@ -36,7 +37,7 @@ def load_batches(data_dir, pattern, max_batches=25):
     return batch_map
 
 
-picasa_adata = an.read_h5ad(WDIR+SAMPLE+'/model_results/picasa.h5ad')
+picasa_adata = an.read_h5ad(WDIR+SAMPLE+'/results/picasa.h5ad')
 n_latent=picasa_adata.obsm['common'].shape[1]
 
 
@@ -52,13 +53,27 @@ adata_combined.obsm["X_scVI"] = model.get_latent_representation()
 pd.DataFrame(adata_combined.obsm['X_scVI'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_scvi.csv.gz'),compression='gzip')
 
 
+fig, ax = plt.subplots(figsize=(6, 6))
+
 sc.pp.neighbors(adata_combined, use_rep="X_scVI")
 sc.tl.umap(adata_combined)
 
 sc.pl.umap(adata_combined, color=[constants.BATCH],legend_loc=None)
+ax = plt.gca()
+ax.set_xlabel('')
+ax.set_ylabel('')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_title('')
 plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_scvi_umap_'+constants.BATCH+'.png'))
 plt.close()
 
 sc.pl.umap(adata_combined, color=[constants.GROUP],legend_loc=None)
+ax = plt.gca()
+ax.set_xlabel('')
+ax.set_ylabel('')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_title('')
 plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_scvi_umap_'+constants.GROUP+'.png'))
 plt.close()

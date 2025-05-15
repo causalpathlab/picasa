@@ -7,8 +7,7 @@ sample = 'sim1'
 wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'+sample
 
 ############ read model results as adata 
-picasa_adata = ad.read_h5ad(wdir+'/model_results/picasa.h5ad')
-wdir = wdir + '/notebooks/'
+picasa_adata = ad.read_h5ad(wdir+'/results/picasa.h5ad')
 
 ####################################
 

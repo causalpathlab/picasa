@@ -10,10 +10,17 @@ Makefile
 .snakemake/
 
 /picasa_reproducibility/analysis/*/*/*/*.png
-/picasa_reproducibility/analysis/*/*/*/.pdf
-
 /picasa_reproducibility/analysis/*/*/*.png
-/picasa_reproducibility/analysis/*/*/.pdf
+/picasa_reproducibility/analysis/*/*.png
+/picasa_reproducibility/analysis/*/*/*/*.pdf
+/picasa_reproducibility/analysis/*/*/*.pdf
+/picasa_reproducibility/analysis/*/*.pdf
+/picasa_reproducibility/analysis/*/*/*/*.rds
+/picasa_reproducibility/analysis/*/*/*.rds
+/picasa_reproducibility/analysis/*/*.rds
+/picasa_reproducibility/analysis/*/*/*/*.jpeg
+/picasa_reproducibility/analysis/*/*/*.jpeg
+/picasa_reproducibility/analysis/*/*.jpeg
 
 test/results/*.png
 test/results/*.pdf
@@ -46,6 +53,8 @@ __pycache__/
 *.RDS
 *.parquet
 *.pdf
+*.rds 
+*.jpeg
 
 
 !/picasa_reproducibility/analysis/tutorial/

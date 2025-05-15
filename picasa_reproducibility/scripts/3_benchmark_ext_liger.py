@@ -21,7 +21,7 @@ SAMPLE = sys.argv[1]
 WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 PATTERN = f'{SAMPLE}_*.h5ad'
@@ -56,7 +56,7 @@ for batch, adata in batch_map.items():
     adata.uns['sample_name'] = batch
     adata_list.append(adata)
 
-picasa_adata = an.read_h5ad(WDIR+SAMPLE+'/model_results/picasa.h5ad')
+picasa_adata = an.read_h5ad(WDIR+SAMPLE+'/results/picasa.h5ad')
 K=picasa_adata.obsm['common'].shape[1]
 
 
@@ -85,17 +85,34 @@ h_norm = np.vstack([adata.obsm["H_norm"] for adata in ifnb_liger.adata_list])
 
 
 adata_combined.obsm['X_liger'] = h_norm
+
+pd.DataFrame(adata_combined.obsm['X_liger'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_liger.csv.gz'),compression='gzip')
+
+
+fig, ax = plt.subplots(figsize=(6, 6))
+
+
 sc.pp.neighbors(adata_combined, use_rep="X_liger")
 sc.tl.umap(adata_combined)
 
 
 sc.pl.umap(adata_combined, color=[constants.BATCH],legend_loc=None)
+ax = plt.gca()
+ax.set_xlabel('')
+ax.set_ylabel('')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_title('')
 plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_liger_umap_'+constants.BATCH+'.png'))
 plt.close()
 
 sc.pl.umap(adata_combined, color=[constants.GROUP],legend_loc=None)
+ax = plt.gca()
+ax.set_xlabel('')
+ax.set_ylabel('')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_title('')
 plt.savefig(os.path.join(RESULTS_DIR, 'scanpy_liger_umap_'+constants.GROUP+'.png'))
 plt.close()
 
-
-pd.DataFrame(adata_combined.obsm['X_liger'],index=adata_combined.obs.index.values).to_csv(os.path.join(RESULTS_DIR, 'benchmark_liger.csv.gz'),compression='gzip')

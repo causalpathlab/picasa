@@ -53,47 +53,47 @@ plt.tight_layout()
 plt.savefig('results/figure1_latent_umaps.png')
 
 
-fig, axes = plt.subplots(3, 2, figsize=(10, 12))
+# fig, axes = plt.subplots(3, 2, figsize=(10, 12))
 
-for i, (umap_x, umap_y) in enumerate(umap_pairs):
-    sc.pl.scatter(adata, x=umap_x, y=umap_y, color='batch', palette= color_palette,ax=axes[i, 0], show=False)
-    axes[i, 0].set_title(f"{umap_x[0]} (Batch)")
+# for i, (umap_x, umap_y) in enumerate(umap_pairs):
+#     sc.pl.scatter(adata, x=umap_x, y=umap_y, color='batch', palette= color_palette,ax=axes[i, 0], show=False)
+#     axes[i, 0].set_title(f"{umap_x[0]} (Batch)")
 
-    sc.pl.scatter(adata, x=umap_x, y=umap_y,color = 'celltype',palette=cust_palette, ax=axes[i, 1], show=False)
+#     sc.pl.scatter(adata, x=umap_x, y=umap_y,color = 'celltype',palette=cust_palette, ax=axes[i, 1], show=False)
     
-    axes[i, 1].set_title(f"{umap_x[0]} (Celltype)")
+#     axes[i, 1].set_title(f"{umap_x[0]} (Celltype)")
     
-    break
+#     break
 
-plt.savefig('results/figure1_latent_umaps.pdf')
+# plt.savefig('results/figure1_latent_umaps.pdf')
 
 
-fig, axes = plt.subplots(3, 2, figsize=(10, 12))
+# fig, axes = plt.subplots(3, 2, figsize=(10, 12))
 
-for i, (umap_x, umap_y) in enumerate(umap_pairs):
-    sc.pl.scatter(adata, x=umap_x, y=umap_y, color='batch', ax=axes[i, 0], show=False)
-    axes[i, 0].set_title(f"{umap_x[0]} (Batch)")
+# for i, (umap_x, umap_y) in enumerate(umap_pairs):
+#     sc.pl.scatter(adata, x=umap_x, y=umap_y, color='batch', ax=axes[i, 0], show=False)
+#     axes[i, 0].set_title(f"{umap_x[0]} (Batch)")
 
-    sc.pl.scatter(adata, x=umap_x, y=umap_y, color='treatment_phase', ax=axes[i, 1], show=False)
-    axes[i, 1].set_title(f"{umap_x[0]} (treatment_phase)")
+#     sc.pl.scatter(adata, x=umap_x, y=umap_y, color='treatment_phase', ax=axes[i, 1], show=False)
+#     axes[i, 1].set_title(f"{umap_x[0]} (treatment_phase)")
 
-plt.tight_layout()
-plt.show()
-plt.savefig('results/figure1_latent_umaps_disease.png')
+# plt.tight_layout()
+# plt.show()
+# plt.savefig('results/figure1_latent_umaps_disease.png')
 
-fig, axes = plt.subplots(3, 2, figsize=(10, 12))
+# fig, axes = plt.subplots(3, 2, figsize=(10, 12))
 
-for i, (umap_x, umap_y) in enumerate(umap_pairs):
-    sc.pl.scatter(adata, x=umap_x, y=umap_y,color = 'celltype',palette=cust_palette, ax=axes[i, 0], show=False)
-    axes[i, 0].set_title(f"{umap_x[0]} (celltype)")
+# for i, (umap_x, umap_y) in enumerate(umap_pairs):
+#     sc.pl.scatter(adata, x=umap_x, y=umap_y,color = 'celltype',palette=cust_palette, ax=axes[i, 0], show=False)
+#     axes[i, 0].set_title(f"{umap_x[0]} (celltype)")
 
-    tag = umap_x.split('_')[0]
-    tag = tag+'_leiden'
-    sc.pl.scatter(adata, x=umap_x, y=umap_y, color=tag, ax=axes[i, 1], show=False)
-    axes[i, 1].set_title(f"{umap_x[0]} (Leiden)")
+#     tag = umap_x.split('_')[0]
+#     tag = tag+'_leiden'
+#     sc.pl.scatter(adata, x=umap_x, y=umap_y, color=tag, ax=axes[i, 1], show=False)
+#     axes[i, 1].set_title(f"{umap_x[0]} (Leiden)")
 
-plt.tight_layout()
-plt.show()
-plt.savefig('results/figure1_latent_umaps_leiden.png')
+# plt.tight_layout()
+# plt.show()
+# plt.savefig('results/figure1_latent_umaps_leiden.png')
 
 

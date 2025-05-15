@@ -33,10 +33,7 @@ nn_params['device'] = 'cpu'
 
 picasa_unique_model = model.PICASAUniqueNet(input_dim,common_latent_dim,unique_latent_dim,enc_layers,dec_layers,num_batches).to(nn_params['device'])
 picasa_unique_model.load_state_dict(torch.load(wdir+'/model_results/picasa_unique.model', map_location=torch.device(nn_params['device'])))
-
 picasa_unique_model.eval()
-
-
 df_w = pd.DataFrame(picasa_unique_model.zinb_scale.weight.data.detach().cpu().numpy())
 
 from scipy.stats import zscore
@@ -45,8 +42,8 @@ df_w = zscore(df_w, axis=0)
 df_w = df_w.T
 df_w.columns = adata.var_names
 
+df_w.to_csv('results/picasa_parameters_factor_by_gene.csv.gz',compression='gzip')
 
-####################################
 
 
 ### patient data 
@@ -58,30 +55,15 @@ df.columns = [x.split('_')[1] for x in df.columns]
 
 p = [ x for x in df_w.columns if x  in df.columns]
 df = df[p]
-df = df.loc[:, ~df.columns.duplicated()]
-df = df.div(df.sum(axis=1), axis=0) * 10000
 
+### normalize patient data
+df = np.log1p(df)
+df = zscore(df, axis=1) 
 
-new_adata = ad.AnnData(X=df.values)
-new_adata.var_names = df.columns
-new_adata.obs_names = df.index
 
 #### transform to picasa space
-df_w = df_w[p]
+df_w = df_w[df.columns]
 df_z = df.dot(df_w.T)
-# df_z.columns = df_w_top_topics['index'].values
-new_adata.obsm['picasa'] = df_z.values
 
-#############add metadata 
-
-import scanpy as sc
-import matplotlib.pyplot as plt
-sc.pp.neighbors(new_adata, use_rep="picasa")
-sc.tl.umap(new_adata)
-sc.tl.leiden(new_adata)
-sc.pl.umap(new_adata,color=['leiden'] )
-plt.savefig('results/picasa_space_umap.png')
-
-
-new_adata.write_h5ad('results/picasa.h5ad')
-
+df_z.columns = ['u'+str(x)for x in df_z.columns]
+df_z.to_csv('results/picasa_parameters_patient_by_factor.csv.gz',compression='gzip')

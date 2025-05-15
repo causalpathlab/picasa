@@ -14,7 +14,7 @@ import constants
 SAMPLE = sys.argv[1] 
 WDIR = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/picasa_reproducibility/analysis/'
 
-DATA_DIR = os.path.join(WDIR, SAMPLE, 'model_data')
+DATA_DIR = os.path.join(WDIR, SAMPLE, 'data')
 RESULTS_DIR = os.path.join(WDIR, SAMPLE,'benchmark_results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 PATTERN = f'{SAMPLE}_*.h5ad'
@@ -70,11 +70,22 @@ def run_scanpy_external_analysis(adata, method, save_path, batch_key=constants.B
         sc.tl.umap(adata)
         
     sc.pl.umap(adata, color=[batch_key],legend_loc=None)
+    ax = plt.gca()
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title('')
     plt.savefig(os.path.join(save_path+'_'+batch_key+'.png'))
     plt.close()
 
     sc.pl.umap(adata, color=[group_key],legend_loc=None)
-    
+    ax = plt.gca()
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title('')    
     plt.savefig(os.path.join(save_path+'_'+group_key+'.png'))
     plt.close()
 
