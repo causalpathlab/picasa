@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 setup(
     name="picasa",
     version="0.1.0",
-    description="A PICASA project python package",
+    description="PICASA, Partitioning Inter-patient Cellular Attributes by Shared Attention, project python package",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author="Sishir Subedi and Yongjin Park",
     author_email="",
-    url="",
+    url="https://github.com/causalpathlab/picasa",
     license="MIT",
     packages=find_packages(),
     install_requires=[

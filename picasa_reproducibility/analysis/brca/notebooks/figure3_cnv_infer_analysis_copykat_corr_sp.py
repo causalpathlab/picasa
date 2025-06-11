@@ -40,40 +40,40 @@ ptct_pairs = [(x,y) for x,y in zip(
 )]
 
 
-res = []
-for ptct_pair in ptct_pairs:
-    pc = ptct_pair[0]        
-    ctc = ptct_pair[1]
+# res = []
+# for ptct_pair in ptct_pairs:
+#     pc = ptct_pair[0]        
+#     ctc = ptct_pair[1]
     
-    df_raw = pd.read_csv('raw_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')    
-    cols = [str(x)+'_'+str(y) for x,y in zip(df_raw['chrom'],df_raw['chrompos'])]
-    df_raw = df_raw.iloc[:,3:]
-    df_raw = df_raw.T
-    df_raw.columns = cols
+#     df_raw = pd.read_csv('raw_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')    
+#     cols = [str(x)+'_'+str(y) for x,y in zip(df_raw['chrom'],df_raw['chrompos'])]
+#     df_raw = df_raw.iloc[:,3:]
+#     df_raw = df_raw.T
+#     df_raw.columns = cols
 
-    df_recons = pd.read_csv('recons_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')
-    cols = [str(x)+'_'+str(y) for x,y in zip(df_recons['chrom'],df_recons['chrompos'])]
-    df_recons = df_recons.iloc[:,3:]
-    df_recons = df_recons.T
-    df_recons.columns = cols
+#     df_recons = pd.read_csv('recons_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')
+#     cols = [str(x)+'_'+str(y) for x,y in zip(df_recons['chrom'],df_recons['chrompos'])]
+#     df_recons = df_recons.iloc[:,3:]
+#     df_recons = df_recons.T
+#     df_recons.columns = cols
 
-    org_vals = df_raw.mean().values
-    rec_vals = df_recons.mean().values
-    corval = round(spearmanr(org_vals,rec_vals).correlation,5)
+#     org_vals = df_raw.mean().values
+#     rec_vals = df_recons.mean().values
+#     corval = round(spearmanr(org_vals,rec_vals).correlation,5)
             
-    res.append([pc,ctc,corval])
+#     res.append([pc,ctc,corval])
             
 
-df_res = pd.DataFrame(res,columns=['patient','celltype','cnv_corr'])
-subtype_map = {x:y for x,y in zip(adata.obs.batch,adata.obs.subtype)}
-df_res['subtype'] = [subtype_map[x] for x in df_res['patient']]
-df_res.to_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz',compression='gzip')
+# df_res = pd.DataFrame(res,columns=['patient','celltype','cnv_corr'])
+# subtype_map = {x:y for x,y in zip(adata.obs.batch,adata.obs.subtype)}
+# df_res['subtype'] = [subtype_map[x] for x in df_res['patient']]
+# df_res.to_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz',compression='gzip')
 
 
 ### plot patient wise
 cutoff = 3
 unique_patients = df_fp['patient'].unique()
-cn = 3
+cn = 5
 rn = int(np.ceil(len(unique_patients) / cn))  
 
 fig, axes = plt.subplots(rn, cn, figsize=(20, 30))
@@ -150,6 +150,11 @@ for idx, p in enumerate(unique_patients):
         weight='bold', 
         ha='left', va='top'
     )
+    
+    axes[row, col].set_xticks([])
+    axes[row, col].set_yticks([])
+    axes[row, col].set_xlabel('')
+    axes[row, col].set_ylabel('')
     
 plt.tight_layout()
 plt.savefig('figure3_cnv_analysis_scatter_patient_all_sp_copykat.pdf')

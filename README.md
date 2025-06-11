@@ -6,9 +6,8 @@
 
 
 ### This is a project repository for -
-* Subedi, S. & Park, Y. P. (2025)
-Attention based decomposition of single-cell data reveals common
-cell state and patient-specific effects in cancer. (Inprep)
+* - Subedi, Sishir, and  Yongjin P. Park. "Decomposing patient heterogeneity of single-cell cancer data by cross-attention neural networks." [medRxiv 2025.06.04.25328900](https://www.medrxiv.org/content/10.1101/2025.06.04.25328900v1)
+
 
 
 ## Tutorial

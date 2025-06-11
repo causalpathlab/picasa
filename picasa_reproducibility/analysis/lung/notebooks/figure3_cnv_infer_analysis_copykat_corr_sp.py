@@ -40,144 +40,263 @@ ptct_pairs = [(x,y) for x,y in zip(
 )]
 
 
-res = []
-for ptct_pair in ptct_pairs:
-    pc = ptct_pair[0]        
-    ctc = ptct_pair[1]
+# res = []
+# for ptct_pair in ptct_pairs:
+#     pc = ptct_pair[0]        
+#     ctc = ptct_pair[1]
     
-    df_raw = pd.read_csv('raw_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')    
-    cols = [str(x)+'_'+str(y) for x,y in zip(df_raw['chrom'],df_raw['chrompos'])]
-    df_raw = df_raw.iloc[:,3:]
-    df_raw = df_raw.T
-    df_raw.columns = cols
+#     df_raw = pd.read_csv('raw_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')    
+#     cols = [str(x)+'_'+str(y) for x,y in zip(df_raw['chrom'],df_raw['chrompos'])]
+#     df_raw = df_raw.iloc[:,3:]
+#     df_raw = df_raw.T
+#     df_raw.columns = cols
 
-    df_recons = pd.read_csv('recons_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')
-    cols = [str(x)+'_'+str(y) for x,y in zip(df_recons['chrom'],df_recons['chrompos'])]
-    df_recons = df_recons.iloc[:,3:]
-    df_recons = df_recons.T
-    df_recons.columns = cols
+#     df_recons = pd.read_csv('recons_'+pc+'_'+ctc+'__copykat_CNA_results.txt',sep='\t')
+#     cols = [str(x)+'_'+str(y) for x,y in zip(df_recons['chrom'],df_recons['chrompos'])]
+#     df_recons = df_recons.iloc[:,3:]
+#     df_recons = df_recons.T
+#     df_recons.columns = cols
 
-    org_vals = df_raw.mean().values
-    rec_vals = df_recons.mean().values
-    corval = round(spearmanr(org_vals,rec_vals).correlation,5)
+#     org_vals = df_raw.mean().values
+#     rec_vals = df_recons.mean().values
+#     corval = round(spearmanr(org_vals,rec_vals).correlation,5)
             
-    res.append([pc,ctc,corval])
-    print(pc,ctc,corval)
+#     res.append([pc,ctc,corval])
+#     print(pc,ctc,corval)
             
 
-df_res = pd.DataFrame(res,columns=['patient','celltype','cnv_corr'])
-subtype_map = {
-'P10':'LUSC',
-'P23':'LUSC',
-'P1':'LUSC',
-'P4':'LUSC',
-'P37':'LUSC',
-'P38':'LUAD',
-'P21':'LUAD',
-'P41':'LUSC',
-'P25':'LUSC',
-'P15':'LUSC',
-'P6':'LUSC',
-'P3':'LUSC',
-'P39':'LUAD',
-'P16':'LUAD',
-'P18':'LUSC',
-'P8':'LUAD',
-'P28':'LUAD',
-'P7':'LUSC',
-'P17':'LUSC',
-'P5':'LUAD',
-'P14':'LUSC',
-'P35':'LUAD',
-'P9':'LUAD'
-}
+# df_res = pd.DataFrame(res,columns=['patient','celltype','cnv_corr'])
+# subtype_map = {
+# 'P10':'LUSC',
+# 'P23':'LUSC',
+# 'P1':'LUSC',
+# 'P4':'LUSC',
+# 'P37':'LUSC',
+# 'P38':'LUAD',
+# 'P21':'LUAD',
+# 'P41':'LUSC',
+# 'P25':'LUSC',
+# 'P15':'LUSC',
+# 'P6':'LUSC',
+# 'P3':'LUSC',
+# 'P39':'LUAD',
+# 'P16':'LUAD',
+# 'P18':'LUSC',
+# 'P8':'LUAD',
+# 'P28':'LUAD',
+# 'P7':'LUSC',
+# 'P17':'LUSC',
+# 'P5':'LUAD',
+# 'P14':'LUSC',
+# 'P35':'LUAD',
+# 'P9':'LUAD'
+# }
 
 
-df_res['subtype'] = [subtype_map[x] for x in df_res['patient']]
-df_res.to_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz',compression='gzip')
+# df_res['subtype'] = [subtype_map[x] for x in df_res['patient']]
+# df_res.to_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz',compression='gzip')
 
 
 ### plot patient wise
-cutoff = 3
-unique_patients = df_fp['patient'].unique()
-cn = 3
-rn = int(np.ceil(len(unique_patients) / cn))  
+# cutoff = 3
+# unique_patients = df_fp['patient'].unique()
+# cn = 5
+# rn = int(np.ceil(len(unique_patients) / cn))  
 
-fig, axes = plt.subplots(rn, cn, figsize=(20, 30))
+# fig, axes = plt.subplots(rn, cn, figsize=(20, 30))
 
-for idx, p in enumerate(unique_patients):
+# for idx, p in enumerate(unique_patients):
     
-    row, col = divmod(idx, cn)
-    print(row,col)
+#     row, col = divmod(idx, cn)
+#     print(row,col)
 
-    pattern = 'raw_'+p+'*__copykat_CNA_results.txt'
-    file_paths = glob.glob(pattern)
-    df_patient_raw = pd.DataFrame()
-    for f in file_paths:
-        df_raw_c = pd.read_csv(f,sep='\t')    
-        cols = [str(x)+'_'+str(y) for x,y in zip(df_raw_c['chrom'],df_raw_c['chrompos'])]
-        df_raw_c = df_raw_c.iloc[:,3:]
-        df_raw_c = df_raw_c.T
-        df_raw_c.columns = cols
+#     pattern = 'raw_'+p+'*__copykat_CNA_results.txt'
+#     file_paths = glob.glob(pattern)
+#     df_patient_raw = pd.DataFrame()
+#     for f in file_paths:
+#         df_raw_c = pd.read_csv(f,sep='\t')    
+#         cols = [str(x)+'_'+str(y) for x,y in zip(df_raw_c['chrom'],df_raw_c['chrompos'])]
+#         df_raw_c = df_raw_c.iloc[:,3:]
+#         df_raw_c = df_raw_c.T
+#         df_raw_c.columns = cols
         
-        df_patient_raw = pd.concat([df_patient_raw,df_raw_c])
+#         df_patient_raw = pd.concat([df_patient_raw,df_raw_c])
 
-    pattern = 'recons_'+p+'*__copykat_CNA_results.txt'
-    file_paths = glob.glob(pattern)
-    df_patient_recons = pd.DataFrame()
-    for f in file_paths:
-        df_recons_c = pd.read_csv(f,sep='\t')    
-        cols = [str(x)+'_'+str(y) for x,y in zip(df_recons_c['chrom'],df_recons_c['chrompos'])]
-        df_recons_c = df_recons_c.iloc[:,3:]
-        df_recons_c = df_recons_c.T
-        df_recons_c.columns = cols
+#     pattern = 'recons_'+p+'*__copykat_CNA_results.txt'
+#     file_paths = glob.glob(pattern)
+#     df_patient_recons = pd.DataFrame()
+#     for f in file_paths:
+#         df_recons_c = pd.read_csv(f,sep='\t')    
+#         cols = [str(x)+'_'+str(y) for x,y in zip(df_recons_c['chrom'],df_recons_c['chrompos'])]
+#         df_recons_c = df_recons_c.iloc[:,3:]
+#         df_recons_c = df_recons_c.T
+#         df_recons_c.columns = cols
         
-        df_patient_recons = pd.concat([df_patient_recons,df_recons_c])
+#         df_patient_recons = pd.concat([df_patient_recons,df_recons_c])
 
 
 
-    org_vals = df_patient_raw.mean().values
-    rec_vals = df_patient_recons.mean().values
-    corval = round(spearmanr(org_vals,rec_vals).correlation,5)
+#     org_vals = df_patient_raw.mean().values
+#     rec_vals = df_patient_recons.mean().values
+#     corval = round(spearmanr(org_vals,rec_vals).correlation,5)
     
-    df_plot = pd.DataFrame({
-        'Original': org_vals,
-        'Reconstructed': rec_vals
-    })
+#     df_plot = pd.DataFrame({
+#         'Original': org_vals,
+#         'Reconstructed': rec_vals
+#     })
 
-    print(corval)
+#     print(corval)
     
-    df_z = zscore(df_plot, axis=0)
-    nonoutlier_idxs = df_z[   
-            (df_z['Original']<cutoff) &
-            (df_z['Reconstructed']<cutoff) &
-            (df_z['Original']>-cutoff) &
-            (df_z['Reconstructed']>-cutoff) 
-        ].index.values
+#     df_z = zscore(df_plot, axis=0)
+#     nonoutlier_idxs = df_z[   
+#             (df_z['Original']<cutoff) &
+#             (df_z['Reconstructed']<cutoff) &
+#             (df_z['Original']>-cutoff) &
+#             (df_z['Reconstructed']>-cutoff) 
+#         ].index.values
 
-    df_plot = df_plot.iloc[nonoutlier_idxs]
+#     df_plot = df_plot.iloc[nonoutlier_idxs]
 
 
-    ax = sns.kdeplot(
-        data=df_plot, 
-        x="Original", 
-        y="Reconstructed", 
-        cmap="coolwarm",  
-        levels=10,
-        ax = axes[row,col],
-        fill=True  
-    )
+#     ax = sns.kdeplot(
+#         data=df_plot, 
+#         x="Original", 
+#         y="Reconstructed", 
+#         cmap="coolwarm",  
+#         levels=10,
+#         ax = axes[row,col],
+#         fill=True  
+#     )
     
-    axes[row, col].set_title(p)
-    axes[row, col].text(
-        0.5, 0.9, corval, 
-        transform=axes[row, col].transAxes, 
-        fontsize=12, 
-        color='black', 
-        weight='bold', 
-        ha='left', va='top'
-    )
+#     axes[row, col].set_title(p)
+#     axes[row, col].text(
+#         0.5, 0.9, corval, 
+#         transform=axes[row, col].transAxes, 
+#         fontsize=12, 
+#         color='black', 
+#         weight='bold', 
+#         ha='left', va='top'
+#     )
     
-plt.tight_layout()
-plt.savefig('figure3_cnv_analysis_scatter_patient_all_sp_copykat.pdf')
-plt.close()
+#     axes[row, col].set_xticks([])
+#     axes[row, col].set_yticks([])
+#     axes[row, col].set_xlabel('')
+#     axes[row, col].set_ylabel('')
+
+    
+# plt.tight_layout()
+# plt.savefig('figure3_cnv_analysis_scatter_patient_all_sp_copykat.pdf')
+# plt.close()
+
+
+
+
+### plot patient cell type wise
+
+for p in  df_fp_count['patient'].unique():
+
+    unique_celltypes = df_fp_count.loc[df_fp_count['patient']==p]['celltype']
+    cutoff = 3
+    cn = len(unique_celltypes)
+    rn = 1  
+
+    if cn == 1 : continue
+    
+    fig, axes = plt.subplots(rn, cn, figsize=(20, 10))
+    
+    for idx, ct in enumerate(unique_celltypes):
+        
+        col = idx
+        row = 0
+        
+        print(row,col)
+
+        pattern = 'raw_'+p+'_'+ct+'__copykat_CNA_results.txt'
+        file_paths = glob.glob(pattern)
+        df_patient_raw = pd.DataFrame()
+        for f in file_paths:
+            df_raw_c = pd.read_csv(f,sep='\t')    
+            cols = [str(x)+'_'+str(y) for x,y in zip(df_raw_c['chrom'],df_raw_c['chrompos'])]
+            df_raw_c = df_raw_c.iloc[:,3:]
+            df_raw_c = df_raw_c.T
+            df_raw_c.columns = cols
+            
+            df_patient_raw = pd.concat([df_patient_raw,df_raw_c])
+
+        pattern = 'recons_'+p+'_'+ct+'__copykat_CNA_results.txt'
+        file_paths = glob.glob(pattern)
+        df_patient_recons = pd.DataFrame()
+        for f in file_paths:
+            df_recons_c = pd.read_csv(f,sep='\t')    
+            cols = [str(x)+'_'+str(y) for x,y in zip(df_recons_c['chrom'],df_recons_c['chrompos'])]
+            df_recons_c = df_recons_c.iloc[:,3:]
+            df_recons_c = df_recons_c.T
+            df_recons_c.columns = cols
+            
+            df_patient_recons = pd.concat([df_patient_recons,df_recons_c])
+
+
+
+        org_vals = df_patient_raw.mean().values
+        rec_vals = df_patient_recons.mean().values
+        corval = round(spearmanr(org_vals,rec_vals).correlation,3)
+        
+        df_plot = pd.DataFrame({
+            'Original': org_vals,
+            'Reconstructed': rec_vals
+        })
+
+        print(p,ct,corval)
+        
+        df_z = zscore(df_plot, axis=0)
+        nonoutlier_idxs = df_z[   
+                (df_z['Original']<cutoff) &
+                (df_z['Reconstructed']<cutoff) &
+                (df_z['Original']>-cutoff) &
+                (df_z['Reconstructed']>-cutoff) 
+            ].index.values
+
+        df_plot = df_plot.iloc[nonoutlier_idxs]
+
+
+        ax = sns.kdeplot(
+            data=df_plot, 
+            x="Original", 
+            y="Reconstructed", 
+            cmap="coolwarm",  
+            levels=10,
+            ax = axes[col],
+            fill=True  
+        )
+        
+        axes[col].set_title(ct)
+        axes[col].text(
+            0.5, 0.9, corval, 
+            transform=axes[col].transAxes, 
+            fontsize=12, 
+            color='black', 
+            weight='bold', 
+            ha='left', va='top'
+        )
+        
+        axes[col].set_xticks([])
+        axes[col].set_yticks([])
+        axes[col].set_xlabel('')
+        axes[col].set_ylabel('')
+
+    
+    plt.tight_layout()
+    plt.savefig('figure3_cnv_analysis_scatter_patient_'+p+'_copykat.pdf')
+    plt.close()
+
+
+
+## print cell type table
+
+import pandas as pd
+df = pd.read_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz')
+dfg = df.groupby(['patient','celltype'])['cnv_corr'].mean()
+dfg = dfg.reset_index()
+dfg = dfg.sort_values('cnv_corr',ascending=False)
+df = pd.read_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz')
+
