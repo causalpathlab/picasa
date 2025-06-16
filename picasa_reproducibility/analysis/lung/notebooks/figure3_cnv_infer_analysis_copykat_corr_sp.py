@@ -298,5 +298,4 @@ df = pd.read_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz')
 dfg = df.groupby(['patient','celltype'])['cnv_corr'].mean()
 dfg = dfg.reset_index()
 dfg = dfg.sort_values('cnv_corr',ascending=False)
-df = pd.read_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz')
-
+dfg.to_csv('figure3_cnv_celltype_corr_sp_copykat_celltype.csv.gz',compression='gzip')

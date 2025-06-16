@@ -21,7 +21,7 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 
 from plotnine import *
 
-def plot_lisi(df_res):
+def plot_all(df_res):
     
     df_summary = df_res.copy()
     df_summary["Method"] = pd.Categorical(df_summary["Method"], categories=['PCA','BBKNN','Combat','Harmony', 'Scanorama','Liger','scVI','PICASA_C','PICASA_U','PICASA_UC'], ordered=True)
@@ -43,14 +43,18 @@ def plot_lisi(df_res):
     }
     
 
-    plot_pairs = [ 'ILISI_mean:ILISI_std','CLISI_mean:CLISI_std']
+    plot_pairs = [ 
+        'ILISI_mean:ILISI_std','CLISI_mean:CLISI_std',
+        'ISIL_mean:ISIL_std','CSIL_mean:CSIL_std',
+        'GraphCC_mean:GraphCC_std']
     
     for pair in plot_pairs:
         
         m1, m2 = pair.split(':') 
         if 'I' in m1.split('_')[0][0]: tn = 'Batch correction'
         elif 'C' in m1.split('_')[0][0]: tn = 'Cell type'
-
+        else: tn = 'Graph connectivity'
+        
         # Filter and pivot data
         df_filtered = df_summary[df_summary['variable'].isin([m1, m2])]
         df_pivot = df_filtered.pivot(index="Method", columns="variable", values="value").reset_index()
@@ -74,7 +78,7 @@ def plot_lisi(df_res):
             + scale_color_manual(values=custom_colors)
             + scale_fill_manual(values=custom_colors)  
             + theme_minimal()
-            + labs(x="",y="",title= tn+" LISI")
+            + labs(x="",y="",title= m1.split('_')[0]+' '+tn)
         + scale_y_continuous(expand=(0,0))
         + theme(
         figure_size=(10, 6),
@@ -91,13 +95,57 @@ def plot_lisi(df_res):
         )
         print(pair)
         
-        p.save(os.path.join(RESULTS_DIR,'benchmark_plot_'+pair.replace(':','_')+'.pdf'))
+        p.save(os.path.join(RESULTS_DIR,'benchmark_plot_'+pair.replace(':','_')+'.png'))
         plt.close()
-  
 
+
+    df_summary = df_summary[df_summary['variable'].isin(['NMI','ARI'])]
+
+
+    # Create the plot
+    p = (
+        ggplot(df_summary, aes(x="Method", y="value", fill="Method"))
+        + geom_bar(stat="identity", position="dodge", width=0.7)
+        + scale_fill_manual(values=custom_colors)  
+        + theme_minimal()
+        + labs(x="",y="",title= 'NMI_ARI')
+    + scale_y_continuous(expand=(0,0))
+    +facet_wrap('variable')
+    + theme(
+    figure_size=(10, 6),
+    panel_background=element_rect(fill="white", color=None),  
+    plot_background=element_rect(fill="white", color=None),
+    axis_text=element_text(color='black'),
+    axis_title=element_text(size=20, weight="bold"),
+    legend_text=element_text(size=20, weight="bold"),
+    legend_title=element_text(size=20),
+    plot_title=element_text(size=20, weight="bold", ha='center'),
+    axis_text_x=element_text(size=20, angle=45, ha='right'),  
+    axis_text_y=element_text(size=20)  
+    )
+    )    
+    p.save(os.path.join(RESULTS_DIR,'benchmark_plot_NMI_ARI.png'))
+    plt.close()
+    
+    
+    
 def eval_plot(df_res):
     
-    df_res.rename(columns={'ilisi_mean':'ILISI_mean','ilisi_std':'ILISI_std','clisi_mean':'CLISI_mean','clisi_std':'CLISI_std'},inplace=True)
+    df_res.rename(columns={
+    'ilisi_mean':'ILISI_mean',
+    'ilisi_std':'ILISI_std',
+    'clisi_mean':'CLISI_mean',
+    'clisi_std':'CLISI_std',
+    'graphcc_mean':'GraphCC_mean',
+    'graphcc_std':'GraphCC_std',
+    'nmi_score':'NMI',
+    'ari_score':'ARI',
+    'isil_mean':'ISIL_mean',
+    'isil_std':'ISIL_std',
+    'csil_mean':'CSIL_mean',
+    'csil_std':'CSIL_std'
+    },inplace=True)
+    
     
     mmap = {'pca': 'PCA',
         'bbknn':'BBKNN',
@@ -113,7 +161,7 @@ def eval_plot(df_res):
   }
     df_res['Method'] = [mmap[x] for x in df_res['Method']]
     df_res = df_res[df_res['Method']!='PICASA_B']
-    plot_lisi(df_res)
+    plot_all(df_res)
 
 
 
@@ -132,9 +180,16 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-methods = ['ILISI_mean_ILISI_std','CLISI_mean_CLISI_std']
+methods = [
+    'ILISI_mean_ILISI_std',
+    'CLISI_mean_CLISI_std',
+    'ISIL_mean_ISIL_std',
+    'CSIL_mean_CSIL_std',
+    'GraphCC_mean_GraphCC_std',
+    'NMI_ARI'
+    ]
 
-fig, axes = plt.subplots(1, 2)
+fig, axes = plt.subplots(3, 2, figsize=(10, 8))  
 axes = axes.flatten()
 
 for ax, label in zip(axes, methods):

@@ -159,3 +159,13 @@ for idx, p in enumerate(unique_patients):
 plt.tight_layout()
 plt.savefig('figure3_cnv_analysis_scatter_patient_all_sp_copykat.pdf')
 plt.close()
+
+
+## print cell type table
+
+import pandas as pd
+df = pd.read_csv('figure3_cnv_celltype_corr_sp_copykat.csv.gz')
+dfg = df.groupby(['patient','celltype'])['cnv_corr'].mean()
+dfg = dfg.reset_index()
+dfg = dfg.sort_values('cnv_corr',ascending=False)
+dfg.to_csv('figure3_cnv_celltype_corr_sp_copykat_celltype.csv.gz',compression='gzip')
