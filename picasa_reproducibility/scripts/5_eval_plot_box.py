@@ -51,9 +51,9 @@ def plot_all(df_res):
     for pair in plot_pairs:
         
         m1, m2 = pair.split(':') 
-        if 'I' in m1.split('_')[0][0]: tn = 'Batch correction'
-        elif 'C' in m1.split('_')[0][0]: tn = 'Cell type'
-        else: tn = 'Graph connectivity'
+        if 'I' in m1.split('_')[0][0]: tn = '- Batch Correction'
+        elif 'C' in m1.split('_')[0][0]: tn = '- Cell Type'
+        else: tn = 'Connected Components - Graph Connectivity'
         
         # Filter and pivot data
         df_filtered = df_summary[df_summary['variable'].isin([m1, m2])]
@@ -78,7 +78,7 @@ def plot_all(df_res):
             + scale_color_manual(values=custom_colors)
             + scale_fill_manual(values=custom_colors)  
             + theme_minimal()
-            + labs(x="",y="",title= m1.split('_')[0]+' '+tn)
+            + labs(x="",y="",title= m1.split('_')[0].replace('GraphCC','') +' '+tn)
         + scale_y_continuous(expand=(0,0))
         + theme(
         figure_size=(10, 6),
@@ -87,7 +87,7 @@ def plot_all(df_res):
         axis_text=element_text(color='black'),
         axis_title=element_text(size=20, weight="bold"),
         legend_text=element_text(size=20, weight="bold"),
-        legend_title=element_text(size=20),
+        legend_title=element_blank(),
         plot_title=element_text(size=20, weight="bold", ha='center'),
         axis_text_x=element_text(size=20, angle=45, ha='right'),  
         axis_text_y=element_text(size=20)  
@@ -118,7 +118,7 @@ def plot_all(df_res):
     axis_text=element_text(color='black'),
     axis_title=element_text(size=20, weight="bold"),
     legend_text=element_text(size=20, weight="bold"),
-    legend_title=element_text(size=20),
+    legend_title=element_blank(),
     plot_title=element_text(size=20, weight="bold", ha='center'),
     axis_text_x=element_text(size=20, angle=45, ha='right'),  
     axis_text_y=element_text(size=20)  

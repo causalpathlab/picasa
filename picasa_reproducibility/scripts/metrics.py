@@ -120,7 +120,7 @@ def get_silhouette_metric(
                 continue
 
             sil = silhouette_samples(X_subset, label_subset, chunk_size=chunk_size)
-            sil = np.abs(sil)
+            sil = (1+sil)/2
             sil_res.append(np.mean(sil))
 
     else:
