@@ -26,6 +26,21 @@ test/results/*.png
 test/results/*.pdf
 
 
+/picasa_reproducibility/revision/*/*/*/*.png
+/picasa_reproducibility/revision/*/*/*.png
+/picasa_reproducibility/revision/*/*.png
+/picasa_reproducibility/revision/*/*.flag
+/picasa_reproducibility/revision/*/*/*.flag
+/picasa_reproducibility/revision/*/*/*/*.pdf
+/picasa_reproducibility/revision/*/*/*.pdf
+/picasa_reproducibility/revision/*/*.pdf
+/picasa_reproducibility/revision/*/*/*/*.rds
+/picasa_reproducibility/revision/*/*/*.rds
+/picasa_reproducibility/revision/*/*.rds
+/picasa_reproducibility/revision/*/*/*/*.jpeg
+/picasa_reproducibility/revision/*/*/*.jpeg
+/picasa_reproducibility/revision/*/*.jpeg
+
 io.py
 scratch.py
 
@@ -46,6 +61,7 @@ __pycache__/
 *.csv.gz
 *.txt
 *.txt.gz
+*.gz
 *.h5*
 *.log
 *.out
@@ -59,3 +75,5 @@ __pycache__/
 
 !/picasa_reproducibility/analysis/tutorial/
 !/picasa_reproducibility/analysis/tutorial/**
+
+/test/results_backup/

@@ -1,11 +1,12 @@
 import picasa
 import anndata as an
+
 import glob
 import os
 
 
 sample = 'testds'
-wdir = '/home/BCCRC.CA/ssubedi/projects/experiments/picasa/test'
+wdir = 'test'
 
 common_epochs = 1
 common_meta_epoch = 5
@@ -31,11 +32,10 @@ for file_name in file_names:
 picasa_object = picasa.create_picasa_object(
 	batch_map,
     sample,
-	'seq',
 	wdir
  	)
 
-params = {'device' : 'cuda',
+params = {'device' : 'cpu',
 		'batch_size' : 100,
 		'input_dim' : 1000,
 		'embedding_dim' : 1000,
@@ -88,8 +88,8 @@ adata = sc.concat(frames, label='batch', keys=['Batch3', 'Batch2', 'Batch1'])
 picasa_object.train_unique(adata,enc_layers,common_latent_dim,unique_latent_dim,dec_layers,l_rate=0.001,epochs=unique_epoch,batch_size=128,device='cuda')
 picasa_object.plot_loss(tag='unq')
 
-
 eval_batch_size = 1000
+
 picasa_object.eval_unique(adata,enc_layers,common_latent_dim,unique_latent_dim,dec_layers,eval_batch_size,device='cuda')
 
 latent_dim=params['latent_dim']

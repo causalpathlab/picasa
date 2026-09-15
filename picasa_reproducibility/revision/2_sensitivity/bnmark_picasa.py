@@ -1,36 +1,51 @@
+import sys
+import scanpy as sc
+import matplotlib.pylab as plt
+import anndata as ad
 import os
-import anndata as an
 import pandas as pd
 import numpy as np
-import constants 
 
 
-def get_meta_data(SAMPLE,DATA_DIR):
-	picasa_adata = an.read_h5ad(os.path.join(DATA_DIR, 'picasa.h5ad'))
-	df_meta = picasa_adata.obs.copy()
-	if SAMPLE == 'lung':
-		df_meta.index = ['@'.join(x.split('@')[:2]) for x in df_meta.index.values]
-	else:
-		df_meta.index = [x.split('@')[0] for x in df_meta.index.values]
-	return df_meta
+############################
+SAMPLE = "sim1_rep1_latn64" 
+WDIR = '/Users/sishirsubedi/Documents/projects/picasa/revision/sim1/'+SAMPLE
+
+############ read model results as adata 
+picasa_adata = ad.read_h5ad(WDIR+'/results/picasa.h5ad')
+
+idvals = [x.split('@')[0] for x in picasa_adata.obsm['common'].index.values]
+
+pd.DataFrame(picasa_adata.obsm['common'].values,index=idvals).to_csv(os.path.join(WDIR,'results/benchmark_picasac.csv.gz'),compression='gzip')
+
+
+############################
+fig, ax = plt.subplots(figsize=(6, 6))
+sc.pp.neighbors(picasa_adata,use_rep='common')
+sc.tl.umap(picasa_adata)
+sc.pl.umap(picasa_adata,color=['batch','celltype'],show=False)
+plt.tight_layout()
+plt.savefig(os.path.join(WDIR,'results/scanpy_picasac_umap_batch.png'), dpi=300, bbox_inches="tight")
+plt.close()
+############################
 
 
 
 ##### LISI
 
 import harmonypy as hm 
-def get_metrics_hm_batch(df,df_meta,batch_key=constants.BATCH):
+def get_metrics_hm_batch(df,df_meta,batch_key='batch'):
 	
 	lisi_res = hm.compute_lisi(df,df_meta,[batch_key])
 	return np.mean(lisi_res),np.std(lisi_res)
    
 
-def get_metrics_hm_group(df,df_meta,group_key=constants.GROUP):
+def get_metrics_hm_group(df,df_meta,group_key='celltype'):
 	
 	lisi_res = hm.compute_lisi(df,df_meta,[group_key])
 	return np.mean(lisi_res),np.std(lisi_res)
 
-def get_metrics_lisi(df,df_meta,batch_key=constants.BATCH,group_key=constants.GROUP):    
+def get_metrics_lisi(df,df_meta,batch_key='batch',group_key='celltype'):    
 
 	avg_res = []
 	
@@ -80,8 +95,8 @@ def get_silhouette_metric(
     df,
     df_meta,
     mode="batch",  # or "group"
-    batch_key=constants.BATCH,
-    group_key=constants.GROUP,
+    batch_key='batch',
+    group_key='celltype',
     chunk_size=1000,
     rescale=True
 ):
@@ -133,11 +148,11 @@ from scib_metrics.nearest_neighbors import pynndescent
 from scib_metrics import clisi_knn, nmi_ari_cluster_labels_leiden, silhouette_label
 
 
-def get_metrics_others(df,df_meta,batch_key=constants.BATCH,group_key=constants.GROUP):    
+def get_metrics_others(df,df_meta,batch_key='batch',group_key='celltype'):    
 
 	avg_res = []
 	
-	## first get nearest neighbours from latent space
+	## first lets get nearest neighbours from latent space
 	batch_labels = df_meta[batch_key].values
 	group_labels = df_meta[group_key].values
 	neigh_result = pynndescent(df.values,n_neighbors=30)
@@ -158,3 +173,11 @@ def get_metrics_others(df,df_meta,batch_key=constants.BATCH,group_key=constants.
 	df_res = pd.DataFrame(avg_res,columns=['graphcc_mean','graphcc_std','nmi_score','ari_score','isil_mean','isil_std','csil_mean','csil_std'])
 	
 	return df_res.round(3)
+
+
+
+df_meta = picasa_adata.obs.copy()
+df_meta.index = [x.split('@')[0] for x in df_meta.index.values]
+df = pd.DataFrame(picasa_adata.obsm['common'].values,index=idvals)
+df_res = get_metrics_others(df,df_meta)
+df_res.to_csv(os.path.join(WDIR,'results/benchmark_scores.csv.gz'),compression='gzip')
