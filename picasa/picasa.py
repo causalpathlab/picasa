@@ -1,6 +1,6 @@
 from . import dutil 
 from . import model 
-from .util import generate_neighbours
+from .util import generate_neighbours,generate_neighbours_middle,generate_neighbours_last,generate_neighbours_random
 import torch
 import logging
 import gc
@@ -109,9 +109,22 @@ class picasa(object):
             for ad_pair in self.adata_pairs:
                 p1 = self.adata_keys[ad_pair[0]]
                 p2 = self.adata_keys[ad_pair[1]]
+                
                 logging.info('Generating neighbour using approximate method - ANNOY...\n'+p1+'_('+str(self.data.adata_list[p1].X.shape)+') >'+p2+'_('+str(self.data.adata_list[p2].X.shape)+')')
                 self.nbr_map[p1+'_'+p2] = generate_neighbours(self.data.adata_list[p2],self.data.adata_list[p1],p1+p2,number_of_trees)
                 self.nbr_map[p2+'_'+p1] = generate_neighbours(self.data.adata_list[p1],self.data.adata_list[p2],p2+p1,number_of_trees)
+                
+                # logging.info('Generating neighbour using approximate method - ANNOY...using LAST\n'+p1+'_('+str(self.data.adata_list[p1].X.shape)+') >'+p2+'_('+str(self.data.adata_list[p2].X.shape)+')')
+                # self.nbr_map[p1+'_'+p2] = generate_neighbours_last(self.data.adata_list[p2],self.data.adata_list[p1],p1+p2,number_of_trees)
+                # self.nbr_map[p2+'_'+p1] = generate_neighbours_last(self.data.adata_list[p1],self.data.adata_list[p2],p2+p1,number_of_trees)
+    
+                # logging.info('Generating neighbour using approximate method - ANNOY...using MIDDLE\n'+p1+'_('+str(self.data.adata_list[p1].X.shape)+') >'+p2+'_('+str(self.data.adata_list[p2].X.shape)+')')
+                # self.nbr_map[p1+'_'+p2] = generate_neighbours_middle(self.data.adata_list[p2],self.data.adata_list[p1],p1+p2,number_of_trees)
+                # self.nbr_map[p2+'_'+p1] = generate_neighbours_middle(self.data.adata_list[p1],self.data.adata_list[p2],p2+p1,number_of_trees)
+    
+                # logging.info('Generating neighbour using approximate method - ANNOY...using RANDOM\n'+p1+'_('+str(self.data.adata_list[p1].X.shape)+') >'+p2+'_('+str(self.data.adata_list[p2].X.shape)+')')
+                # self.nbr_map[p1+'_'+p2] = generate_neighbours_random(self.data.adata_list[p2],self.data.adata_list[p1],p1+p2,number_of_trees)
+                # self.nbr_map[p2+'_'+p1] = generate_neighbours_random(self.data.adata_list[p1],self.data.adata_list[p2],p2+p1,number_of_trees)
     
         elif method == 'exact':
             from scipy.spatial.distance import cdist

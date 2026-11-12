@@ -41,6 +41,22 @@ test/results/*.pdf
 /picasa_reproducibility/revision/*/*/*.jpeg
 /picasa_reproducibility/revision/*/*.jpeg
 
+
+/picasa_reproducibility/revision_2/*/*/*/*.png
+/picasa_reproducibility/revision_2/*/*/*.png
+/picasa_reproducibility/revision_2/*/*.png
+/picasa_reproducibility/revision_2/*/*.flag
+/picasa_reproducibility/revision_2/*/*/*.flag
+/picasa_reproducibility/revision_2/*/*/*/*.pdf
+/picasa_reproducibility/revision_2/*/*/*.pdf
+/picasa_reproducibility/revision_2/*/*.pdf
+/picasa_reproducibility/revision_2/*/*/*/*.rds
+/picasa_reproducibility/revision_2/*/*/*.rds
+/picasa_reproducibility/revision_2/*/*.rds
+/picasa_reproducibility/revision_2/*/*/*/*.jpeg
+/picasa_reproducibility/revision_2/*/*/*.jpeg
+/picasa_reproducibility/revision_2/*/*.jpeg
+
 io.py
 scratch.py
 
@@ -77,3 +93,10 @@ __pycache__/
 !/picasa_reproducibility/analysis/tutorial/**
 
 /test/results_backup/
+
+.DS_Store
+/picasa_reproducibility/.DS_Store
+/picasa_reproducibility/analysis/.DS_Store
+/picasa_reproducibility/analysis/sim1/.DS_Store
+/picasa_reproducibility/revision/.DS_Store
+/picasa_reproducibility/revision/2_sensitivity_v2/.DS_Store
